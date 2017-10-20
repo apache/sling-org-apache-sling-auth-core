@@ -46,9 +46,9 @@
     </properties>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/sling/trunk/bundles/auth/core</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/sling/trunk/bundles/auth/core</developerConnection>
-        <url>http://svn.apache.org/viewvc/sling/trunk/bundles/auth/core</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-auth-core.git</conncetion>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-auth-core.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-auth-core.git</url>
     </scm>
 
     <build>
