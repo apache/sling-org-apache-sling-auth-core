@@ -83,6 +83,8 @@ public class AuthUtilTest {
         TestCase.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/>/x"));
         TestCase.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/'/x"));
         TestCase.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/\"/x"));
+        TestCase.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/\n"));
+        TestCase.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/\r"));
     }
 
     @Test

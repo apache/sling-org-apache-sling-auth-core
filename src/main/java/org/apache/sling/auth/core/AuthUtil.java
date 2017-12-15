@@ -21,6 +21,8 @@ package org.apache.sling.auth.core;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -453,6 +455,13 @@ public final class AuthUtil {
     public static boolean isRedirectValid(final HttpServletRequest request, final String target) {
         if (target == null || target.length() == 0) {
             getLog().warn("isRedirectValid: Redirect target must not be empty or null");
+            return false;
+        }
+        
+        try {
+            new URI(target);
+        } catch (URISyntaxException e) {
+            getLog().warn("isRedirectValid: Redirect target '{}' contains illegal characters", target);
             return false;
         }
 
