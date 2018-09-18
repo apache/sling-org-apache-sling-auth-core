@@ -30,6 +30,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.AccountNotFoundException;
@@ -40,6 +41,7 @@ import javax.servlet.ServletRequestListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
@@ -486,6 +488,8 @@ public class SlingAuthenticator implements Authenticator,
         try {
             postProcess(authInfo, request, response);
         } catch (LoginException e) {
+        	postLoginFailedEvent(request, authInfo, e);
+        	
             handleLoginFailure(request, response, authInfo, e);
             return false;
         }
@@ -833,6 +837,7 @@ public class SlingAuthenticator implements Authenticator,
             return processRequest;
 
         } catch (LoginException re) {
+        	postLoginFailedEvent(request, authInfo, re);
 
             // handle failure feedback before proceeding to handling the
             // failed login internally
@@ -1011,26 +1016,26 @@ public class SlingAuthenticator implements Authenticator,
                 // request authentication information and send 403 (Forbidden)
                 // if no handler can request authentication information.
 
-                AuthenticationHandler.FAILURE_REASON_CODES code = AuthenticationHandler.FAILURE_REASON_CODES.INVALID_LOGIN;
-                String message = "User name and password do not match";
-
-                if (reason.getCause() instanceof CredentialExpiredException) {
-                    // force failure attribute to be set so handlers can
-                    // react to this special circumstance
-                    Object creds = authInfo.get("user.jcr.credentials");
-                    if (creds instanceof SimpleCredentials && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
-                        code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY;
-                        message = "Password expired and new password found in password history";
-                    } else {
-                        code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED;
-                        message = "Password expired";
-                    }
-                } else if (reason.getCause() instanceof AccountLockedException) {
-                    code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_LOCKED;
+                AuthenticationHandler.FAILURE_REASON_CODES code = getFailureReasonFromException(authInfo, reason);
+                String message = null;
+                switch (code) {
+				case ACCOUNT_LOCKED:
                     message = "Account is locked";
-                } else if (reason.getCause() instanceof AccountNotFoundException) {
-                    code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_NOT_FOUND;
+					break;
+				case ACCOUNT_NOT_FOUND:
                     message = "Account was not found";
+					break;
+				case PASSWORD_EXPIRED:
+                    message = "Password expired";
+					break;
+				case PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY:
+                    message = "Password expired and new password found in password history";
+					break;
+				case UNKNOWN:
+				case INVALID_LOGIN:
+				default:
+					message = "User name and password do not match";
+					break;
                 }
 
                 // preset a reason for the login failure
@@ -1060,6 +1065,39 @@ public class SlingAuthenticator implements Authenticator,
 
     }
 
+    /**
+     * Try to determine the failure reason from the thrown exception
+     */
+    private AuthenticationHandler.FAILURE_REASON_CODES getFailureReasonFromException(final AuthenticationInfo authInfo, Exception reason) {
+        AuthenticationHandler.FAILURE_REASON_CODES code = null;
+        if (reason.getClass().getName().contains("TooManySessionsException")) {
+        	// not a login failure just unavailable service
+        	code = null;
+        } else if (reason instanceof LoginException) {
+            if (reason.getCause() instanceof CredentialExpiredException) {
+                // force failure attribute to be set so handlers can
+                // react to this special circumstance
+                Object creds = authInfo.get("user.jcr.credentials");
+                if (creds instanceof SimpleCredentials && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
+                    code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY;
+                } else {
+                    code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED;
+                }
+            } else if (reason.getCause() instanceof AccountLockedException) {
+                code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_LOCKED;
+            } else if (reason.getCause() instanceof AccountNotFoundException) {
+                code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_NOT_FOUND;
+            }
+
+            if (code == null) {
+            	// default to invalid login as the reason
+            	code = AuthenticationHandler.FAILURE_REASON_CODES.INVALID_LOGIN;
+            }
+        }
+        
+        return code;
+    }
+    
     /**
      * Tries to request credentials from the client. The following mechanisms
      * are implemented by this method:
@@ -1487,6 +1525,27 @@ public class SlingAuthenticator implements Authenticator,
         EventAdmin localEA = this.eventAdmin;
         if (localEA != null) {
             localEA.postEvent(new Event(AuthConstants.TOPIC_LOGIN, properties));
+        }
+    }
+
+    /**
+     * Post an event to let subscribers know that a login failure has occurred.  For examples, subscribers
+     * to the {@link AuthConstants#TOPIC_LOGIN_FAILED} event topic may be used to implement a failed login throttling solution.
+     */
+    private void postLoginFailedEvent(final HttpServletRequest request, final AuthenticationInfo authInfo, Exception reason) {
+        // The reason for the failure may be useful to downstream subscribers.
+        AuthenticationHandler.FAILURE_REASON_CODES reason_code = getFailureReasonFromException(authInfo, reason);
+        //if reason_code is null, it is problem some non-login related failure, so don't send the event
+        if (reason_code != null) {
+        	final Dictionary<String, Object> properties = new Hashtable<String, Object>();
+            properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
+            properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
+           	properties.put("reason_code", reason_code.name());
+            
+            EventAdmin localEA = this.eventAdmin;
+            if (localEA != null) {
+                localEA.postEvent(new Event(AuthConstants.TOPIC_LOGIN_FAILED, properties));
+            }
         }
     }
 
