@@ -115,7 +115,7 @@ public final class AuthConstants {
     public static final String TOPIC_LOGIN = "org/apache/sling/auth/core/Authenticator/LOGIN";
 
     /**
-     * The topic for the OSGi event which is sent when a user has logged in successfully.
+     * The topic for the OSGi event which is sent when a user has failed to login successfully.
      * The event contains at least the {@link org.apache.sling.api.SlingConstants#PROPERTY_USERID}
      * and the {@link org.apache.sling.auth.core.spi.AuthenticationInfo#AUTH_TYPE}
      * properties.
