@@ -75,17 +75,6 @@
                         <Private-Package>
                             org.apache.sling.auth.core.impl.*
                         </Private-Package>
-                        <Embed-Dependency>
-                            org.apache.sling.commons.osgi;inline=org/apache/sling/commons/osgi/PropertiesUtil.class,
-                            commons-codec;inline="org/apache/commons/codec/binary/Base64.*
-                                |org/apache/commons/codec/binary/StringUtils*
-                                |org/apache/commons/codec/BinaryEncoder*
-                                |org/apache/commons/codec/BinaryDecoder*
-                                |org/apache/commons/codec/Encoder*
-                                |org/apache/commons/codec/Decoder*
-                                |org/apache/commons/codec/EncoderException*
-                                |org/apache/commons/codec/DecoderException*"
-                        </Embed-Dependency>
                         <DynamicImport-Package>
                             javax.jcr
                         </DynamicImport-Package>
