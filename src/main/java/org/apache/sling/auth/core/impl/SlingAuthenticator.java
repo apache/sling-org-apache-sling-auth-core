@@ -489,7 +489,7 @@ public class SlingAuthenticator implements Authenticator,
             postProcess(authInfo, request, response);
         } catch (LoginException e) {
         	postLoginFailedEvent(request, authInfo, e);
-        	
+
             handleLoginFailure(request, response, authInfo, e);
             return false;
         }
@@ -945,21 +945,21 @@ public class SlingAuthenticator implements Authenticator,
         if (path == null || holderPath == null) {
             return false;
         }
-        
+
         if (("/").equals(holderPath)) {
             return true;
         }
-        
+
         int holderPathLength = holderPath.length();
-        
+
         if (path.length() < holderPathLength) {
             return false;
         }
-        
+
         if (path.equals(holderPath)) {
             return true;
         }
-        
+
         if (path.startsWith(holderPath)) {
             if (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.') {
                 return true;
@@ -967,8 +967,8 @@ public class SlingAuthenticator implements Authenticator,
         }
         return false;
     }
-    
-    
+
+
     /**
      * Returns credentials to use for anonymous resource access. If an anonymous
      * user is configued, this returns an {@link AuthenticationInfo} instance
@@ -1094,10 +1094,10 @@ public class SlingAuthenticator implements Authenticator,
             	code = AuthenticationHandler.FAILURE_REASON_CODES.INVALID_LOGIN;
             }
         }
-        
+
         return code;
     }
-    
+
     /**
      * Tries to request credentials from the client. The following mechanisms
      * are implemented by this method:
@@ -1538,10 +1538,14 @@ public class SlingAuthenticator implements Authenticator,
         //if reason_code is null, it is problem some non-login related failure, so don't send the event
         if (reason_code != null) {
         	final Dictionary<String, Object> properties = new Hashtable<String, Object>();
-            properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
-            properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
+            if (authInfo.getUser() != null) {
+                properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
+            }
+            if (authInfo.getAuthType() != null) {
+                properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
+            }
            	properties.put("reason_code", reason_code.name());
-            
+
             EventAdmin localEA = this.eventAdmin;
             if (localEA != null) {
                 localEA.postEvent(new Event(AuthConstants.TOPIC_LOGIN_FAILED, properties));
@@ -1615,11 +1619,11 @@ public class SlingAuthenticator implements Authenticator,
         if (value == null || value.length() == 0) {
             return value;
         }
-        
+
         if (value.startsWith("\"") && value.endsWith("\"")) {
             value = value.substring(1, value.length()-1);
         }
-        
+
         StringBuilder builder = new StringBuilder();
         String [] values = value.split("\\\\");
         for (String v:values) {
@@ -1627,7 +1631,7 @@ public class SlingAuthenticator implements Authenticator,
                 builder.append(URLDecoder.decode(v, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 builder.append(v);
-            } 
+            }
         }
         return builder.toString();
     }
