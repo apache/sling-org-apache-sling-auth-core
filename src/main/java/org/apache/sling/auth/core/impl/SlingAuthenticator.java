@@ -1425,7 +1425,7 @@ public class SlingAuthenticator implements Authenticator,
         String currentSudo = getSudoCookieValue(req);
 
         // set the (new) impersonation
-        final boolean setCookie = sudo != currentSudo;
+        final boolean setCookie = !sudo.equals(currentSudo);
         if (setCookie) {
             if (sudo == null) {
                 // Parameter set to "-" to clear impersonation, which was
