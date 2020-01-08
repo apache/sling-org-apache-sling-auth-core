@@ -134,6 +134,12 @@ public class SlingAuthenticator implements Authenticator,
 
     @Property(cardinality = 2147483647)
     private static final String PAR_AUTH_REQ = AuthConstants.AUTH_REQUIREMENTS;
+    
+    @Property()
+    private static final String CUSTOM_AUTH_USER = "X-Auth-User";
+
+    @Property()
+    private static final String CUSTOM_AUTH_TOKEN = "X-Auth-Token";
 
     @Property()
     private static final String PAR_ANONYMOUS_USER = "sling.auth.anonymous.user";
@@ -759,6 +765,13 @@ public class SlingAuthenticator implements Authenticator,
                 authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER, httpBasicHandler);
                 return authInfo;
             }
+        }
+        // handler for custom authentication from headers...
+
+        if(null != request.getHeader(CUSTOM_AUTH_USER) && null != request.getHeader(CUSTOM_AUTH_TOKEN)){
+            final AuthenticationInfo authInfo = new AuthenticationInfo(HttpServletRequest.BASIC_AUTH, request.getHeader(CUSTOM_AUTH_TOKEN).toString(),
+                    request.getHeader(CUSTOM_AUTH_TOKEN).toCharArray());
+            return authInfo;
         }
 
         // no handler found for the request ....
