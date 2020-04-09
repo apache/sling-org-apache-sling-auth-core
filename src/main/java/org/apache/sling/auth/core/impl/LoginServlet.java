@@ -23,32 +23,32 @@ import java.io.IOException;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Properties;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.ReferencePolicy;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.auth.core.AuthUtil;
-import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.propertytypes.ServiceDescription;
+import org.osgi.service.component.propertytypes.ServiceVendor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The <code>LoginServlet</code> lets the Authenticator do the login.
  */
-@Component()
-@Service(value = Servlet.class)
-@Properties( {
-    @Property(name = Constants.SERVICE_DESCRIPTION, value = "Authenticator Login Servlet"),
-    @Property(name = Constants.SERVICE_VENDOR, value = "The Apache Software Foundation"),
-    @Property(name = "sling.servlet.methods", value = { "GET", "POST" }) })
+@Component(service = Servlet.class,
+  property = {
+          "sling.servlet.methods=GET",
+          "sling.servlet.methods=POST",
+          "sling.servlet.paths=" + LoginServlet.SERVLET_PATH
+  })
+@ServiceDescription("Authenticator Login Servlet")
+@ServiceVendor("The Apache Software Foundation")
 public class LoginServlet extends SlingAllMethodsServlet {
 
     /** serialization UID */
@@ -57,14 +57,13 @@ public class LoginServlet extends SlingAllMethodsServlet {
     /** default log */
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL_UNARY, policy = ReferencePolicy.DYNAMIC)
+    @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile Authenticator authenticator;
 
     /**
      * The servlet is registered on this path, and the authenticator allows any
      * requests to that path, without authentication
      */
-    @Property(name = "sling.servlet.paths")
     public static final String SERVLET_PATH = "/system/sling/login";
 
     @Override

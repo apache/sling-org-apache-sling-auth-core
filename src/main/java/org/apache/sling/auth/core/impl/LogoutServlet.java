@@ -21,20 +21,20 @@ package org.apache.sling.auth.core.impl;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Properties;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.PropertyUnbounded;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.ReferencePolicy;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.servlets.SlingAllMethodsServlet;
 import org.apache.sling.auth.core.AuthUtil;
-import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.propertytypes.ServiceDescription;
+import org.osgi.service.component.propertytypes.ServiceVendor;
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,16 +42,22 @@ import org.slf4j.LoggerFactory;
  * The <code>LogoutServlet</code> lets the Authenticator
  * do the logout.
  */
-@Component(metatype=true, label="Apache Sling Authentication Logout Servlet",
-           description="Servlet for logging out users through the authenticator service.")
-@Service(value = Servlet.class)
-@Properties( {
-    @Property(name = Constants.SERVICE_DESCRIPTION, value = "Authenticator Logout Servlet"),
-    @Property(name = Constants.SERVICE_VENDOR, value = "The Apache Software Foundation"),
-    @Property(name = "sling.servlet.methods", value = { "GET", "POST" } ,
-              label = "Method", description = "Supported Methdos", unbounded=PropertyUnbounded.ARRAY)
-})
+@Component(service = Servlet.class,
+    property = {
+            "sling.servlet.paths=" + LogoutServlet.SERVLET_PATH
+    })
+@ServiceDescription("Authenticator Logout Servlet")
+@ServiceVendor("The Apache Software Foundation")
+@Designate(ocd = LogoutServlet.Config.class)
 public class LogoutServlet extends SlingAllMethodsServlet {
+
+    @ObjectClassDefinition(name = "Apache Sling Authentication Logout Servlet",
+            description = "Servlet for logging out users through the authenticator service.")
+    public @interface Config {
+
+        @AttributeDefinition(name = "Method", description = "Supported Methods")
+        String[] sling_servlet_methods() default {"GET", "POST"};
+    }
 
     /** serialization UID */
     private static final long serialVersionUID = -1L;
@@ -59,13 +65,12 @@ public class LogoutServlet extends SlingAllMethodsServlet {
     /** default log */
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL_UNARY, policy = ReferencePolicy.DYNAMIC)
+    @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile Authenticator authenticator;
 
     /**
      * The servlet is registered on this path.
      */
-    @Property(name = "sling.servlet.paths")
     public static final String SERVLET_PATH = "/system/sling/logout";
 
     @Override

@@ -21,14 +21,12 @@ package org.apache.sling.auth.core.impl.engine;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Properties;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.engine.auth.Authenticator;
 import org.apache.sling.engine.auth.NoAuthenticationHandlerException;
-import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.propertytypes.ServiceDescription;
+import org.osgi.service.component.propertytypes.ServiceVendor;
 
 /**
  * The <code>EngineSlingAuthenticator</code> class is a simple proxy service
@@ -36,17 +34,16 @@ import org.osgi.framework.Constants;
  * new standalone Apache Sling
  * {@link org.apache.sling.auth.core.AuthenticationSupport} service.
  */
-@Component()
-@Service(value = Authenticator.class)
-@Properties( {
-    @Property(name = Constants.SERVICE_DESCRIPTION, value = "Apache Sling Request Authenticator (Legacy Bridge)"),
-    @Property(name = Constants.SERVICE_VENDOR, value = "The Apache Software Foundation") })
+@Component(service = Authenticator.class)
+@ServiceDescription("Apache Sling Request Authenticator (Legacy Bridge)")
+@ServiceVendor("The Apache Software Foundation")
 @SuppressWarnings("deprecation")
 public class EngineSlingAuthenticator implements Authenticator {
 
     @Reference
     private org.apache.sling.api.auth.Authenticator slingAuthenticator;
 
+    @Override
     public void login(HttpServletRequest request, HttpServletResponse response) {
         try {
             slingAuthenticator.login(request, response);

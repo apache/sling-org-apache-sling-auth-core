@@ -132,7 +132,7 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
     String getProvider() {
         // assume the commons/auth SlingAuthenticator provides the entry
         if (serviceReference == null) {
-            return SlingAuthenticator.DESCRIPTION;
+            return "Apache Sling Request Authenticator";
         }
 
         final String descr = PropertiesUtil.toString(

@@ -35,6 +35,7 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.auth.login.CredentialExpiredException;
+import javax.servlet.Servlet;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -42,17 +43,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Modified;
-import org.apache.felix.scr.annotations.Properties;
-import org.apache.felix.scr.annotations.Property;
-import org.apache.felix.scr.annotations.PropertyOption;
-import org.apache.felix.scr.annotations.PropertyUnbounded;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferencePolicy;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.auth.NoAuthenticationHandlerException;
@@ -74,10 +64,26 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.propertytypes.ServiceDescription;
+import org.osgi.service.component.propertytypes.ServiceVendor;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
+import org.osgi.service.http.whiteboard.propertytypes.HttpWhiteboardContextSelect;
+import org.osgi.service.http.whiteboard.propertytypes.HttpWhiteboardListener;
+import org.osgi.service.metatype.annotations.AttributeDefinition;
+import org.osgi.service.metatype.annotations.AttributeType;
+import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.service.metatype.annotations.ObjectClassDefinition;
+import org.osgi.service.metatype.annotations.Option;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,50 +102,117 @@ import org.slf4j.LoggerFactory;
  * URL.
  */
 @Component(name = "org.apache.sling.engine.impl.auth.SlingAuthenticator",
-           label = "%auth.name",
-           description = "%auth.description", metatype = true)
-@Service(value = { Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class })
-@Properties({
-    @Property(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, value = "(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=*)"),
-    @Property(name = HttpWhiteboardConstants.HTTP_WHITEBOARD_LISTENER, value = "true"),
-    @Property(name = Constants.SERVICE_VENDOR, value = "The Apache Software Foundation")
-
-})
+           service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class })
+@HttpWhiteboardContextSelect("(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=*)")
+@HttpWhiteboardListener
+@ServiceDescription("Apache Sling Request Authenticator")
+@ServiceVendor("The Apache Software Foundation")
+@Designate(ocd = SlingAuthenticator.Config.class)
 public class SlingAuthenticator implements Authenticator,
         AuthenticationSupport, ServletRequestListener {
+
+    @ObjectClassDefinition(name = "Apache Sling Authentication Service",
+          description = "Extracts user authentication details from the request with" +
+            " the help of authentication handlers registered as separate services. One" +
+            " example of such an authentication handler is the handler HTTP Authorization" +
+            " header contained authentication.")
+    public @interface Config {
+
+        @AttributeDefinition(name = "Impersonation Cookie",
+                description = "The name the HTTP Cookie to set with the value" +
+                        " of the user which is to be impersonated. This cookie will always be a session" +
+                        " cookie.")
+        String auth_sudo_cookie() default "sling.sudo";
+
+        @AttributeDefinition(name = "Impersonation Parameter",
+                description = "The name of the request parameter initiating" +
+                        " impersonation. Setting this parameter to a user id will result in using an" +
+                        " impersonated session (instead of the actually authenticated session) and set" +
+                        " a session cookie of the name defined in the Impersonation Cookie setting.")
+        String auth_sudo_parameter() default "sudo";
+
+        @AttributeDefinition(name = "Allow Anonymous Access",
+                description = "Whether default access as anonymous when no" +
+                        " credentials are present in the request is allowed. The default value is" +
+                        " \"true\" to allow access without credentials. When set to \"false\" access to the" +
+                        " repository is only allowed if valid credentials are presented. The value of" +
+                        " this configuration option is added to list of Authentication Requirements" +
+                        " and needs not be explicitly listed. If anonymous access is allowed the entry" +
+                        " added is \"-/\". Otherwise anonymous access is denied and \"+/\" is added to the" +
+                        " list.")
+        boolean auth_annonymous() default true;
+
+        @AttributeDefinition(name = "Authentication Requirements",
+                description = "Defines URL space subtrees which require" +
+                        " or don't require authentication. For any request the best matching path" +
+                        " configured applies and defines whether authentication is actually required" +
+                        " for the request or not. Each entry in this list can be an absolute path (such" +
+                        " as /content) or and absolute URI (such as http://thehost/content). Optionally" +
+                        " each entry may be prefixed by a plus (+) or minus (-) sign indicating that" +
+                        " authentication is required (plus) or not required (minus). Example entries are" +
+                        " \"/content\" or \"+/content\" to require authentication at and below \"/content\" and" +
+                        " \"-/system/sling/login\" to not require authentication at and below" +
+                        " \"/system/sling/login\". By default this list is empty. This list is extended at" +
+                        " run time with additional entries: One entry is added for the \"Allow Anonymous" +
+                        " Access\" configuration. Other entries are added for any services setting the" +
+                        " \"sling.auth.requirements\" service registration property.")
+        String[] sling_auth_requirements();
+
+        @AttributeDefinition(name = "Anonymous User Name",
+                description = "Defines which user name to assume" +
+                        " for anonymous requests, that is requests not providing credentials" +
+                        " supported by any of the registered authentication handlers. If this" +
+                        " property is missing or empty, the default is assumed which depends on" +
+                        " the resource provider(s). Otherwise anonymous requests are handled with" +
+                        " this user name. If the configured user name does not exist or is not" +
+                        " allowed to access the resource data, anonymous requests may still be" +
+                        " blocked. If anonymous access is not allowed, this property is ignored.")
+        String sling_auth_anonymous_user();
+
+        @AttributeDefinition(name = "Anonymous User Password",
+                description = "Password for the anonymous" +
+                        " user defined in the Anonymous User Name field. This property is only" +
+                        " used if a non-empty anonymous user name is configured. If this property" +
+                        " is not defined but a password is required, an empty password would be" +
+                        " assumed.", type = AttributeType.PASSWORD)
+        String sling_auth_anonymous_password();
+
+        @AttributeDefinition(name = "HTTP Basic Authentication",
+                description = "Level of support for HTTP Basic Authentication. Such" +
+                        " support can be provided in three levels: (1) no support at all, that is" +
+                        " disabled, (2) preemptive support, that is HTTP Basic Authentication is" +
+                        " supported if the authentication header is set in the request, (3) full" +
+                        " support. The default is preemptive support unless Anonymous Access is" +
+                        " not allowed. In this case HTTP Basic Authentication is always enabled" +
+                        " to ensure clients can authenticate at least with basic authentication.",
+                options = {
+                        @Option(label = "Enabled", value = HTTP_AUTH_ENABLED),
+                        @Option(label = "Enabled (Preemptive)", value = HTTP_AUTH_PREEMPTIVE),
+                        @Option(label = "Disabled", value = HTTP_AUTH_DISABLED)
+                })
+        String auth_http() default HTTP_AUTH_PREEMPTIVE;
+
+        @AttributeDefinition(name = "Realm",
+                description = "HTTP BASIC authentication realm. This property" +
+                        " is only used if the HTTP Basic Authentication support is not disabled. The" +
+                        " default value is \"Sling (Development)\".")
+        String auth_http_realm() default "Sling (Development)";
+
+        @AttributeDefinition(name = "Authentication URI Suffices",
+                description = "A list of request URI suffixes intended to" +
+                        " be handled by Authentication Handlers. Any request whose request URI" +
+                        " ends with any one of the listed suffices is intended to be handled by" +
+                        " an Authentication Handler causing the request to either be rejected or" +
+                        " the client being redirected to another location and thus the request not" +
+                        " being further processed after the authentication phase. The default is" +
+                        " just \"/j_security_check\" which is the suffix defined by the Servlet API" +
+                        " specification used for FORM based authentication.")
+        String[] auth_uri_suffix() default DEFAULT_AUTH_URI_SUFFIX;
+    }
 
     /** default log */
     private final Logger log = LoggerFactory.getLogger(SlingAuthenticator.class);
 
-    @Property(name = Constants.SERVICE_DESCRIPTION)
-    static final String DESCRIPTION = "Apache Sling Request Authenticator";
-
-    /** The default impersonation cookie name */
-    private static final String DEFAULT_IMPERSONATION_COOKIE = "sling.sudo";
-
-    @Property(value = DEFAULT_IMPERSONATION_COOKIE)
-    public static final String PAR_IMPERSONATION_COOKIE_NAME = "auth.sudo.cookie";
-
-    /** The default impersonation parameter name */
-    private static final String DEFAULT_IMPERSONATION_PARAMETER = "sudo";
-
-    @Property(value = DEFAULT_IMPERSONATION_PARAMETER)
-    public static final String PAR_IMPERSONATION_PAR_NAME = "auth.sudo.parameter";
-
-    /** The default value for allowing anonymous access */
-    private static final boolean DEFAULT_ANONYMOUS_ALLOWED = true;
-
-    @Property(boolValue = DEFAULT_ANONYMOUS_ALLOWED)
-    public static final String PAR_ANONYMOUS_ALLOWED = "auth.annonymous";
-
-    @Property(cardinality = 2147483647)
-    private static final String PAR_AUTH_REQ = AuthConstants.AUTH_REQUIREMENTS;
-
-    @Property()
-    private static final String PAR_ANONYMOUS_USER = "sling.auth.anonymous.user";
-
-    @Property() // TODO: This should be a PASSWORD type
-    private static final String PAR_ANONYMOUS_PASSWORD = "sling.auth.anonymous.password";
 
     /**
      * Value of the {@link #PAR_HTTP_AUTH} property to fully enable the built-in
@@ -162,24 +235,6 @@ public class SlingAuthenticator implements Authenticator,
      */
     private static final String HTTP_AUTH_PREEMPTIVE = "preemptive";
 
-    @Property(value = HTTP_AUTH_PREEMPTIVE, options = {
-        @PropertyOption(name = HTTP_AUTH_ENABLED, value = "Enabled"),
-        @PropertyOption(name = HTTP_AUTH_PREEMPTIVE, value = "Enabled (Preemptive)"),
-        @PropertyOption(name = HTTP_AUTH_DISABLED, value = "Disabled") })
-    private static final String PAR_HTTP_AUTH = "auth.http";
-
-    /**
-     * The default realm for the built-in HTTP Basic authentication handler.
-     */
-    private static final String DEFAULT_REALM = "Sling (Development)";
-
-    /**
-     * The name of the configuration property used to set the Realm of the
-     * built-in HTTP Basic authentication handler.
-     */
-    @Property(value = DEFAULT_REALM)
-    public static final String PAR_REALM_NAME = "auth.http.realm";
-
     /**
      * Default request URI suffix to expect to be handled by authentication
      * handlers and not expecting to cause
@@ -193,14 +248,6 @@ public class SlingAuthenticator implements Authenticator,
      * the user (value is "j_newpassword").
      */
     private static final String PAR_NEW_PASSWORD = "j_newpassword";
-
-    /**
-     * The name of the configuration property used to set a (potentially
-     * empty) list of request URI suffixes intended to be handled by
-     * authentication handlers.
-     */
-    @Property(value = DEFAULT_AUTH_URI_SUFFIX, unbounded = PropertyUnbounded.ARRAY)
-    public static final String PAR_AUTH_URI_SUFFIX = "auth.uri.suffix";
 
     /**
      * The name of the {@link AuthenticationInfo} property providing the option
@@ -256,7 +303,7 @@ public class SlingAuthenticator implements Authenticator,
     private HttpBasicAuthenticationHandler httpBasicHandler;
 
     /** Web Console Plugin service registration */
-    private ServiceRegistration webConsolePlugin;
+    private ServiceRegistration<Servlet> webConsolePlugin;
 
     /**
      * The listener for services registered with "sling.auth.requirements" to
@@ -277,21 +324,20 @@ public class SlingAuthenticator implements Authenticator,
     /**
      * ServiceTracker tracking AuthenticationInfoPostProcessor services
      */
-    private ServiceTracker authInfoPostProcessorTracker;
+    private ServiceTracker<AuthenticationInfoPostProcessor, AuthenticationInfoPostProcessor> authInfoPostProcessorTracker;
 
     /**
      * The event admin service.
      */
-    @Reference(policy=ReferencePolicy.DYNAMIC)
+    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile EventAdmin eventAdmin;
 
     // ---------- SCR integration
 
-    @SuppressWarnings("unused")
     @Activate
     private void activate(final BundleContext bundleContext,
-            final Map<String, Object> properties) {
-        modified(properties);
+            final Config config) {
+        modified(config);
 
         AuthenticatorWebConsolePlugin plugin = new AuthenticatorWebConsolePlugin(
             this);
@@ -302,10 +348,10 @@ public class SlingAuthenticator implements Authenticator,
         props.put(Constants.SERVICE_DESCRIPTION,
             "Sling Request Authenticator WebConsole Plugin");
         props.put(Constants.SERVICE_VENDOR,
-            properties.get(Constants.SERVICE_VENDOR));
+            "The Apache Software Foundation");
 
         webConsolePlugin = bundleContext.registerService(
-            "javax.servlet.Servlet", plugin, props);
+            Servlet.class, plugin, props);
 
         serviceListener = SlingAuthenticatorServiceListener.createListener(
             bundleContext, this.authRequiredCache);
@@ -314,20 +360,13 @@ public class SlingAuthenticator implements Authenticator,
             authHandlerCache);
         engineAuthHandlerTracker = new EngineAuthenticationHandlerTracker(
             bundleContext, authHandlerCache);
-        authInfoPostProcessorTracker = new ServiceTracker(bundleContext, AuthenticationInfoPostProcessor.SERVICE_NAME, null);
+        authInfoPostProcessorTracker = new ServiceTracker(bundleContext, AuthenticationInfoPostProcessor.class, null);
         authInfoPostProcessorTracker.open();
     }
 
     @Modified
-    private void modified(Map<String, Object> properties) {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-
-        String newCookie = (String) properties.get(PAR_IMPERSONATION_COOKIE_NAME);
-        if (newCookie == null || newCookie.length() == 0) {
-            newCookie = DEFAULT_IMPERSONATION_COOKIE;
-        }
+    private void modified(Config config) {
+        String newCookie = config.auth_sudo_cookie();
         if (!newCookie.equals(this.sudoCookieName)) {
             log.info(
                 "modified: Setting new cookie name for impersonation {} (was {})",
@@ -335,10 +374,7 @@ public class SlingAuthenticator implements Authenticator,
             this.sudoCookieName = newCookie;
         }
 
-        String newPar = (String) properties.get(PAR_IMPERSONATION_PAR_NAME);
-        if (newPar == null || newPar.length() == 0) {
-            newPar = DEFAULT_IMPERSONATION_PARAMETER;
-        }
+        String newPar = config.auth_sudo_parameter();
         if (!newPar.equals(this.sudoParameterName)) {
             log.info(
                 "modified: Setting new parameter name for impersonation {} (was {})",
@@ -348,10 +384,10 @@ public class SlingAuthenticator implements Authenticator,
 
         authRequiredCache.clear();
 
-        final boolean anonAllowed = PropertiesUtil.toBoolean(properties.get(PAR_ANONYMOUS_ALLOWED), DEFAULT_ANONYMOUS_ALLOWED);
+        final boolean anonAllowed = config.auth_annonymous();
         authRequiredCache.addHolder(new AuthenticationRequirementHolder("/", !anonAllowed, null));
 
-        String[] authReqs = PropertiesUtil.toStringArray(properties.get(PAR_AUTH_REQ));
+        String[] authReqs = config.sling_auth_requirements();
         if (authReqs != null) {
             for (String authReq : authReqs) {
                 if (authReq != null && authReq.length() > 0) {
@@ -361,18 +397,16 @@ public class SlingAuthenticator implements Authenticator,
             }
         }
 
-        final String anonUser = PropertiesUtil.toString(properties.get(PAR_ANONYMOUS_USER), "");
-        if (anonUser.length() > 0) {
+        final String anonUser = config.sling_auth_anonymous_user();
+        if (anonUser != null && anonUser.length() > 0) {
             this.anonUser = anonUser;
-            this.anonPassword = PropertiesUtil.toString(properties.get(PAR_ANONYMOUS_PASSWORD), "").toCharArray();
+            this.anonPassword = config.sling_auth_anonymous_password() == null ? "".toCharArray() : config.sling_auth_anonymous_password().toCharArray();
         } else {
             this.anonUser = null;
             this.anonPassword = null;
         }
 
-        authUriSuffices = PropertiesUtil.toStringArray(properties.get(PAR_AUTH_URI_SUFFIX),
-            new String[] { DEFAULT_AUTH_URI_SUFFIX });
-
+        authUriSuffices = config.auth_uri_suffix();
         // don't require authentication for login/logout servlets
         authRequiredCache.addHolder(new AuthenticationRequirementHolder(
             LoginServlet.SERVLET_PATH, false, null));
@@ -386,7 +420,7 @@ public class SlingAuthenticator implements Authenticator,
 
         final String http;
         if (anonAllowed) {
-            http = PropertiesUtil.toString(properties.get(PAR_HTTP_AUTH), HTTP_AUTH_PREEMPTIVE);
+            http = config.auth_http();
         } else {
             http = HTTP_AUTH_ENABLED;
             log.debug("modified: Anonymous Access is denied thus HTTP Basic Authentication is fully enabled");
@@ -395,12 +429,11 @@ public class SlingAuthenticator implements Authenticator,
         if (HTTP_AUTH_DISABLED.equals(http)) {
             httpBasicHandler = null;
         } else {
-            final String realm = PropertiesUtil.toString(properties.get(PAR_REALM_NAME), DEFAULT_REALM);
+            final String realm = config.auth_http_realm();
             httpBasicHandler = new HttpBasicAuthenticationHandler(realm, HTTP_AUTH_ENABLED.equals(http));
         }
     }
 
-    @SuppressWarnings("unused")
     @Deactivate
     private void deactivate(final BundleContext bundleContext) {
         this.authRequiredCache.clear();
