@@ -82,7 +82,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener {
 
             // add requirements for newly registered services and for
             // updated services
-            if ((event.getType() & (ServiceEvent.REGISTERED | ServiceEvent.MODIFIED)) != 0) {
+            if ((event.getType() & ServiceEvent.REGISTERED ) != 0) {
                 addService(event.getServiceReference());
             }
         }
