@@ -30,7 +30,7 @@
     <artifactId>org.apache.sling.auth.core</artifactId>
     <version>1.4.7-SNAPSHOT</version>
 
-    <name>Apache Sling Authentication Service</name>
+    <name>Apache Sling Auth Core</name>
     <description>
         The Sling Authentication Service bundle provides the basic
         mechanisms to authenticate HTTP requests with a JCR repository.
