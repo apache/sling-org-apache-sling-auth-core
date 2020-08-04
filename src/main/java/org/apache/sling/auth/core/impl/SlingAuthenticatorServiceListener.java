@@ -19,8 +19,6 @@
 package org.apache.sling.auth.core.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -232,7 +230,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
             case MODIFIED : this.modifiedService(mapper, action.reference); break;
             case UPDATE: final List<AuthenticationRequirementHolder> list = props.get(id);
                          if (!list.isEmpty() ) {
-                             this.modifiedService(mapper, list.get(0).serviceReference, regProps.get(id));
+                             this.modifiedService(mapper, list.get(0).serviceReference);
                          }
         }
     }
@@ -256,7 +254,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
     }
 
-    private Set<String> buildPathsSet(final ResourceMapper mapper, final Collection<String> authReqPaths) {
+    private Set<String> buildPathsSet(final ResourceMapper mapper, final String[] authReqPaths) {
         final Set<String> paths = new HashSet<>();
         for(final String authReq : authReqPaths) {
             if (authReq != null && authReq.length() > 0) {
@@ -280,7 +278,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
         if ( authReqPaths != null ) {
             final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-            final Set<String> paths = buildPathsSet(mapper, Arrays.asList(authReqPaths));
+            final Set<String> paths = buildPathsSet(mapper, authReqPaths);
 
             if ( !paths.isEmpty() ) {
                 final List<AuthenticationRequirementHolder> authReqList = new ArrayList<AuthenticationRequirementHolder>();
@@ -288,7 +286,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                     authReqList.add(AuthenticationRequirementHolder.fromConfig(authReq, ref));
                 }
 
-                // keep original set for modified
+                // keep original
                 regProps.put(id, paths);
                 registerService(authReqList);
                 props.put(id, authReqList);
@@ -302,12 +300,6 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      */
     private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref) {
         final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
-
-        modifiedService(mapper, ref, Arrays.asList(authReqPaths));
-    }
-
-
-    private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref, final Collection<String> authReqPaths) {
         final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
         if ( authReqPaths != null ) {
             final Set<String> oldPaths = regProps.get(id);
