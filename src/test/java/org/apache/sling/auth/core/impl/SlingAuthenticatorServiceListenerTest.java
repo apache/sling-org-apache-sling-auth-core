@@ -25,8 +25,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.api.resource.mapping.ResourceMapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
@@ -75,10 +80,24 @@ public class SlingAuthenticatorServiceListenerTest {
         return ref;
     }
 
-    @Test public void testAddRemoveRegistration() {
+    private ResourceResolverFactory createFactoryForMapper(final ResourceMapper mapper) throws LoginException {
+        final ResourceResolverFactory factory = mock(ResourceResolverFactory.class);
+
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+
+        when(factory.getServiceResourceResolver(null)).thenReturn(resolver);
+
+        when(resolver.adaptTo(ResourceMapper.class)).thenReturn(mapper);
+
+        return factory;
+    }
+
+    @Test public void testAddRemoveRegistration() throws LoginException {
         final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
         final BundleContext context = mock(BundleContext.class);
-        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, cache);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
 
         assertTrue(cache.getHolders().isEmpty());
 
@@ -95,10 +114,14 @@ public class SlingAuthenticatorServiceListenerTest {
         assertTrue(cache.getHolders().isEmpty());
     }
 
-    @Test public void testDuplicateRegistration() {
+    @Test public void testDuplicateRegistration() throws LoginException {
         final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
         final BundleContext context = mock(BundleContext.class);
-        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, cache);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Collections.singleton("/path3"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1", "/path1", "/path2"});
         listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -117,10 +140,16 @@ public class SlingAuthenticatorServiceListenerTest {
         assertTrue(cache.getHolders().isEmpty());
     }
 
-    @Test public void testAddRemoveRegistrations() {
+    @Test public void testAddRemoveRegistrations() throws LoginException {
         final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
         final BundleContext context = mock(BundleContext.class);
-        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, cache);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Collections.singleton("/path3"));
+        when(mapper.getAllMappings("/path4")).thenReturn(Collections.singleton("/path4"));
+        when(mapper.getAllMappings("/path5")).thenReturn(Collections.singleton("/path5"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1"});
         listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -147,10 +176,16 @@ public class SlingAuthenticatorServiceListenerTest {
         assertTrue(cache.getHolders().isEmpty());
     }
 
-    @Test public void testModifyRegistration() {
+    @Test public void testModifyRegistration() throws LoginException {
         final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
         final BundleContext context = mock(BundleContext.class);
-        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, cache);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Collections.singleton("/path3"));
+        when(mapper.getAllMappings("/path4")).thenReturn(Collections.singleton("/path4"));
+        when(mapper.getAllMappings("/path5")).thenReturn(Collections.singleton("/path5"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1", "/path2", "/path3"});
         listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -169,4 +204,23 @@ public class SlingAuthenticatorServiceListenerTest {
         assertTrue(cache.getHolders().isEmpty());
 
     }
+
+    @Test public void testRegistrationWithMapping() throws LoginException {
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final BundleContext context = mock(BundleContext.class);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path2", "/path3"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
+
+        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path2", "/path3"},
+                           new ServiceReference<?>[] {ref, ref, ref});
+
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
+
+        assertTrue(cache.getHolders().isEmpty());
+    }
+
 }

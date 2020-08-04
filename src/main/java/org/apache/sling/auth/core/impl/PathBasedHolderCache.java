@@ -49,11 +49,7 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
         this.rwLock.writeLock().lock();
         try {
 
-            Map<String, SortedSet<Type>> byHostMap = cache.get(holder.protocol);
-            if (byHostMap == null) {
-                byHostMap = new HashMap<String, SortedSet<Type>>();
-                cache.put(holder.protocol, byHostMap);
-            }
+            final Map<String, SortedSet<Type>> byHostMap = cache.computeIfAbsent(holder.protocol, protocol -> new HashMap<>());
 
             final SortedSet<Type> byPathSet = new TreeSet<Type>();
 
