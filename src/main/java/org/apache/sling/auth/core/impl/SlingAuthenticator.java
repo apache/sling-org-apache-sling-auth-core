@@ -47,8 +47,10 @@ import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
@@ -256,6 +258,11 @@ public class SlingAuthenticator implements Authenticator,
      */
     private static final String AUTH_INFO_PROP_FEEDBACK_HANDLER = "$$sling.auth.AuthenticationFeedbackHandler$$";
 
+    /**
+     * Request attribute holding the resolved path
+     */
+    private static final String ATTR_RESOLVED_PATH = SlingAuthenticator.class.getName().concat("/resolvedPath");
+
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
 
@@ -332,12 +339,15 @@ public class SlingAuthenticator implements Authenticator,
     @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile EventAdmin eventAdmin;
 
+    private ResourceResolver serviceResolver;
+
     // ---------- SCR integration
 
     @Activate
     private void activate(final BundleContext bundleContext,
-            final Config config) {
+            final Config config) throws LoginException {
         modified(config);
+        this.serviceResolver = resourceResolverFactory.getServiceResourceResolver(null);
 
         AuthenticatorWebConsolePlugin plugin = new AuthenticatorWebConsolePlugin(
             this);
@@ -456,6 +466,10 @@ public class SlingAuthenticator implements Authenticator,
             webConsolePlugin.unregister();
             webConsolePlugin = null;
         }
+        if ( this.serviceResolver != null ) {
+            this.serviceResolver.close();
+            this.serviceResolver = null;
+        }
     }
 
     // --------- AuthenticationSupport interface
@@ -479,29 +493,33 @@ public class SlingAuthenticator implements Authenticator,
     public boolean handleSecurity(HttpServletRequest request,
             HttpServletResponse response) {
 
-        // 0. Nothing to do, if the session is also in the request
-        // this might be the case if the request is handled as a result
-        // of a servlet container include inside another Sling request
-        Object sessionAttr = request.getAttribute(REQUEST_ATTRIBUTE_RESOLVER);
-        if (sessionAttr instanceof ResourceResolver) {
-            log.debug("handleSecurity: Request already authenticated, nothing to do");
-            return true;
-        } else if (sessionAttr != null) {
-            // warn and remove existing non-session
-            log.warn("handleSecurity: Overwriting existing ResourceResolver attribute ({})", sessionAttr);
-            request.removeAttribute(REQUEST_ATTRIBUTE_RESOLVER);
-        }
+        try {
+            // 0. Nothing to do, if the session is also in the request
+            // this might be the case if the request is handled as a result
+            // of a servlet container include inside another Sling request
+            Object sessionAttr = request.getAttribute(REQUEST_ATTRIBUTE_RESOLVER);
+            if (sessionAttr instanceof ResourceResolver) {
+                log.debug("handleSecurity: Request already authenticated, nothing to do");
+                return true;
+            } else if (sessionAttr != null) {
+                // warn and remove existing non-session
+                log.warn("handleSecurity: Overwriting existing ResourceResolver attribute ({})", sessionAttr);
+                request.removeAttribute(REQUEST_ATTRIBUTE_RESOLVER);
+            }
 
-        boolean process = doHandleSecurity(request, response);
-        if (process && expectAuthenticationHandler(request)) {
-            log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
-            AuthUtil.sendInvalid(request, response);
-            return false;
-        }
+            boolean process = doHandleSecurity(request, response);
+            if (process && expectAuthenticationHandler(request)) {
+                log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+                AuthUtil.sendInvalid(request, response);
+                return false;
+            }
 
-        return process;
+            return process;
+        } finally {
+            request.removeAttribute(ATTR_RESOLVED_PATH);
+        }
     }
 
     private boolean doHandleSecurity(HttpServletRequest request, HttpServletResponse response) {
@@ -579,50 +597,54 @@ public class SlingAuthenticator implements Authenticator,
             throw new IllegalStateException("Response already committed");
         }
 
-        // select path used for authentication handler selection
-        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
-                .findApplicableHolders(request);
-        final String path = getHandlerSelectionPath(request);
-        boolean done = false;
-        for (int m = 0; !done && m < holdersArray.length; m++) {
-            final Collection<AbstractAuthenticationHandlerHolder> holderList = holdersArray[m];
-            if ( holderList != null ) {
-                for (AbstractAuthenticationHandlerHolder holder : holderList) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)) {
-                        log.debug("login: requesting authentication using handler: {}",
-                            holder);
+        try {
+            // select path used for authentication handler selection
+            final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
+                    .findApplicableHolders(request);
+            final String path = getHandlerSelectionPath(request);
+            boolean done = false;
+            for (int m = 0; !done && m < holdersArray.length; m++) {
+                final Collection<AbstractAuthenticationHandlerHolder> holderList = holdersArray[m];
+                if ( holderList != null ) {
+                    for (AbstractAuthenticationHandlerHolder holder : holderList) {
+                        if (isNodeRequiresAuthHandler(path, holder.path)) {
+                            log.debug("login: requesting authentication using handler: {}",
+                                holder);
 
-                        try {
-                            done = holder.requestCredentials(request, response);
-                        } catch (IOException ioe) {
-                            log.error(
-                                "login: Failed sending authentication request through handler "
-                                    + holder + ", access forbidden", ioe);
-                            done = true;
-                        }
-                        if (done) {
-                            break;
+                            try {
+                                done = holder.requestCredentials(request, response);
+                            } catch (IOException ioe) {
+                                log.error(
+                                    "login: Failed sending authentication request through handler "
+                                        + holder + ", access forbidden", ioe);
+                                done = true;
+                            }
+                            if (done) {
+                                break;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // fall back to HTTP Basic handler (if not done already)
-        if (!done && httpBasicHandler != null) {
-            done = httpBasicHandler.requestCredentials(request, response);
-        }
-
-        // no handler could send an authentication request, throw
-        if (!done) {
-            int size = 0;
-            for (int m = 0; m < holdersArray.length; m++) {
-                if (holdersArray[m] != null) {
-                    size += holdersArray[m].size();
-                }
+            // fall back to HTTP Basic handler (if not done already)
+            if (!done && httpBasicHandler != null) {
+                done = httpBasicHandler.requestCredentials(request, response);
             }
-            log.info("login: No handler for request ({} handlers available)", size);
-            throw new NoAuthenticationHandlerException();
+
+            // no handler could send an authentication request, throw
+            if (!done) {
+                int size = 0;
+                for (int m = 0; m < holdersArray.length; m++) {
+                    if (holdersArray[m] != null) {
+                        size += holdersArray[m].size();
+                    }
+                }
+                log.info("login: No handler for request ({} handlers available)", size);
+                throw new NoAuthenticationHandlerException();
+            }
+        } finally {
+            request.removeAttribute(ATTR_RESOLVED_PATH);
         }
     }
 
@@ -642,27 +664,31 @@ public class SlingAuthenticator implements Authenticator,
         // make sure impersonation is dropped
         setSudoCookie(request, response, new AuthenticationInfo("dummy", request.getRemoteUser()));
 
-        final String path = getHandlerSelectionPath(request);
-        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
-                .findApplicableHolders(request);
-        for (int m = 0; m < holdersArray.length; m++) {
-            final Collection<AbstractAuthenticationHandlerHolder> holderSet = holdersArray[m];
-            if (holderSet != null) {
-                for (AbstractAuthenticationHandlerHolder holder : holderSet) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)) {
-                        log.debug("logout: dropping authentication using handler: {}",
-                            holder);
+        try {
+            final String path = getHandlerSelectionPath(request);
+            final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
+                    .findApplicableHolders(request);
+            for (int m = 0; m < holdersArray.length; m++) {
+                final Collection<AbstractAuthenticationHandlerHolder> holderSet = holdersArray[m];
+                if (holderSet != null) {
+                    for (AbstractAuthenticationHandlerHolder holder : holderSet) {
+                        if (isNodeRequiresAuthHandler(path, holder.path)) {
+                            log.debug("logout: dropping authentication using handler: {}",
+                                holder);
 
-                        try {
-                            holder.dropCredentials(request, response);
-                        } catch (IOException ioe) {
-                            log.error(
-                                "logout: Failed dropping authentication through handler "
-                                    + holder, ioe);
+                            try {
+                                holder.dropCredentials(request, response);
+                            } catch (IOException ioe) {
+                                log.error(
+                                    "logout: Failed dropping authentication through handler "
+                                        + holder, ioe);
+                            }
                         }
                     }
                 }
             }
+        } finally {
+            request.removeAttribute(ATTR_RESOLVED_PATH);
         }
 
         if (httpBasicHandler != null) {
@@ -742,25 +768,37 @@ public class SlingAuthenticator implements Authenticator,
     // ---------- internal
 
     private String getPath(HttpServletRequest request) {
-        final StringBuilder sb = new StringBuilder();
-        if (request.getServletPath() != null) {
-            sb.append(request.getServletPath());
+        String path = (String)request.getAttribute(ATTR_RESOLVED_PATH);
+        if ( path == null ) {
+            final StringBuilder sb = new StringBuilder();
+            if (request.getServletPath() != null) {
+                sb.append(request.getServletPath());
+            }
+            if (request.getPathInfo() != null) {
+                sb.append(request.getPathInfo());
+            }
+            path = sb.toString();
+            // Get the path used to select the authenticator, if the SlingServlet
+            // itself has been requested without any more info, this will be empty
+            // and we assume the root (SLING-722)
+            if (path.length() == 0) {
+                path = "/";
+            }
+
+            if ( !path.equals("/") && serviceResolver != null ) { // NULL check to let unit tests pass
+                final Resource mappedResource = serviceResolver.resolve(path);
+                if ( !ResourceUtil.isNonExistingResource(mappedResource) ) {
+                    path = mappedResource.getPath();
+                }
+            }
+            request.setAttribute(ATTR_RESOLVED_PATH, path);
         }
-        if (request.getPathInfo() != null) {
-            sb.append(request.getPathInfo());
-        }
-        return sb.toString();
+        return path;
     }
 
     private AuthenticationInfo getAuthenticationInfo(HttpServletRequest request, HttpServletResponse response) {
 
-        // Get the path used to select the authenticator, if the SlingServlet
-        // itself has been requested without any more info, this will be empty
-        // and we assume the root (SLING-722)
         String path = getPath(request);
-        if (path.length() == 0) {
-            path = "/";
-        }
 
         final Collection<AbstractAuthenticationHandlerHolder>[] localArray = this.authHandlerCache
                 .findApplicableHolders(request);
@@ -953,9 +991,6 @@ public class SlingAuthenticator implements Authenticator,
     private boolean isAnonAllowed(HttpServletRequest request) {
 
         String path = getPath(request);
-        if (path.length() == 0) {
-            path = "/";
-        }
 
         final Collection<AuthenticationRequirementHolder>[] holderSetArray = authRequiredCache
                 .findApplicableHolders(request);
@@ -1502,12 +1537,12 @@ public class SlingAuthenticator implements Authenticator,
             if (ctxPath !=  null && path.startsWith(ctxPath)) {
                 path = path.substring(ctxPath.length());
             }
+            if (path == null || path.length() == 0) {
+                path = "/";
+            }
+
         } else {
             path = getPath(request);
-        }
-
-        if (path == null || path.length() == 0) {
-            path = "/";
         }
 
         return path;
