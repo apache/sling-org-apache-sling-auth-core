@@ -44,7 +44,18 @@ public class SlingAuthenticatorServiceListenerTest {
     private void assertPaths(final PathBasedHolderCache<AuthenticationRequirementHolder> cache,
             final String[] paths,
             final ServiceReference<?>[] refs) {
+        assertPaths(cache, paths, refs, null);
+    }
+
+    private void assertPaths(final PathBasedHolderCache<AuthenticationRequirementHolder> cache,
+            final String[] paths,
+            final ServiceReference<?>[] refs,
+            final boolean[] requireAuth) {
         assertEquals(paths.length, refs.length);
+        if ( requireAuth != null ) {
+            assertEquals(paths.length, requireAuth.length);
+        }
+
         assertEquals(paths.length, cache.getHolders().size());
         for(final AuthenticationRequirementHolder h : cache.getHolders()) {
             boolean found = false;
@@ -52,6 +63,10 @@ public class SlingAuthenticatorServiceListenerTest {
             while ( !found && index < paths.length ) {
                 if (paths[index].equals(h.path) && refs[index].equals(h.serviceReference) ) {
                     found = true;
+
+                    if ( requireAuth != null ) {
+                        assertEquals(requireAuth[index], h.requiresAuthentication());
+                    }
                 } else {
                     index++;
                 }
@@ -246,5 +261,47 @@ public class SlingAuthenticatorServiceListenerTest {
         listener.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
 
         assertTrue(cache.getHolders().isEmpty());
+    }
+
+    @Test public void testAllowDeny() throws LoginException {
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final BundleContext context = mock(BundleContext.class);
+
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(null), cache);
+
+        final ServiceReference<?> ref = createServiceReference(new String[] {"-/path1", "+/path2", "/path3"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path2", "/path3"},
+                           new ServiceReference<?>[] {ref, ref, ref},
+                           new boolean[] {false, true, true});
+    }
+
+    @Test public void testAllowDenyWithMapping() throws LoginException {
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final BundleContext context = mock(BundleContext.class);
+
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a", "/path1b"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a", "/path2b"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Arrays.asList("/path3", "/path3a", "/path3b"));
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
+
+        final ServiceReference<?> ref = createServiceReference(new String[] {"-/path1", "+/path2", "/path3"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path2", "/path3", "/path1a", "/path2a", "/path3a", "/path1b", "/path2b", "/path3b"},
+                           new ServiceReference<?>[] {ref, ref, ref, ref, ref, ref, ref, ref, ref},
+                           new boolean[] {false, true, true, false, true, true, false, true, true});
+
+        // update mapping
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1c"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2c"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Arrays.asList("/path3", "/path3c"));
+        listener.handleEvent(null);
+
+        assertPaths(cache, new String[] {"/path1", "/path2", "/path3", "/path1c", "/path2c", "/path3c"},
+                new ServiceReference<?>[] {ref, ref, ref, ref, ref, ref},
+                new boolean[] {false, true, true, false, true, true});
     }
 }

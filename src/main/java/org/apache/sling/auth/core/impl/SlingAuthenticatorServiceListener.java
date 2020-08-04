@@ -256,13 +256,23 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
 
     private Set<String> buildPathsSet(final ResourceMapper mapper, final String[] authReqPaths) {
         final Set<String> paths = new HashSet<>();
-        for(final String authReq : authReqPaths) {
-            if (authReq != null && authReq.length() > 0) {
-                paths.add(authReq);
+        for(String authReq : authReqPaths) {
+            if (authReq != null ) {
+                authReq = authReq.trim();
+                if ( authReq.length() > 0 ) {
+                    final String prefix;
+                    if ( authReq.startsWith("+") || authReq.startsWith("-") ) {
+                        prefix = authReq.substring(0, 1);
+                    } else {
+                        prefix = "+";
+                        authReq = prefix.concat(authReq);
+                    }
+                    paths.add(authReq);
 
-                if ( mapper != null ) {
-                    for(final String mappedPath : mapper.getAllMappings(authReq)) {
-                        paths.add(mappedPath);
+                    if ( mapper != null ) {
+                        for(final String mappedPath : mapper.getAllMappings(authReq.substring(1))) {
+                            paths.add(prefix.concat(mappedPath));
+                        }
                     }
                 }
             }
