@@ -337,7 +337,7 @@ public class SlingAuthenticator implements Authenticator,
 
     @Activate
     private void activate(final BundleContext bundleContext,
-            final Config config) throws LoginException {
+            final Config config) {
         modified(config);
 
         AuthenticatorWebConsolePlugin plugin = new AuthenticatorWebConsolePlugin(
@@ -1720,7 +1720,7 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         private void bindAuthHandler(final Object handler, final ServiceReference ref) {
-            final String paths[] = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+            final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
             if (paths != null && paths.length > 0) {
 
                 // generate the holders

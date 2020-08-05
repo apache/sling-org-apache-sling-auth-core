@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
 public class SlingAuthenticatorServiceListener implements AllServiceListener, EventHandler {
 
     /** Filter expression for auth requirements */
-    private static String FILTER_EXPR = "(".concat(AuthConstants.AUTH_REQUIREMENTS).concat("=*)");
+    private static final String FILTER_EXPR = "(".concat(AuthConstants.AUTH_REQUIREMENTS).concat("=*)");
 
     /** Fake service id to indicate an update of a mapping */
     private static final Long UPDATE = 0L;
@@ -143,6 +143,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         this.authRequiredCache = authRequiredCache;
         this.executor = executor;
         this.resolverFactory = factory;
+        logger.debug("Started auth requirements listener");
     }
 
     void setServiceRegistration(final ServiceRegistration<EventHandler> reg) {
@@ -162,7 +163,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
 
     private void schedule() {
         if ( this.backgroundJobRunning.compareAndSet(false, true) ) {
-            this.executor.execute(() -> { processQueue(); });
+            this.executor.execute(() -> processQueue());
         }
     }
 
@@ -206,7 +207,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param id The id of the service
      * @param action The action to take
      */
-    private void queue(final Long id, final Action action) {
+    private void queue(final long id, final Action action) {
         logger.debug("Queuing action for service {} : {}", id, action);
         synchronized ( this.processingQueue ) {
             if ( id == CLEAR ) {
@@ -245,14 +246,12 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                     }
                 } else {
                     logger.debug("Processing action for service {} : {}", entry.getKey(), entry.getValue());
-                    if ( entry.getValue().type != ActionType.REMOVED ) {
-                        if ( mapper == null ) {
-                            try {
-                                resolver = this.resolverFactory.getServiceResourceResolver(null);
-                                mapper = resolver.adaptTo(ResourceMapper.class);
-                            } catch ( final org.apache.sling.api.resource.LoginException le) {
-                                // ignore
-                            }
+                    if ( entry.getValue().type != ActionType.REMOVED && mapper == null ) {
+                        try {
+                            resolver = this.resolverFactory.getServiceResourceResolver(null);
+                            mapper = resolver.adaptTo(ResourceMapper.class);
+                        } catch ( final org.apache.sling.api.resource.LoginException le) {
+                            // ignore
                         }
                     }
                     process(mapper, entry.getKey(), entry.getValue());
@@ -347,7 +346,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
 
             if ( !paths.isEmpty() ) {
                 final List<AuthenticationRequirementHolder> authReqList = new ArrayList<AuthenticationRequirementHolder>();
-                for (final String authReq : paths) {
+                for(final String authReq : paths) {
                     authReqList.add(AuthenticationRequirementHolder.fromConfig(authReq, ref));
                 }
 
@@ -415,7 +414,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
             }
         }
         regProps.remove(id);
-        logger.debug("Removed auth requirements for service {}");
+        logger.debug("Removed auth requirements for service {}", id);
     }
 
     /**
