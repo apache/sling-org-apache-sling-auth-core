@@ -47,6 +47,8 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
 import org.osgi.util.converter.Converters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Service listener keeping track of all auth requirements registered in
@@ -55,28 +57,50 @@ import org.osgi.util.converter.Converters;
  */
 public class SlingAuthenticatorServiceListener implements AllServiceListener, EventHandler {
 
+    /** Filter expression for auth requirements */
     private static String FILTER_EXPR = "(".concat(AuthConstants.AUTH_REQUIREMENTS).concat("=*)");
 
+    /** Fake service id to indicate an update of a mapping */
     private static final Long UPDATE = 0L;
 
+    /** Fake service id to indicate clearing the processing queue */
     private static final Long CLEAR = -1L;
 
+    /** Logger */
+    private final Logger logger = LoggerFactory.getLogger(SlingAuthenticatorServiceListener.class);
+
+    /** Resource resolver factory */
     private final ResourceResolverFactory resolverFactory;
 
+    /** Auth requirements cache */
     private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache;
 
+    /** Cache for registration properties of auth requirements */
     private final Map<Long, Set<String>> regProps = new ConcurrentHashMap<>();
 
+    /** Cache for registered holders for an auth requirement */
     private final Map<Long, List<AuthenticationRequirementHolder>> props = new ConcurrentHashMap<>();
 
+    /** Service registration for the event handler */
     private ServiceRegistration<EventHandler> serviceRegistration;
 
+    /** Processing queue for changes */
     private final Map<Long, Action> processingQueue = new LinkedHashMap<>();
 
+    /** Executor for the processing queue */
     private final Executor executor;
 
+    /** Flag to indicate whether processing queue is running */
     private final AtomicBoolean backgroundJobRunning = new AtomicBoolean(false);
 
+    /**
+     * Create a new listener
+     * @param context Bundle context
+     * @param executor Executor service
+     * @param factory Resource resolver factory
+     * @param authRequiredCache The cache for the auth requirements
+     * @return
+     */
     static SlingAuthenticatorServiceListener createListener(
         final BundleContext context,
         final Executor executor,
@@ -133,6 +157,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
         queue(CLEAR, null);
         backgroundJobRunning.set(false);
+        logger.debug("Stopped auth requirements listener");
     }
 
     private void schedule() {
@@ -182,6 +207,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param action The action to take
      */
     private void queue(final Long id, final Action action) {
+        logger.debug("Queuing action for service {} : {}", id, action);
         synchronized ( this.processingQueue ) {
             if ( id == CLEAR ) {
                 this.processingQueue.clear();
@@ -218,6 +244,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                         this.backgroundJobRunning.compareAndSet(true, !this.processingQueue.isEmpty());
                     }
                 } else {
+                    logger.debug("Processing action for service {} : {}", entry.getKey(), entry.getValue());
                     if ( entry.getValue().type != ActionType.REMOVED ) {
                         if ( mapper == null ) {
                             try {
@@ -328,6 +355,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                 regProps.put(id, paths);
                 registerService(authReqList);
                 props.put(id, authReqList);
+                logger.debug("Added auth requirements for service {} : {}", id, paths);
             }
         }
     }
@@ -367,6 +395,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                         }
                     }
                     regProps.put(id, paths);
+                    logger.debug("Updated auth requirements for service {} : {}", id, paths);
                 }
             }
         } else {
@@ -386,6 +415,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
             }
         }
         regProps.remove(id);
+        logger.debug("Removed auth requirements for service {}");
     }
 
     /**
@@ -409,6 +439,11 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         public Action(final ActionType type, final ServiceReference<?> ref) {
             this.type = type;
             this.reference = ref;
+        }
+
+        @Override
+        public String toString() {
+            return "Action [type=" + type + ", reference=" + reference + "]";
         }
     }
 }
