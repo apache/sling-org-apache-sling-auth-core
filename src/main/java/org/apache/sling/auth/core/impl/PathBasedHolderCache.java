@@ -44,10 +44,9 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
     public synchronized void addHolder(final Type holder) {
         final Map<String, SortedSet<Type>> byHostMap = cache.computeIfAbsent(holder.protocol, protocol -> new ConcurrentHashMap<>());
 
-        final SortedSet<Type> byPathSet = new TreeSet<Type>();
-
         // preset with current list
         final SortedSet<Type> currentPathSet = byHostMap.get(holder.host);
+        final SortedSet<Type> byPathSet = new TreeSet<Type>();
         if (currentPathSet != null) {
             byPathSet.addAll(currentPathSet);
         }
