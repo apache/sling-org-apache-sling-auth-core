@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
  *             {@link org.apache.sling.auth.core.spi.AuthenticationHandler}
  *             instead
  */
+@Deprecated
 public interface AuthenticationHandler {
 
     /**

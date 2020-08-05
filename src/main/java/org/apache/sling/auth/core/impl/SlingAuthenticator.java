@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
@@ -354,7 +355,7 @@ public class SlingAuthenticator implements Authenticator,
             Servlet.class, plugin, props);
 
         serviceListener = SlingAuthenticatorServiceListener.createListener(
-            bundleContext, this.authRequiredCache);
+            bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory, this.authRequiredCache);
 
         authHandlerTracker = new AuthenticationHandlerTracker(bundleContext,
             authHandlerCache);
@@ -448,7 +449,7 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         if (serviceListener != null) {
-            bundleContext.removeServiceListener(serviceListener);
+            serviceListener.stop(bundleContext);
             serviceListener = null;
         }
 
@@ -478,7 +479,6 @@ public class SlingAuthenticator implements Authenticator,
     @Override
     public boolean handleSecurity(HttpServletRequest request,
             HttpServletResponse response) {
-
         // 0. Nothing to do, if the session is also in the request
         // this might be the case if the request is handled as a result
         // of a servlet container include inside another Sling request
@@ -741,7 +741,12 @@ public class SlingAuthenticator implements Authenticator,
 
     // ---------- internal
 
-    private String getPath(HttpServletRequest request) {
+    /**
+     * Get the request path from the request
+     * @param request The request
+     * @return The path
+     */
+    private String getPath(final HttpServletRequest request) {
         final StringBuilder sb = new StringBuilder();
         if (request.getServletPath() != null) {
             sb.append(request.getServletPath());
@@ -749,18 +754,20 @@ public class SlingAuthenticator implements Authenticator,
         if (request.getPathInfo() != null) {
             sb.append(request.getPathInfo());
         }
-        return sb.toString();
+        String path = sb.toString();
+        // Get the path used to select the authenticator, if the SlingServlet
+        // itself has been requested without any more info, this will be empty
+        // and we assume the root (SLING-722)
+        if (path.length() == 0) {
+            path = "/";
+        }
+
+        return path;
     }
 
     private AuthenticationInfo getAuthenticationInfo(HttpServletRequest request, HttpServletResponse response) {
 
-        // Get the path used to select the authenticator, if the SlingServlet
-        // itself has been requested without any more info, this will be empty
-        // and we assume the root (SLING-722)
         String path = getPath(request);
-        if (path.length() == 0) {
-            path = "/";
-        }
 
         final Collection<AbstractAuthenticationHandlerHolder>[] localArray = this.authHandlerCache
                 .findApplicableHolders(request);
@@ -953,9 +960,6 @@ public class SlingAuthenticator implements Authenticator,
     private boolean isAnonAllowed(HttpServletRequest request) {
 
         String path = getPath(request);
-        if (path.length() == 0) {
-            path = "/";
-        }
 
         final Collection<AuthenticationRequirementHolder>[] holderSetArray = authRequiredCache
                 .findApplicableHolders(request);
@@ -975,10 +979,6 @@ public class SlingAuthenticator implements Authenticator,
     }
 
    private boolean isNodeRequiresAuthHandler(String path, String holderPath) {
-        if (path == null || holderPath == null) {
-            return false;
-        }
-
         if (("/").equals(holderPath)) {
             return true;
         }
@@ -993,10 +993,8 @@ public class SlingAuthenticator implements Authenticator,
             return true;
         }
 
-        if (path.startsWith(holderPath)) {
-            if (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.') {
-                return true;
-            }
+        if (path.startsWith(holderPath) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.')) {
+            return true;
         }
         return false;
     }
@@ -1502,12 +1500,12 @@ public class SlingAuthenticator implements Authenticator,
             if (ctxPath !=  null && path.startsWith(ctxPath)) {
                 path = path.substring(ctxPath.length());
             }
+            if (path == null || path.length() == 0) {
+                path = "/";
+            }
+
         } else {
             path = getPath(request);
-        }
-
-        if (path == null || path.length() == 0) {
-            path = "/";
         }
 
         return path;

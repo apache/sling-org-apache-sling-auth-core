@@ -34,6 +34,7 @@ import org.apache.sling.api.SlingException;
  *
  * @deprecated see {@link Authenticator}
  */
+@Deprecated
 @SuppressWarnings("serial")
 public class NoAuthenticationHandlerException extends SlingException {
 

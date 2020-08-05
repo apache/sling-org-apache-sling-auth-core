@@ -27,6 +27,7 @@ import javax.jcr.Credentials;
  *
  * @deprecated see {@link AuthenticationHandler}
  */
+@Deprecated
 public class AuthenticationInfo {
 
     /**
