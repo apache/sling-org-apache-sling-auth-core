@@ -60,7 +60,6 @@ import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
 import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -85,6 +84,7 @@ import org.osgi.service.metatype.annotations.AttributeType;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.service.metatype.annotations.Option;
+import org.osgi.util.converter.Converters;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1720,7 +1720,7 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         private void bindAuthHandler(final Object handler, final ServiceReference ref) {
-            final String paths[] = PropertiesUtil.toStringArray(ref.getProperty(AuthenticationHandler.PATH_PROPERTY));
+            final String paths[] = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
             if (paths != null && paths.length > 0) {
 
                 // generate the holders

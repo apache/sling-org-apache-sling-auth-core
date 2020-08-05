@@ -18,9 +18,9 @@
  */
 package org.apache.sling.auth.core.impl;
 
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
+import org.osgi.util.converter.Converters;
 
 /**
  * The <code>PathBasedHolder</code> provides the basic abstraction for managing
@@ -135,15 +135,13 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
             return "Apache Sling Request Authenticator";
         }
 
-        final String descr = PropertiesUtil.toString(
-            serviceReference.getProperty(Constants.SERVICE_DESCRIPTION), null);
+        final String descr = Converters.standardConverter().convert(serviceReference.getProperty(Constants.SERVICE_DESCRIPTION)).to(String.class);
         if (descr != null) {
             return descr;
         }
 
-        return "Service "
-            + PropertiesUtil.toString(
-                serviceReference.getProperty(Constants.SERVICE_ID), "unknown");
+        final String id = Converters.standardConverter().convert(serviceReference.getProperty(Constants.SERVICE_ID)).defaultValue("unknown").to(String.class);
+        return "Service ".concat(id);
     }
 
     /**

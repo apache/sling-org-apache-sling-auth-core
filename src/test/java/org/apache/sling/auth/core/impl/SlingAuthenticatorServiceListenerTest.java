@@ -51,9 +51,9 @@ public class SlingAuthenticatorServiceListenerTest {
             final String[] paths,
             final ServiceReference<?>[] refs,
             final boolean[] requireAuth) {
-        assertEquals(paths.length, refs.length);
+        assertEquals("Wrong input to assert paths", paths.length, refs.length);
         if ( requireAuth != null ) {
-            assertEquals(paths.length, requireAuth.length);
+            assertEquals("Wrong input to assert paths", paths.length, requireAuth.length);
         }
 
         assertEquals(paths.length, cache.getHolders().size());
@@ -119,11 +119,41 @@ public class SlingAuthenticatorServiceListenerTest {
         final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
         listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
 
-        assertEquals(1, cache.getHolders().size());
         assertPaths(cache, new String[] {"/path1"},
                            new ServiceReference<?>[] {ref});
-        assertEquals(ref, cache.getHolders().get(0).serviceReference);
 
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
+
+        assertTrue(cache.getHolders().isEmpty());
+    }
+
+    @Test public void testAddUpdateRemoveRegistration() throws LoginException {
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final BundleContext context = mock(BundleContext.class);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a"));
+        when(mapper.getAllMappings("/path3")).thenReturn(Arrays.asList("/path3", "/path3a"));
+
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
+
+        // add
+        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1", "/path2"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path1a", "/path2", "/path2a"},
+                           new ServiceReference<?>[] {ref, ref, ref, ref},
+                           new boolean[] {true, true, true, true});
+
+        // update
+        when(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).thenReturn(new String[] {"/path2", "/path3"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.MODIFIED, ref));
+
+        assertPaths(cache, new String[] {"/path2", "/path2a", "/path3", "/path3a"},
+                new ServiceReference<?>[] {ref, ref, ref, ref},
+                new boolean[] {true, true, true, true});
+
+        // remmove
         listener.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
 
         assertTrue(cache.getHolders().isEmpty());
@@ -303,5 +333,36 @@ public class SlingAuthenticatorServiceListenerTest {
         assertPaths(cache, new String[] {"/path1", "/path2", "/path3", "/path1c", "/path2c", "/path3c"},
                 new ServiceReference<?>[] {ref, ref, ref, ref, ref, ref},
                 new boolean[] {false, true, true, false, true, true});
+    }
+
+    @Test public void testSwitchAllowDeny() throws LoginException {
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final BundleContext context = mock(BundleContext.class);
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a"));
+
+        final SlingAuthenticatorServiceListener listener = SlingAuthenticatorServiceListener.createListener(context, callable -> callable.run(), createFactoryForMapper(mapper), cache);
+
+        // add
+        final ServiceReference<?> ref = createServiceReference(new String[] {"+/path1", "-/path2"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path1a", "/path2", "/path2a"},
+                           new ServiceReference<?>[] {ref, ref, ref, ref},
+                           new boolean[] {true, true, false, false});
+
+        // update
+        when(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).thenReturn(new String[] {"-/path1", "/path2"});
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.MODIFIED, ref));
+
+        assertPaths(cache, new String[] {"/path1", "/path1a", "/path2", "/path2a"},
+                new ServiceReference<?>[] {ref, ref, ref, ref},
+                new boolean[] {false, false, true, true});
+
+        // remmove
+        listener.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
+
+        assertTrue(cache.getHolders().isEmpty());
     }
 }

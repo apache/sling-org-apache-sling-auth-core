@@ -36,7 +36,6 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.mapping.ResourceMapper;
 import org.apache.sling.auth.core.AuthConstants;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -47,6 +46,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
+import org.osgi.util.converter.Converters;
 
 /**
  * Service listener keeping track of all auth requirements registered in
@@ -107,6 +107,12 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         return null;
     }
 
+    /**
+     * Create a new listener
+     * @param authRequiredCache The cache
+     * @param executor For updating
+     * @param factory The resource resolver factory
+     */
     private SlingAuthenticatorServiceListener(final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache,
             final Executor executor,
             final ResourceResolverFactory factory) {
@@ -135,6 +141,9 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
     }
 
+    /**
+     * Handle service registration updates (add, modified, remove)
+     */
     @Override
     public void serviceChanged(final ServiceEvent event) {
         // modification of service properties, unregistration of the
@@ -158,6 +167,9 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         schedule();
     }
 
+    /**
+     * Handle a mapping event
+     */
     @Override
     public void handleEvent(final Event event) {
         queue(UPDATE, null);
@@ -184,6 +196,10 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
     }
 
+    /**
+     * Process the queue, one by one
+     * Lazy creation of resource resolver / resource mapper
+     */
     private void processQueue() {
         ResourceResolver resolver = null;
         ResourceMapper mapper = null;
@@ -223,11 +239,20 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
     }
 
+    /**
+     * Process a single action
+     * @param mapper
+     * @param id
+     * @param action
+     */
     private void process(final ResourceMapper mapper, final Long id, final Action action) {
         switch ( action.type ) {
-            case ADDED : this.addService(mapper, action.reference); break;
-            case REMOVED : this.removeService((Long)action.reference.getProperty(Constants.SERVICE_ID)); break;
-            case MODIFIED : this.modifiedService(mapper, action.reference); break;
+            case ADDED : this.addService(mapper, action.reference);
+                         break;
+            case REMOVED : this.removeService((Long)action.reference.getProperty(Constants.SERVICE_ID));
+                           break;
+            case MODIFIED : this.modifiedService(mapper, action.reference);
+                            break;
             case UPDATE: final List<AuthenticationRequirementHolder> list = props.get(id);
                          if (!list.isEmpty() ) {
                              this.modifiedService(mapper, list.get(0).serviceReference);
@@ -261,17 +286,20 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                 authReq = authReq.trim();
                 if ( authReq.length() > 0 ) {
                     final String prefix;
-                    if ( authReq.startsWith("+") || authReq.startsWith("-") ) {
-                        prefix = authReq.substring(0, 1);
+                    if ( authReq.startsWith("+") ) {
+                        prefix = null;
+                        authReq = authReq.substring(1);
+                    } else if ( authReq.startsWith("-") ) {
+                        prefix = "-";
+                        authReq = authReq.substring(1);
                     } else {
-                        prefix = "+";
-                        authReq = prefix.concat(authReq);
+                        prefix = null;
                     }
-                    paths.add(authReq);
+                    paths.add(prefix == null ? authReq : prefix.concat(authReq));
 
                     if ( mapper != null ) {
-                        for(final String mappedPath : mapper.getAllMappings(authReq.substring(1))) {
-                            paths.add(prefix.concat(mappedPath));
+                        for(final String mappedPath : mapper.getAllMappings(authReq)) {
+                            paths.add(prefix == null ? mappedPath : prefix.concat(mappedPath));
                         }
                     }
                 }
@@ -285,8 +313,8 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param ref The service reference
      */
     private void addService(final ResourceMapper mapper, final ServiceReference<?> ref) {
-        final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
-        if ( authReqPaths != null ) {
+        final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
+        if ( authReqPaths.length > 0 ) {
             final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
             final Set<String> paths = buildPathsSet(mapper, authReqPaths);
 
@@ -309,9 +337,9 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param ref The service reference
      */
     private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref) {
-        final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
+        final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-        if ( authReqPaths != null ) {
+        if ( authReqPaths.length > 0 ) {
             final Set<String> oldPaths = regProps.get(id);
             if ( oldPaths == null ) {
                 addService(mapper, ref);
@@ -360,10 +388,18 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         regProps.remove(id);
     }
 
+    /**
+     * Action type for the queued execution
+     *
+     */
     public enum ActionType {
         ADDED, MODIFIED, REMOVED, UPDATE
     }
 
+    /**
+     * Action for the queued execution
+     *
+     */
     public static final class Action {
 
         public final ActionType type;
