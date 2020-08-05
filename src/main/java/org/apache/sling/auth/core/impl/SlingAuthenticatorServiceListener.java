@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.sling.auth.core.AuthConstants;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
+import org.osgi.util.converter.Converters;
 
 public class SlingAuthenticatorServiceListener implements AllServiceListener {
 
@@ -122,7 +122,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener {
      * @param ref The service reference
      */
     private void addService(final ServiceReference<?> ref) {
-        final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
+        final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         if ( authReqPaths != null ) {
             final Set<String> paths = buildPathsSet(authReqPaths);
 
@@ -146,7 +146,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener {
      * @param ref The service reference
      */
     private void modifiedService(final ServiceReference<?> ref) {
-        final String[] authReqPaths = PropertiesUtil.toStringArray(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
+        final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         if ( authReqPaths != null ) {
             final Set<String> oldPaths = regProps.get(ref.getProperty(Constants.SERVICE_ID));
             if ( oldPaths == null ) {

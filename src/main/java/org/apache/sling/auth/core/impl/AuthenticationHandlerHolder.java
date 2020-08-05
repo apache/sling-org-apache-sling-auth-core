@@ -28,8 +28,8 @@ import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
-import org.apache.sling.commons.osgi.PropertiesUtil;
 import org.osgi.framework.ServiceReference;
+import org.osgi.util.converter.Converters;
 
 /**
  * The <code>AuthenticationHandlerHolder</code> class represents an
@@ -53,11 +53,11 @@ final class AuthenticationHandlerHolder extends
             final ServiceReference serviceReference) {
         super(fullPath, serviceReference);
 
-        final String browserOnly = PropertiesUtil.toString(serviceReference.getProperty(AuthConstants.AUTH_HANDLER_BROWSER_ONLY), null);
+        final String browserOnly = Converters.standardConverter().convert(serviceReference.getProperty(AuthConstants.AUTH_HANDLER_BROWSER_ONLY)).to(String.class);
 
         // assign the fields
         this.handler = handler;
-        this.authType = PropertiesUtil.toString(serviceReference.getProperty(TYPE_PROPERTY), null);
+        this.authType = Converters.standardConverter().convert(serviceReference.getProperty(TYPE_PROPERTY)).to(String.class);
         this.browserOnlyRequestCredentials = "true".equalsIgnoreCase(browserOnly)
             || "yes".equalsIgnoreCase(browserOnly);
     }
