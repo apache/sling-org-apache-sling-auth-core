@@ -1287,8 +1287,10 @@ public class SlingAuthenticator implements Authenticator,
             final HttpServletRequest request) {
 
         // HttpService API required attributes
-        request.setAttribute(ServletContextHelper.REMOTE_USER, resolver.getUserID());
         request.setAttribute(ServletContextHelper.AUTHENTICATION_TYPE, authType);
+        if ( authType != null ) {
+            request.setAttribute(ServletContextHelper.REMOTE_USER, resolver.getUserID());
+        }
 
         // resource resolver for down-stream use
         request.setAttribute(REQUEST_ATTRIBUTE_RESOLVER, resolver);
