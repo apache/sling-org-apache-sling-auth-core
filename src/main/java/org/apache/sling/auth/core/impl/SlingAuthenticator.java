@@ -25,11 +25,11 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
@@ -1673,7 +1673,7 @@ public class SlingAuthenticator implements Authenticator,
 
         private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache;
 
-        private final HashMap<Object, AbstractAuthenticationHandlerHolder[]> handlerMap = new HashMap<Object, AbstractAuthenticationHandlerHolder[]>();
+        private final Map<Object, AbstractAuthenticationHandlerHolder[]> handlerMap = new ConcurrentHashMap<>();
 
         AuthenticationHandlerTracker(
                 final BundleContext context,
@@ -1740,18 +1740,12 @@ public class SlingAuthenticator implements Authenticator,
                 }
 
                 // keep a copy of them for unregistration later
-                synchronized (handlerMap) {
-                    handlerMap.put(ref.getProperty(Constants.SERVICE_ID),
-                        holders);
-                }
+                handlerMap.put(ref.getProperty(Constants.SERVICE_ID), holders);
             }
         }
 
         private void unbindAuthHandler(ServiceReference ref) {
-            final AbstractAuthenticationHandlerHolder[] holders;
-            synchronized (handlerMap) {
-                holders = handlerMap.remove(ref.getProperty(Constants.SERVICE_ID));
-            }
+            final AbstractAuthenticationHandlerHolder[] holders = handlerMap.remove(ref.getProperty(Constants.SERVICE_ID));
 
             if (holders != null) {
                 for (AbstractAuthenticationHandlerHolder holder : holders) {
