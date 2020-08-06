@@ -18,7 +18,7 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import static junit.framework.Assert.failNotEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -28,7 +28,6 @@ import javax.jcr.Credentials;
 import javax.jcr.SimpleCredentials;
 
 import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -181,7 +180,7 @@ public class AuthenticationInfoTest {
             pwd);
 
         assertSame(pwd, info.getPassword());
-        assertEquals(pwd, (char[]) info.get(ResourceResolverFactory.PASSWORD));
+        assertEquals(String.valueOf(pwd), String.valueOf((char[]) info.get(ResourceResolverFactory.PASSWORD)));
         Assert.assertEquals(info.get(ResourceResolverFactory.PASSWORD),
             info.getPassword());
     }
@@ -273,23 +272,5 @@ public class AuthenticationInfoTest {
             // expected
         }
         assertSame(oldValue, info.get(key));
-    }
-
-    static void assertEquals(final char[] expected, final char[] actual) {
-        if (expected == null && actual != null) {
-            failNotEquals(null, expected, actual);
-        }
-        if (expected != null && actual == null) {
-            failNotEquals(null, expected, actual);
-        }
-        if (expected.length != actual.length) {
-            failNotEquals(null, expected, actual);
-        }
-
-        for (int i = 0; i < expected.length; i++) {
-            if (expected[i] != actual[i]) {
-                failNotEquals(null, expected, actual);
-            }
-        }
     }
 }
