@@ -50,6 +50,8 @@ import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.api.resource.mapping.PathToUriMappingService;
+import org.apache.sling.api.uri.SlingUri;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
@@ -259,6 +261,9 @@ public class SlingAuthenticator implements Authenticator,
 
     @Reference
     private ResourceResolverFactory resourceResolverFactory;
+
+    @Reference
+    private PathToUriMappingService pathToUriMappingService;
 
     private PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
 
@@ -506,7 +511,7 @@ public class SlingAuthenticator implements Authenticator,
 
     private boolean doHandleSecurity(HttpServletRequest request, HttpServletResponse response) {
 
-        // 0. Check for request attribute; set if not present
+        // 0 Check for request attribute; set if not present
         Object authUriSufficesAttr = request
                 .getAttribute(AuthConstants.ATTR_REQUEST_AUTH_URI_SUFFIX);
         if (authUriSufficesAttr == null && authUriSuffices != null) {
@@ -747,22 +752,18 @@ public class SlingAuthenticator implements Authenticator,
      * @return The path
      */
     private String getPath(final HttpServletRequest request) {
-        final StringBuilder sb = new StringBuilder();
-        if (request.getServletPath() != null) {
-            sb.append(request.getServletPath());
-        }
-        if (request.getPathInfo() != null) {
-            sb.append(request.getPathInfo());
-        }
-        String path = sb.toString();
-        // Get the path used to select the authenticator, if the SlingServlet
-        // itself has been requested without any more info, this will be empty
-        // and we assume the root (SLING-722)
-        if (path.length() == 0) {
-            path = "/";
-        }
 
-        return path;
+        // this method is safely called from all three public entry points (that is handleSecurity(), login(), logout())
+        // for all execution paths
+        // therefore Sling engine may rely on AuthenticationSupport.REQUEST_ATTRIBUTE_URI
+
+        SlingUri slingUri = (SlingUri) request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_URI);
+        if (slingUri == null) {
+            slingUri = pathToUriMappingService.resolve(request, null).getUri();
+            request.setAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_URI, slingUri);
+        }
+        
+        return slingUri.getPath();
     }
 
     private AuthenticationInfo getAuthenticationInfo(HttpServletRequest request, HttpServletResponse response) {

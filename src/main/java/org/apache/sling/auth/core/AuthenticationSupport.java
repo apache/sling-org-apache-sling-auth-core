@@ -85,6 +85,14 @@ public interface AuthenticationSupport {
     static final String REQUEST_ATTRIBUTE_RESOLVER = "org.apache.sling.auth.core.ResourceResolver";
 
     /**
+     * The name of the request attribute set by the {@link #handleSecurity(HttpServletRequest, HttpServletResponse)} method for the request
+     * URI that was resolved already.
+     * <p>
+     * The request attribute is set to a Sling <code>SlingUri</code> as provided by PathToUriMappingService.resolve().
+     */
+    static final String REQUEST_ATTRIBUTE_URI = "org.apache.sling.auth.core.SlingUri";
+
+    /**
      * The name of the request parameter indicating where to redirect to after
      * successful authentication (and optional impersonation). This parameter is
      * respected if either anonymous authentication or regular authentication

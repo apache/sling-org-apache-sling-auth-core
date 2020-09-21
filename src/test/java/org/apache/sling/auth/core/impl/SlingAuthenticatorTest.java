@@ -18,21 +18,48 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import static org.mockito.Mockito.when;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.sling.api.resource.mapping.PathToUriMappingService;
+import org.apache.sling.api.uri.SlingUriBuilder;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import junitx.util.PrivateAccessor;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SlingAuthenticatorTest {
+
+    @InjectMocks
+    SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
+
+    @Mock
+    PathToUriMappingService pathToUriMappingService;
+
+    @Mock
+    HttpServletRequest request;
+
+    @Mock
+    PathToUriMappingService.Result resolveResult;
+
+    @Before
+    public void setup() {
+        when(pathToUriMappingService.resolve(request, null)).thenReturn(resolveResult);
+    }
 
     @Test
     public void test_quoteCookieValue() throws UnsupportedEncodingException {
@@ -82,14 +109,13 @@ public class SlingAuthenticatorTest {
     //SLING-4864
     @Test
     public void  test_isAnonAllowed() throws Throwable {
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
+
+        when(resolveResult.getUri()).thenReturn(SlingUriBuilder.parse("/", null).build());
 
         PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
-
         authRequiredCache.addHolder(new AuthenticationRequirementHolder("/", false, null));
 
         PrivateAccessor.setField(slingAuthenticator, "authRequiredCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getServerName()).thenReturn("localhost");
         Mockito.when(request.getServerPort()).thenReturn(80);
         Mockito.when(request.getScheme()).thenReturn("http");
@@ -109,13 +135,10 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test/childnodetest";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -136,13 +159,10 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -163,13 +183,10 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test/";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -190,13 +207,10 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test.html";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -213,13 +227,10 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/";
         final String REQUEST_CHILD_NODE = "/content/en/test";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -238,14 +249,11 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH_LONGER = "/resource1.test2";
         final String REQUEST_CHILD_NODE = "/resource1.test2";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
@@ -279,19 +287,16 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_NOT_PROTECTED_PATH = "/content/en/test2";
 
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
-
         PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
         authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_NOT_PROTECTED_PATH);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
         /**
-         * The AUTH TYPE defined aboved should not be used for the path /test2.
+         * The AUTH TYPE defined above should not be used for the path /test2.
          */
         Assert.assertFalse(AUTH_TYPE.equals(authInfo.getAuthType()));
     }
@@ -300,7 +305,6 @@ public class SlingAuthenticatorTest {
     public void test_childNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test/test2";
         final String handlerPath = "/content/test";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -309,7 +313,6 @@ public class SlingAuthenticatorTest {
     public void test_siblingNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -318,7 +321,6 @@ public class SlingAuthenticatorTest {
     public void test_actualNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/content/test";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -327,7 +329,6 @@ public class SlingAuthenticatorTest {
     public void test_rootNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -336,7 +337,6 @@ public class SlingAuthenticatorTest {
     public void test_requestPathSelectorsAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/test.html";
         final String handlerPath = "/content/test";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -345,7 +345,6 @@ public class SlingAuthenticatorTest {
     public void test_requestPathSelectorsSiblingAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test2";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -354,7 +353,6 @@ public class SlingAuthenticatorTest {
     public void test_requestPathBackSlash() throws Throwable {
         final String requestPath = "/page1\\somesubepage";
         final String handlerPath = "/page";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -363,7 +361,6 @@ public class SlingAuthenticatorTest {
     public void test_emptyNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "";
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -376,14 +373,12 @@ public class SlingAuthenticatorTest {
      * @param request http request
      * @param requestPath request path
      */
-    private void buildExpectationsForRequest(final HttpServletRequest request,
-            final String requestPath) {
-        {
-            Mockito.when(request.getServletPath()).thenReturn(requestPath);
-            Mockito.when(request.getServerName()).thenReturn("localhost");
-            Mockito.when(request.getServerPort()).thenReturn(80);
-            Mockito.when(request.getScheme()).thenReturn("http");
-        }
+    private void buildExpectationsForRequest(final HttpServletRequest request, final String requestPath) {
+        // path is not taken directly from request but from PathToUriMappingService
+        when(resolveResult.getUri()).thenReturn(SlingUriBuilder.parse(requestPath, null).build());
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
     }
 
     /**
