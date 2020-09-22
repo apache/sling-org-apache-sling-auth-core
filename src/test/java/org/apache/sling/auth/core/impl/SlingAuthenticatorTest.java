@@ -116,7 +116,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -143,7 +143,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -170,7 +170,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -197,7 +197,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -220,7 +220,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -246,7 +246,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_CHILD_NODE, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -286,7 +286,7 @@ public class SlingAuthenticatorTest {
 
         PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequestPathAndAuthPath(request, REQUEST_NOT_PROTECTED_PATH, PROTECTED_PATH);
+        buildExpectationsForRequest(request, REQUEST_NOT_PROTECTED_PATH);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
                 new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
@@ -373,19 +373,16 @@ public class SlingAuthenticatorTest {
     /**
      * Mocks the request to accept method calls on path;
      *
-     * @param request              http request
-     * @param requestPath          path in the http request
-     * @param authProtectedPath    path protected by the auth handler
+     * @param request http request
+     * @param requestPath request path
      */
-    private void buildExpectationsForRequestPathAndAuthPath(final HttpServletRequest request,
-            final String requestPath,
-            final String authProtectedPath) {
+    private void buildExpectationsForRequest(final HttpServletRequest request,
+            final String requestPath) {
         {
             Mockito.when(request.getServletPath()).thenReturn(requestPath);
             Mockito.when(request.getServerName()).thenReturn("localhost");
             Mockito.when(request.getServerPort()).thenReturn(80);
             Mockito.when(request.getScheme()).thenReturn("http");
-            Mockito.when(request.getAttribute("path")).thenReturn(requestPath);
         }
     }
 
