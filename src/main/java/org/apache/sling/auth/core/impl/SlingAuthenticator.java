@@ -268,7 +268,7 @@ public class SlingAuthenticator implements Authenticator,
     private PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
 
     // package protected for access in inner class ...
-    private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+    final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
 
     /** The name of the impersonation parameter */
     private String sudoParameterName;
@@ -360,7 +360,7 @@ public class SlingAuthenticator implements Authenticator,
             Servlet.class, plugin, props);
 
         serviceListener = SlingAuthenticatorServiceListener.createListener(
-            bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory, this.authRequiredCache);
+            bundleContext, Executors.newSingleThreadExecutor(), this.authRequiredCache);
 
         authHandlerTracker = new AuthenticationHandlerTracker(bundleContext,
             authHandlerCache);
@@ -958,7 +958,7 @@ public class SlingAuthenticator implements Authenticator,
         return false;
     }
 
-    private boolean isAnonAllowed(HttpServletRequest request) {
+    boolean isAnonAllowed(HttpServletRequest request) {
 
         String path = getPath(request);
 

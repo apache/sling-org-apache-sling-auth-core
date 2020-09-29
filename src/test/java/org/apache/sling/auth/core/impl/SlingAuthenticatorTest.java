@@ -18,6 +18,8 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.mapping.PathToUriMappingService;
+import org.apache.sling.api.resource.mapping.PathToUriMappingService.Result;
 import org.apache.sling.api.uri.SlingUriBuilder;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
@@ -364,7 +367,24 @@ public class SlingAuthenticatorTest {
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
+    @Test public void testIsAnonAllowedWithMapping() {
+        final HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
+        when(req.getScheme()).thenReturn("http");
+        when(req.getServerPort()).thenReturn(80);
+     
+        final PathBasedHolderCache<AuthenticationRequirementHolder> cache = this.slingAuthenticator.authRequiredCache;
+        cache.addHolder(AuthenticationRequirementHolder.fromConfig("-/path1", null));
+        cache.addHolder(AuthenticationRequirementHolder.fromConfig("-/path2", null));
 
+        final Result r = Mockito.mock(Result.class);
+        when(this.pathToUriMappingService.resolve(req, null)).thenReturn(r);
+        when(r.getUri()).thenReturn(SlingUriBuilder.create().setPath("/path").build());
+        assertFalse(this.slingAuthenticator.isAnonAllowed(req));
+        when(r.getUri()).thenReturn(SlingUriBuilder.create().setPath("/path1").build());
+        assertTrue(this.slingAuthenticator.isAnonAllowed(req));
+        when(r.getUri()).thenReturn(SlingUriBuilder.create().setPath("/path2").build());
+        assertTrue(this.slingAuthenticator.isAnonAllowed(req));
+    }
     //---------------------------- PRIVATE METHODS -----------------------------
 
     /**
