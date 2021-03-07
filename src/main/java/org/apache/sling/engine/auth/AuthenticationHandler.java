@@ -46,7 +46,8 @@ public interface AuthenticationHandler {
      * Extracts credential data from the request if at all contained.
      * <p>
      * The method returns any of the following values :
-     * <table summary="">
+     * <table>
+     * <caption>Extracted Information</caption>
      * <tr>
      * <th>value
      * <th>description
