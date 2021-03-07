@@ -395,10 +395,11 @@ public final class AuthUtil {
      * Check if the request is for this authentication handler.
      *
      * @param request the current request
-     * @return true if the referer matches this handler, or false otherwise
+     * @param loginForm Path to the login form
+     * @return true if the referrer matches this handler, or false otherwise
      */
     public static boolean checkReferer(HttpServletRequest request, String loginForm) {
-        //SLING-2165: if a Referer header is supplied check if it matches the login path for this handler
+        //SLING-2165: if a Referrer header is supplied check if it matches the login path for this handler
     	if ("POST".equals(request.getMethod())) {
             String referer = request.getHeader("Referer");
             if (referer != null) {
@@ -457,7 +458,7 @@ public final class AuthUtil {
             getLog().warn("isRedirectValid: Redirect target must not be empty or null");
             return false;
         }
-        
+
         try {
             new URI(target);
         } catch (URISyntaxException e) {

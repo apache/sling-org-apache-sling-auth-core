@@ -216,19 +216,19 @@ public class SlingAuthenticator implements Authenticator,
 
 
     /**
-     * Value of the {@link #PAR_HTTP_AUTH} property to fully enable the built-in
+     * Value of the {@link Config#auth_http()} property to fully enable the built-in
      * HTTP Authentication Handler (value is "enabled").
      */
     private static final String HTTP_AUTH_ENABLED = "enabled";
 
     /**
-     * Value of the {@link #PAR_HTTP_AUTH} property to completely disable the
+     * Value of the {@link Config#auth_http()} property to completely disable the
      * built-in HTTP Authentication Handler (value is "disabled").
      */
     private static final String HTTP_AUTH_DISABLED = "disabled";
 
     /**
-     * Value of the {@link #PAR_HTTP_AUTH} property to enable extracting the
+     * Value of the {@link Config#auth_http()} property to enable extracting the
      * credentials if the HTTP Basic authentication header is present (value is
      * "preemptive"). In <i>preemptive</i> mode, though, the
      * <code>requestCredentials</code> and <code>dropCredentials</code> methods

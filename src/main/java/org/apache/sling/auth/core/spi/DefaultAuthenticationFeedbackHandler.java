@@ -22,8 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.ResourceUtil;
-import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.AuthUtil;
+import org.apache.sling.auth.core.AuthenticationSupport;
 import org.slf4j.LoggerFactory;
 
 public class DefaultAuthenticationFeedbackHandler implements
@@ -59,6 +59,8 @@ public class DefaultAuthenticationFeedbackHandler implements
      * If sending the redirect response fails due to some IO problems, the
      * request is still terminated but an error message is logged indicating the
      * problem.
+     * @param request The servlet request
+     * @param response The servlet response
      *
      * @return <code>true</code> if redirect was requested. Otherwise
      *         <code>false</code> is returned. Note, that <code>true</code> is
@@ -136,6 +138,7 @@ public class DefaultAuthenticationFeedbackHandler implements
      * <p>
      * Extensions of this class may overwrite to cleanup any internal state.
      */
+    @Override
     public void authenticationFailed(HttpServletRequest request,
             HttpServletResponse response, AuthenticationInfo authInfo) {
     }
@@ -152,6 +155,7 @@ public class DefaultAuthenticationFeedbackHandler implements
      *            {@link #handleRedirect(HttpServletRequest, HttpServletResponse)}
      *            method.
      */
+    @Override
     public boolean authenticationSucceeded(HttpServletRequest request,
             HttpServletResponse response, AuthenticationInfo authInfo) {
         return handleRedirect(request, response);

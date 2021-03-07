@@ -94,6 +94,7 @@ public class AuthenticationInfo {
      * as Basic or Digest, the return value is one of the predefined constants
      * of the <code>HttpServletRequest</code> interface. Otherwise the value
      * may be specific to the {@link AuthenticationHandler} implementation.
+     * @return  The authentication type
      */
     public String getAuthType() {
         return authType;
@@ -102,6 +103,7 @@ public class AuthenticationInfo {
     /**
      * Returns the credentials extracted from the client request to use for
      * authentication.
+     * @return  The extracted credentials
      */
     public Credentials getCredentials() {
         return credentials;
@@ -111,6 +113,7 @@ public class AuthenticationInfo {
      * Returns the name of the workspace the user contained in this instance
      * wishes to connect to. This may be <code>null</code>, in which case the
      * user is connected to the default workspace.
+     * @return The name of the workspace
      */
     public String getWorkspaceName() {
         return workspaceName;

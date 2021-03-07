@@ -62,7 +62,6 @@ public interface AuthenticationHandler {
      * {@link #extractCredentials(HttpServletRequest, HttpServletResponse)}
      * method.
      * <p>
-     * <p>
      * This property is optional but allows the client to optionally select the
      * authentication handler which will actually request credentials upon the
      * {@link #requestCredentials(HttpServletRequest, HttpServletResponse)}

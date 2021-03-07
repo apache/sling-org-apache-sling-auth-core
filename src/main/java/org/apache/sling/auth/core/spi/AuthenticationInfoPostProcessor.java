@@ -47,9 +47,9 @@ public interface AuthenticationInfoPostProcessor {
     /**
      * Perform some post-processing on the AuthenticationInfo object.
      *
-     * @param info
-     * @param request
-     * @param response
+     * @param info The authentication info
+     * @param request The current request
+     * @param response The current response
      * @throws LoginException if SlingAuthenticator should handle the exception (eg.
      *         set the correct status in the response)
      *         SlingException will not be caught by SlingAuthenticator, in this case

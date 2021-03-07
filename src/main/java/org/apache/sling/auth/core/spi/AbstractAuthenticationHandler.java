@@ -20,6 +20,7 @@ package org.apache.sling.auth.core.spi;
 
 import java.io.IOException;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -173,6 +174,9 @@ public abstract class AbstractAuthenticationHandler extends DefaultAuthenticatio
     /**
      * This method calls
      * {@link AuthUtil#isRedirectValid(HttpServletRequest, String)}.
+     * @param request The request
+     * @param target The redirect url
+     * @return Whether the redirect is valid
      *
      * @deprecated This method has been introduced after Bundle release 1.0.6
      *             but has been replaced with

@@ -131,13 +131,14 @@ public class AuthenticationInfo extends HashMap<String, Object> {
     }
 
     /**
-     * Returns the authentication type stored as the {@link #AUTH_TYPE} property
+     * Returns the authentication type as stored in the {@link #AUTH_TYPE} property
      * in this map. This value is expected to never be <code>null</code>.
      * <p>
      * If authentication is taking place through one of the standard ways, such
      * as Basic or Digest, the return value is one of the predefined constants
      * of the <code>HttpServletRequest</code> interface. Otherwise the value may
      * be specific to the {@link AuthenticationHandler} implementation.
+     * @return The authentication type as stored in the {@link #AUTH_TYPE} property.
      */
     public final String getAuthType() {
         return (String) get(AUTH_TYPE);
@@ -154,6 +155,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
     /**
      * Returns the user name stored as the {@link ResourceResolverFactory#USER} property or
      * <code>null</code> if the user is not set in this map.
+     * @return The user name as stored in the {@link ResourceResolverFactory#USER} property.
      */
     public final String getUser() {
         return (String) get(ResourceResolverFactory.USER);
@@ -170,6 +172,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
     /**
      * Returns the password stored as the {@link ResourceResolverFactory#PASSWORD} property or
      * <code>null</code> if the password is not set in this map.
+     * @return the password as stored in the {@link ResourceResolverFactory#PASSWORD} property
      */
     public final char[] getPassword() {
         return (char[]) get(ResourceResolverFactory.PASSWORD);

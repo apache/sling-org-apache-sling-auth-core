@@ -171,6 +171,8 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      * and also escapes single and double quotes.
      * As these characters should never occur in a url this encoding should
      * be fine.
+     * @param input The string to escape
+     * @return The escaped string or {@code null} if the input is {@code null}
      */
     private static String escape(final String input) {
         if (input == null) {
@@ -307,6 +309,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      * <p>
      * This method returns {@link #DEFAULT_FORM_PATH} and may be overwritten by
      * implementations.
+     * @return {@link #DEFAULT_FORM_PATH}
      */
     protected String getDefaultFormPath() {
         return DEFAULT_FORM_PATH;
@@ -321,6 +324,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      * <p>
      * This method returns {@link #CUSTOM_FORM_PATH} and may be overwritten by
      * implementations.
+     * @return  {@link #CUSTOM_FORM_PATH}
      */
     protected String getCustomFormPath() {
         return CUSTOM_FORM_PATH;
