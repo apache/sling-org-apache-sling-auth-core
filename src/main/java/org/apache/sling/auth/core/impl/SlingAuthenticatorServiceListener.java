@@ -32,9 +32,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sling.api.SlingConstants;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.api.resource.mapping.ResourceMapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.osgi.framework.AllServiceListener;
 import org.osgi.framework.BundleContext;
@@ -69,9 +66,6 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
     /** Logger */
     private final Logger logger = LoggerFactory.getLogger(SlingAuthenticatorServiceListener.class);
 
-    /** Resource resolver factory */
-    private final ResourceResolverFactory resolverFactory;
-
     /** Auth requirements cache */
     private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache;
 
@@ -104,12 +98,10 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
     static SlingAuthenticatorServiceListener createListener(
         final BundleContext context,
         final Executor executor,
-        final ResourceResolverFactory factory,
         final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache) {
 
         final SlingAuthenticatorServiceListener listener = new SlingAuthenticatorServiceListener(authRequiredCache,
-                executor,
-                factory);
+                executor);
         try {
             context.addServiceListener(listener, FILTER_EXPR);
             final Dictionary<String, Object> props = new Hashtable<>();
@@ -138,11 +130,9 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param factory The resource resolver factory
      */
     private SlingAuthenticatorServiceListener(final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache,
-            final Executor executor,
-            final ResourceResolverFactory factory) {
+            final Executor executor) {
         this.authRequiredCache = authRequiredCache;
         this.executor = executor;
-        this.resolverFactory = factory;
         logger.debug("Started auth requirements listener");
     }
 
@@ -228,60 +218,42 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * Lazy creation of resource resolver / resource mapper
      */
     private void processQueue() {
-        ResourceResolver resolver = null;
-        ResourceMapper mapper = null;
-        try {
-            while ( this.backgroundJobRunning.get() ) {
-                Map.Entry<Long, Action> entry = null;
-                synchronized ( this.processingQueue ) {
-                    final Iterator<Map.Entry<Long, Action> > iter = this.processingQueue.entrySet().iterator();
-                    if ( iter.hasNext() ) {
-                        entry = iter.next();
-                        iter.remove();
-                    }
-                }
-                if ( entry == null ) {
-                    synchronized ( this.processingQueue ) {
-                        this.backgroundJobRunning.compareAndSet(true, !this.processingQueue.isEmpty());
-                    }
-                } else {
-                    logger.debug("Processing action for service {} : {}", entry.getKey(), entry.getValue());
-                    if ( entry.getValue().type != ActionType.REMOVED && mapper == null ) {
-                        try {
-                            resolver = this.resolverFactory.getServiceResourceResolver(null);
-                            mapper = resolver.adaptTo(ResourceMapper.class);
-                        } catch ( final org.apache.sling.api.resource.LoginException le) {
-                            // ignore
-                        }
-                    }
-                    process(mapper, entry.getKey(), entry.getValue());
+        while ( this.backgroundJobRunning.get() ) {
+            Map.Entry<Long, Action> entry = null;
+            synchronized ( this.processingQueue ) {
+                final Iterator<Map.Entry<Long, Action> > iter = this.processingQueue.entrySet().iterator();
+                if ( iter.hasNext() ) {
+                    entry = iter.next();
+                    iter.remove();
                 }
             }
-
-        } finally {
-            if ( resolver != null ) {
-                resolver.close();
+            if ( entry == null ) {
+                synchronized ( this.processingQueue ) {
+                    this.backgroundJobRunning.compareAndSet(true, !this.processingQueue.isEmpty());
+                }
+            } else {
+                logger.debug("Processing action for service {} : {}", entry.getKey(), entry.getValue());
+                process(entry.getKey(), entry.getValue());
             }
         }
     }
 
     /**
      * Process a single action
-     * @param mapper
      * @param id
      * @param action
      */
-    private void process(final ResourceMapper mapper, final Long id, final Action action) {
+    private void process(final Long id, final Action action) {
         switch ( action.type ) {
-            case ADDED : this.addService(mapper, action.reference);
+            case ADDED : this.addService(action.reference);
                          break;
             case REMOVED : this.removeService((Long)action.reference.getProperty(Constants.SERVICE_ID));
                            break;
-            case MODIFIED : this.modifiedService(mapper, action.reference);
+            case MODIFIED : this.modifiedService(action.reference);
                             break;
             case UPDATE: final List<AuthenticationRequirementHolder> list = props.get(id);
                          if (!list.isEmpty() ) {
-                             this.modifiedService(mapper, list.get(0).serviceReference);
+                             this.modifiedService(list.get(0).serviceReference);
                          }
         }
     }
@@ -305,7 +277,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         }
     }
 
-    private Set<String> buildPathsSet(final ResourceMapper mapper, final String[] authReqPaths) {
+    private Set<String> buildPathsSet(final String[] authReqPaths) {
         final Set<String> paths = new HashSet<>();
         for(String authReq : authReqPaths) {
             if (authReq != null ) {
@@ -322,12 +294,6 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                         prefix = null;
                     }
                     paths.add(prefix == null ? authReq : prefix.concat(authReq));
-
-                    if ( mapper != null ) {
-                        for(final String mappedPath : mapper.getAllMappings(authReq)) {
-                            paths.add(prefix == null ? mappedPath : prefix.concat(mappedPath));
-                        }
-                    }
                 }
             }
         }
@@ -338,11 +304,11 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * Process a new service with auth requirements
      * @param ref The service reference
      */
-    private void addService(final ResourceMapper mapper, final ServiceReference<?> ref) {
+    private void addService(final ServiceReference<?> ref) {
         final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         if ( authReqPaths.length > 0 ) {
             final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-            final Set<String> paths = buildPathsSet(mapper, authReqPaths);
+            final Set<String> paths = buildPathsSet(authReqPaths);
 
             if ( !paths.isEmpty() ) {
                 final List<AuthenticationRequirementHolder> authReqList = new ArrayList<AuthenticationRequirementHolder>();
@@ -363,15 +329,15 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * Process a modified service with auth requirements
      * @param ref The service reference
      */
-    private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref) {
+    private void modifiedService(final ServiceReference<?> ref) {
         final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
         if ( authReqPaths.length > 0 ) {
             final Set<String> oldPaths = regProps.get(id);
             if ( oldPaths == null ) {
-                addService(mapper, ref);
+                addService(ref);
             } else {
-                final Set<String> paths = buildPathsSet(mapper, authReqPaths);
+                final Set<String> paths = buildPathsSet(authReqPaths);
                 if ( paths.isEmpty() ) {
                     removeService(id);
                 } else {
