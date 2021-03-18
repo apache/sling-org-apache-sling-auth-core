@@ -466,9 +466,7 @@ public class SlingAuthenticator implements Authenticator,
             webConsolePlugin = null;
         }
 
-        if (metricsService != null) {
-            metricsService = null;
-        }
+        metricsService = null;
         if (metrics != null) {
             metrics = null;
         }
@@ -508,16 +506,20 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         Timer.Context ctx = metrics.authenticationTimerContext();
-        boolean process = doHandleSecurity(request, response);
-        if (process && expectAuthenticationHandler(request)) {
-            log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
-            AuthUtil.sendInvalid(request, response);
-            process = false;
+        boolean process = false;
+        try {
+            process = doHandleSecurity(request, response);
+            if (process && expectAuthenticationHandler(request)) {
+                log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+                AuthUtil.sendInvalid(request, response);
+                process = false;
+            }
+        } finally {
+            ctx.stop();
+            metrics.authenticateCompleted(process);
         }
-        ctx.stop();
-        metrics.authenticateCompleted(process);
         return process;
     }
 

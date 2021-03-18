@@ -23,14 +23,18 @@ import org.jetbrains.annotations.NotNull;
 
 class SlingAuthenticationMetrics {
 
+    static final String AUTHENTICATE_TIMER_NAME = "sling.auth.core.authenticate.timer";
+    static final String AUTHENTICATE_SUCCESS_METER_NAME = "sling.auth.core.authenticate.success";
+    static final String AUTHENTICATE_FAILED_METER_NAME = "sling.auth.core.authenticate.failed";
+
     private final Timer authenticateTimer;
     private final Meter authenticateSuccess;
     private final Meter authenticateFailed;
 
     SlingAuthenticationMetrics(@NotNull MetricsService metricsService) {
-        authenticateTimer = metricsService.timer("sling.auth.core.authenticate.timer");
-        authenticateSuccess = metricsService.meter("sling.auth.core.authenticate.success");
-        authenticateFailed = metricsService.meter("sling.auth.core.authenticate.failed");
+        authenticateTimer = metricsService.timer(AUTHENTICATE_TIMER_NAME);
+        authenticateSuccess = metricsService.meter(AUTHENTICATE_SUCCESS_METER_NAME);
+        authenticateFailed = metricsService.meter(AUTHENTICATE_FAILED_METER_NAME);
     }
 
     @NotNull
@@ -38,11 +42,11 @@ class SlingAuthenticationMetrics {
         return authenticateTimer.time();
     }
 
-    void authenticateCompleted(boolean failed) {
-        if (failed) {
-            authenticateFailed.mark();
-        } else {
+    void authenticateCompleted(boolean success) {
+        if (success) {
             authenticateSuccess.mark();
+        } else {
+            authenticateFailed.mark();
         }
     }
 }

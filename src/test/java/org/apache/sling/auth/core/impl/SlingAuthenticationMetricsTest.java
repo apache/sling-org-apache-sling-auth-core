@@ -16,16 +16,17 @@
  */
 package org.apache.sling.auth.core.impl;
 
-import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.metrics.Meter;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.apache.sling.commons.metrics.Timer;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_FAILED_METER_NAME;
+import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_SUCCESS_METER_NAME;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -34,7 +35,8 @@ import static org.mockito.Mockito.when;
 
 public class SlingAuthenticationMetricsTest {
 
-    private Meter meter = mock(Meter.class);
+    private Meter successMeter = mock(Meter.class);
+    private Meter failedMeter = mock(Meter.class);
     private Timer.Context ctx = mock(Timer.Context.class);
     private Timer timer = mock(Timer.class);
     private final MetricsService metricsService = mock(MetricsService.class);
@@ -44,7 +46,8 @@ public class SlingAuthenticationMetricsTest {
     @Before
     public void before() {
         when(timer.time()).thenReturn(ctx);
-        when(metricsService.meter(anyString())).thenReturn(meter);
+        when(metricsService.meter(AUTHENTICATE_SUCCESS_METER_NAME)).thenReturn(successMeter);
+        when(metricsService.meter(AUTHENTICATE_FAILED_METER_NAME)).thenReturn(failedMeter);
         when(metricsService.timer(anyString())).thenReturn(timer);
 
         metrics = new SlingAuthenticationMetrics(metricsService);
@@ -54,11 +57,20 @@ public class SlingAuthenticationMetricsTest {
     }
 
     @Test
-    public void testAuthenticationCompleted() {
+    public void testAuthenticationCompletedSuccess() {
         metrics.authenticateCompleted(true);
+        verify(successMeter, times(1)).mark();
+        verify(failedMeter, never()).mark();
+        verifyNoMoreInteractions(successMeter, failedMeter);
+        verifyNoInteractions(timer, ctx);
+    }
+
+    @Test
+    public void testAuthenticationCompletedFailed() {
         metrics.authenticateCompleted(false);
-        verify(meter, times(2)).mark();
-        verifyNoMoreInteractions(meter);
+        verify(failedMeter, times(1)).mark();
+        verify(successMeter, never()).mark();
+        verifyNoMoreInteractions(successMeter, failedMeter);
         verifyNoInteractions(timer, ctx);
     }
 
@@ -70,6 +82,6 @@ public class SlingAuthenticationMetricsTest {
         verify(timer).time();
         verify(ctx).stop();
         verifyNoMoreInteractions(timer, ctx);
-        verifyNoInteractions(meter);
+        verifyNoInteractions(successMeter, failedMeter);
     }
 }
