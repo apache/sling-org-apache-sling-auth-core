@@ -24,6 +24,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
@@ -69,6 +71,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.FieldOption;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
@@ -88,7 +91,6 @@ import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.service.metatype.annotations.Option;
 import org.osgi.util.converter.Converters;
-import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -310,22 +312,16 @@ public class SlingAuthenticator implements Authenticator,
      * The listener for services registered with "sling.auth.requirements" to
      * update the internal authentication requirements
      */
-    private SlingAuthenticatorServiceListener serviceListener;
+    private final SlingAuthenticatorServiceListener serviceListener;
 
     /**
-     * ServiceTracker tracking AuthenticationHandler services
+     * AuthenticationInfoPostProcessor services
      */
-    private ServiceTracker authHandlerTracker;
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = AuthenticationInfoPostProcessor.class, fieldOption = FieldOption.REPLACE)
+    private volatile List<AuthenticationInfoPostProcessor> authInfoPostProcessors = Collections.emptyList();
 
-    /**
-     * ServiceTracker tracking old Sling Engine AuthenticationHandler services
-     */
-    private ServiceTracker engineAuthHandlerTracker;
-
-    /**
-     * ServiceTracker tracking AuthenticationInfoPostProcessor services
-     */
-    private ServiceTracker<AuthenticationInfoPostProcessor, AuthenticationInfoPostProcessor> authInfoPostProcessorTracker;
+    /** Handler map for authentication handlers */
+    private final Map<String, List<AbstractAuthenticationHandlerHolder>> handlerMap = new ConcurrentHashMap<>();
 
     /**
      * The event admin service.
@@ -364,13 +360,6 @@ public class SlingAuthenticator implements Authenticator,
 
         serviceListener = SlingAuthenticatorServiceListener.createListener(
             bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory, this.authRequiredCache);
-
-        authHandlerTracker = new AuthenticationHandlerTracker(bundleContext,
-            authHandlerCache);
-        engineAuthHandlerTracker = new EngineAuthenticationHandlerTracker(
-            bundleContext, authHandlerCache);
-        authInfoPostProcessorTracker = new ServiceTracker(bundleContext, AuthenticationInfoPostProcessor.class, null);
-        authInfoPostProcessorTracker.open();
     }
 
     /**
@@ -379,6 +368,7 @@ public class SlingAuthenticator implements Authenticator,
     SlingAuthenticator() {
         this.resourceResolverFactory = null;
         this.metrics = null;
+        this.serviceListener = null;
     }
     
     @Modified
@@ -454,20 +444,8 @@ public class SlingAuthenticator implements Authenticator,
     @Deactivate
     private void deactivate(final BundleContext bundleContext) {
         this.authRequiredCache.clear();
-        if (engineAuthHandlerTracker != null) {
-            engineAuthHandlerTracker.close();
-            engineAuthHandlerTracker = null;
-        }
 
-        if (authHandlerTracker != null) {
-            authHandlerTracker.close();
-            authHandlerTracker = null;
-        }
-
-        if (serviceListener != null) {
-            serviceListener.stop(bundleContext);
-            serviceListener = null;
-        }
+        serviceListener.stop(bundleContext);
 
         if (webConsolePlugin != null) {
             webConsolePlugin.unregister();
@@ -833,11 +811,9 @@ public class SlingAuthenticator implements Authenticator,
      */
     private void postProcess(AuthenticationInfo info, HttpServletRequest request, HttpServletResponse response)
     		throws LoginException {
-        Object[] services = authInfoPostProcessorTracker.getServices();
-        if (services != null) {
-            for (Object serviceObj : services) {
-                ((AuthenticationInfoPostProcessor)serviceObj).postProcess(info, request, response);
-            }
+        final List<AuthenticationInfoPostProcessor> localList = this.authInfoPostProcessors;
+        for (final AuthenticationInfoPostProcessor processor : localList) {
+            processor.postProcess(info, request, response);
         }
     }
 
@@ -1691,111 +1667,115 @@ public class SlingAuthenticator implements Authenticator,
         return builder.toString();
     }
 
-    private static class AuthenticationHandlerTracker extends ServiceTracker {
-
-        private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache;
-
-        private final Map<Object, AbstractAuthenticationHandlerHolder[]> handlerMap = new ConcurrentHashMap<>();
-
-        AuthenticationHandlerTracker(
-                final BundleContext context,
-                final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache) {
-            this(context, AuthenticationHandler.SERVICE_NAME, authHandlerCache);
-        }
-
-        protected AuthenticationHandlerTracker(
-                final BundleContext context,
-                final String className,
-                final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache) {
-            super(context, className, null);
-            this.authHandlerCache = authHandlerCache;
-
-            open();
-        }
-
-        @Override
-        public Object addingService(ServiceReference reference) {
-            final Object service = super.addingService(reference);
-            if (service != null) {
-                bindAuthHandler(service, reference);
-            }
-            return service;
-        }
-
-        @Override
-        public void modifiedService(ServiceReference reference, Object service) {
-            unbindAuthHandler(reference);
-            if (service != null) {
-                bindAuthHandler(service, reference);
-            }
-        }
-
-        @Override
-        public void removedService(ServiceReference reference, Object service) {
-            unbindAuthHandler(reference);
-            super.removedService(reference, service);
-        }
-
-        protected AbstractAuthenticationHandlerHolder createHolder(
-                final String path, final Object handler,
-                final ServiceReference serviceReference) {
+    /**
+     * Bind authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE)
+    private void bindAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
+        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+        internalBindAuthHandler(paths, id, path -> {
             return new AuthenticationHandlerHolder(path,
-                (AuthenticationHandler) handler, serviceReference);
-        }
+                handler,
+                ref);
+        });
+    }
 
-        private void bindAuthHandler(final Object handler, final ServiceReference ref) {
-            final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-            if (paths != null && paths.length > 0) {
+    /**
+     * Update authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    private void updatedAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
+        unbindAuthHandler(ref);
+        bindAuthHandler(handler, ref);
+    }
 
-                // generate the holders
-                ArrayList<AbstractAuthenticationHandlerHolder> holderList = new ArrayList<AbstractAuthenticationHandlerHolder>();
-                for (String path : paths) {
-                    if (path != null && path.length() > 0) {
-                        holderList.add(createHolder(path, handler, ref));
-                    }
+    /**
+     * Unbind authentication handler
+     * @param ref Service Reference
+     */
+    private void unbindAuthHandler(final ServiceReference<Object> ref) {
+        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        internalUnbindAuthHandler(id);
+    }
+    
+    /**
+     * Bind old engine authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE)
+    private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+        internalBindAuthHandler(paths, id, path -> {
+            return new EngineAuthenticationHandlerHolder(path,
+                handler,
+                ref);
+        });
+    }
+
+    /**
+     * Update old engine authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    private void updatedEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+        unbindEngineAuthHandler(ref);
+        bindEngineAuthHandler(handler, ref);
+    }
+
+    /**
+     * Unbind old engine authentication handler
+     * @param ref Service Reference
+     */
+    private void unbindEngineAuthHandler(final ServiceReference<Object> ref) {
+        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        internalUnbindAuthHandler(id);
+    }
+
+    /**
+     * Bind an authentication handler
+     * @param paths The paths
+     * @param id Unique id
+     * @param createFunction Creation callback
+     */
+    private void internalBindAuthHandler(final String[] paths, final String id, final Function<String, AbstractAuthenticationHandlerHolder> createFunction) {
+        if (paths != null && paths.length > 0) {
+
+            // generate the holders
+            ArrayList<AbstractAuthenticationHandlerHolder> holderList = new ArrayList<AbstractAuthenticationHandlerHolder>();
+            for (String path : paths) {
+                if (path != null && path.length() > 0) {
+                    holderList.add(createFunction.apply(path));
                 }
-
-                // register the holders
-                AbstractAuthenticationHandlerHolder[] holders = holderList.toArray(new AbstractAuthenticationHandlerHolder[holderList.size()]);
-                for (AbstractAuthenticationHandlerHolder holder : holders) {
+            }
+            // register the holders
+            if ( !holderList.isEmpty() ) {
+                for(final AbstractAuthenticationHandlerHolder holder : holderList) {
                     authHandlerCache.addHolder(holder);
                 }
-
-                // keep a copy of them for unregistration later
-                handlerMap.put(ref.getProperty(Constants.SERVICE_ID), holders);
             }
-        }
 
-        private void unbindAuthHandler(ServiceReference ref) {
-            final AbstractAuthenticationHandlerHolder[] holders = handlerMap.remove(ref.getProperty(Constants.SERVICE_ID));
-
-            if (holders != null) {
-                for (AbstractAuthenticationHandlerHolder holder : holders) {
-                    authHandlerCache.removeHolder(holder);
-                }
-            }
+            // keep a copy of them for unregistration later
+            handlerMap.put(id, holderList);
         }
     }
 
-    private static class EngineAuthenticationHandlerTracker extends
-            AuthenticationHandlerTracker {
+    /**
+     * Unbind authentication handler
+     * @param id Unqiue id
+     */
+    private void internalUnbindAuthHandler(final String id) {
+        final List<AbstractAuthenticationHandlerHolder> holders = handlerMap.remove(id);
 
-        EngineAuthenticationHandlerTracker(
-                final BundleContext context,
-                final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache) {
-            super(context,
-                "org.apache.sling.engine.auth.AuthenticationHandler",
-                authHandlerCache);
-        }
-
-        @SuppressWarnings("deprecation")
-        @Override
-        protected AbstractAuthenticationHandlerHolder createHolder(String path,
-                Object handler, final ServiceReference serviceReference) {
-            return new EngineAuthenticationHandlerHolder(path,
-                (org.apache.sling.engine.auth.AuthenticationHandler) handler,
-                serviceReference);
+        if (holders != null) {
+            for (AbstractAuthenticationHandlerHolder holder : holders) {
+                authHandlerCache.removeHolder(holder);
+            }
         }
     }
-
 }
