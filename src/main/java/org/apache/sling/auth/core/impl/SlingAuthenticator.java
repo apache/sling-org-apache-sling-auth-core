@@ -38,7 +38,6 @@ import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.auth.login.CredentialExpiredException;
-import javax.servlet.Servlet;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -67,7 +66,6 @@ import org.apache.sling.commons.metrics.Timer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -108,7 +106,7 @@ import org.slf4j.LoggerFactory;
  * URL.
  */
 @Component(name = "org.apache.sling.engine.impl.auth.SlingAuthenticator",
-           service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class })
+           service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class, SlingAuthenticator.class })
 @HttpWhiteboardContextSelect("(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=*)")
 @HttpWhiteboardListener
 @ServiceDescription("Apache Sling Request Authenticator")
@@ -305,9 +303,6 @@ public class SlingAuthenticator implements Authenticator,
     /** HTTP Basic authentication handler */
     private HttpBasicAuthenticationHandler httpBasicHandler;
 
-    /** Web Console Plugin service registration */
-    private ServiceRegistration<Servlet> webConsolePlugin;
-
     /**
      * The listener for services registered with "sling.auth.requirements" to
      * update the internal authentication requirements
@@ -343,20 +338,6 @@ public class SlingAuthenticator implements Authenticator,
         this.metrics = new SlingAuthenticationMetrics(metricsService);
         this.resourceResolverFactory = resourceResolverFactory;
         modified(config);
-
-        AuthenticatorWebConsolePlugin plugin = new AuthenticatorWebConsolePlugin(
-            this);
-        Hashtable<String, Object> props = new Hashtable<String, Object>();
-        props.put("felix.webconsole.label", plugin.getLabel());
-        props.put("felix.webconsole.title", plugin.getTitle());
-        props.put("felix.webconsole.category", "Sling");
-        props.put(Constants.SERVICE_DESCRIPTION,
-            "Sling Request Authenticator WebConsole Plugin");
-        props.put(Constants.SERVICE_VENDOR,
-            "The Apache Software Foundation");
-
-        webConsolePlugin = bundleContext.registerService(
-            Servlet.class, plugin, props);
 
         serviceListener = SlingAuthenticatorServiceListener.createListener(
             bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory, this.authRequiredCache);
@@ -445,12 +426,7 @@ public class SlingAuthenticator implements Authenticator,
     private void deactivate(final BundleContext bundleContext) {
         this.authRequiredCache.clear();
 
-        serviceListener.stop(bundleContext);
-
-        if (webConsolePlugin != null) {
-            webConsolePlugin.unregister();
-            webConsolePlugin = null;
-        }
+        this.serviceListener.stop(bundleContext);
     }
 
     // --------- AuthenticationSupport interface

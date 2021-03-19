@@ -23,30 +23,36 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.request.ResponseUtil;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.propertytypes.ServiceDescription;
+import org.osgi.service.component.propertytypes.ServiceVendor;
 
 @SuppressWarnings("serial")
+@Component(service = Servlet.class,
+    property = {
+            "felix.webconsole.label=" + AuthenticatorWebConsolePlugin.LABEL,
+            "felix.webconsole.title=" + AuthenticatorWebConsolePlugin.TITLE,
+            "felix.webconsole.category=Sling"
+    })
+@ServiceDescription("Apache Sling Request Authenticator WebConsole Plugin")
+@ServiceVendor("The Apache Software Foundation")
 public class AuthenticatorWebConsolePlugin extends HttpServlet {
 
-    private final SlingAuthenticator slingAuthenticator;
+    /** The label for the web console */
+    public static final String LABEL = "slingauth";
+    /** The title for the web console */
+    public static final String TITLE = "Authenticator";
 
-    String getLabel() {
-        return "slingauth";
-    }
-
-    String getTitle() {
-        return "Authenticator";
-    }
-
-    public AuthenticatorWebConsolePlugin(
-            final SlingAuthenticator slingAuthenticator) {
-        this.slingAuthenticator = slingAuthenticator;
-    }
+    @Reference
+    private SlingAuthenticator slingAuthenticator;
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
