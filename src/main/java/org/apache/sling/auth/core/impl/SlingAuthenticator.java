@@ -73,6 +73,7 @@ import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.propertytypes.ServiceDescription;
 import org.osgi.service.component.propertytypes.ServiceVendor;
 import org.osgi.service.event.Event;
@@ -259,10 +260,7 @@ public class SlingAuthenticator implements Authenticator,
      */
     private static final String AUTH_INFO_PROP_FEEDBACK_HANDLER = "$$sling.auth.AuthenticationFeedbackHandler$$";
 
-    @Reference
-    private ResourceResolverFactory resourceResolverFactory;
-
-    private PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
+    private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
 
     // package protected for access in inner class ...
     private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
@@ -332,18 +330,22 @@ public class SlingAuthenticator implements Authenticator,
     /**
      * The event admin service.
      */
-    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
+    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
     private volatile EventAdmin eventAdmin;
 
-    @Reference
-    private MetricsService metricsService;
-    private SlingAuthenticationMetrics metrics;
+    private final SlingAuthenticationMetrics metrics;
+
+    private final ResourceResolverFactory resourceResolverFactory;
 
     // ---------- SCR integration
 
     @Activate
-    private void activate(final BundleContext bundleContext,
+    public SlingAuthenticator(@Reference(policyOption = ReferencePolicyOption.GREEDY) final MetricsService metricsService,
+            @Reference(policyOption = ReferencePolicyOption.GREEDY) final ResourceResolverFactory resourceResolverFactory,
+            final BundleContext bundleContext,
             final Config config) {
+        this.metrics = new SlingAuthenticationMetrics(metricsService);
+        this.resourceResolverFactory = resourceResolverFactory;
         modified(config);
 
         AuthenticatorWebConsolePlugin plugin = new AuthenticatorWebConsolePlugin(
@@ -369,10 +371,16 @@ public class SlingAuthenticator implements Authenticator,
             bundleContext, authHandlerCache);
         authInfoPostProcessorTracker = new ServiceTracker(bundleContext, AuthenticationInfoPostProcessor.class, null);
         authInfoPostProcessorTracker.open();
-
-        metrics = new SlingAuthenticationMetrics(metricsService);
     }
 
+    /**
+     * Constructor for unit tests
+     */
+    SlingAuthenticator() {
+        this.resourceResolverFactory = null;
+        this.metrics = null;
+    }
+    
     @Modified
     private void modified(Config config) {
         String newCookie = config.auth_sudo_cookie();
@@ -464,11 +472,6 @@ public class SlingAuthenticator implements Authenticator,
         if (webConsolePlugin != null) {
             webConsolePlugin.unregister();
             webConsolePlugin = null;
-        }
-
-        metricsService = null;
-        if (metrics != null) {
-            metrics = null;
         }
     }
 

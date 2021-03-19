@@ -51,7 +51,7 @@ public class SlingAuthenticatorOsgiTest {
     private Timer timer = mock(Timer.class);
     private final MetricsService metricsService = mock(MetricsService.class);
 
-    private final SlingAuthenticator authenticator = new SlingAuthenticator();
+    private SlingAuthenticator authenticator;
 
     @Before
     public void before() throws Exception {
@@ -66,7 +66,7 @@ public class SlingAuthenticatorOsgiTest {
 
         context.registerService(ResourceResolverFactory.class, resourceResolverFactory);
         context.registerService(MetricsService.class, metricsService);
-        context.registerInjectActivateService(authenticator);
+        authenticator = context.registerInjectActivateService(SlingAuthenticator.class);
     }
 
     @Test
