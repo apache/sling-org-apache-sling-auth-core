@@ -370,7 +370,7 @@ public class SlingAuthenticator implements Authenticator,
         this.metrics = null;
         this.serviceListener = null;
     }
-    
+
     @Modified
     private void modified(Config config) {
         String newCookie = config.auth_sudo_cookie();
@@ -1672,7 +1672,7 @@ public class SlingAuthenticator implements Authenticator,
      * @param ref Service reference
      * @param handler The handler
      */
-    @Reference(cardinality = ReferenceCardinality.MULTIPLE)
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
     private void bindAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
@@ -1701,13 +1701,13 @@ public class SlingAuthenticator implements Authenticator,
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         internalUnbindAuthHandler(id);
     }
-    
+
     /**
      * Bind old engine authentication handler
      * @param ref Service reference
      * @param handler The handler
      */
-    @Reference(cardinality = ReferenceCardinality.MULTIPLE)
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
     private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
