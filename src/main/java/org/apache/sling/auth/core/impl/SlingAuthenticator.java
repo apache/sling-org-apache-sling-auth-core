@@ -60,6 +60,8 @@ import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
 import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
+import org.apache.sling.commons.metrics.MetricsService;
+import org.apache.sling.commons.metrics.Timer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -333,6 +335,10 @@ public class SlingAuthenticator implements Authenticator,
     @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile EventAdmin eventAdmin;
 
+    @Reference
+    private MetricsService metricsService;
+    private SlingAuthenticationMetrics metrics;
+
     // ---------- SCR integration
 
     @Activate
@@ -363,6 +369,8 @@ public class SlingAuthenticator implements Authenticator,
             bundleContext, authHandlerCache);
         authInfoPostProcessorTracker = new ServiceTracker(bundleContext, AuthenticationInfoPostProcessor.class, null);
         authInfoPostProcessorTracker.open();
+
+        metrics = new SlingAuthenticationMetrics(metricsService);
     }
 
     @Modified
@@ -457,6 +465,11 @@ public class SlingAuthenticator implements Authenticator,
             webConsolePlugin.unregister();
             webConsolePlugin = null;
         }
+
+        metricsService = null;
+        if (metrics != null) {
+            metrics = null;
+        }
     }
 
     // --------- AuthenticationSupport interface
@@ -492,15 +505,21 @@ public class SlingAuthenticator implements Authenticator,
             request.removeAttribute(REQUEST_ATTRIBUTE_RESOLVER);
         }
 
-        boolean process = doHandleSecurity(request, response);
-        if (process && expectAuthenticationHandler(request)) {
-            log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
-            request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
-            AuthUtil.sendInvalid(request, response);
-            return false;
+        Timer.Context ctx = metrics.authenticationTimerContext();
+        boolean process = false;
+        try {
+            process = doHandleSecurity(request, response);
+            if (process && expectAuthenticationHandler(request)) {
+                log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
+                request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+                AuthUtil.sendInvalid(request, response);
+                process = false;
+            }
+        } finally {
+            ctx.stop();
+            metrics.authenticateCompleted(process);
         }
-
         return process;
     }
 
