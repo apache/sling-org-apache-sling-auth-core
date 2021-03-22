@@ -55,7 +55,8 @@ import org.slf4j.LoggerFactory;
  * the service registry.
  *
  */
-public class SlingAuthenticatorServiceListener extends PathBasedHolderCache<AuthenticationRequirementHolder>
+public class AuthenticationRequirementsManager 
+    extends PathBasedHolderCache<AuthenticationRequirementHolder>
     implements AllServiceListener, EventHandler {
 
     /** Filter expression for auth requirements */
@@ -68,7 +69,7 @@ public class SlingAuthenticatorServiceListener extends PathBasedHolderCache<Auth
     private static final Long CLEAR = -1L;
 
     /** Logger */
-    private final Logger logger = LoggerFactory.getLogger(SlingAuthenticatorServiceListener.class);
+    private final Logger logger = LoggerFactory.getLogger(AuthenticationRequirementsManager.class);
 
     /** Resource resolver factory */
     private final ResourceResolverFactory resolverFactory;
@@ -99,12 +100,12 @@ public class SlingAuthenticatorServiceListener extends PathBasedHolderCache<Auth
      * @param authRequiredCache The cache for the auth requirements
      * @return
      */
-    static SlingAuthenticatorServiceListener createListener(
+    static AuthenticationRequirementsManager createListener(
         final BundleContext context,
         final Executor executor,
         final ResourceResolverFactory factory) {
 
-        final SlingAuthenticatorServiceListener listener = new SlingAuthenticatorServiceListener(executor,
+        final AuthenticationRequirementsManager listener = new AuthenticationRequirementsManager(executor,
                 factory);
         try {
             context.addServiceListener(listener, FILTER_EXPR);
@@ -132,7 +133,7 @@ public class SlingAuthenticatorServiceListener extends PathBasedHolderCache<Auth
      * @param executor For updating
      * @param factory The resource resolver factory
      */
-    private SlingAuthenticatorServiceListener(final Executor executor,
+    private AuthenticationRequirementsManager(final Executor executor,
             final ResourceResolverFactory factory) {
         this.executor = executor;
         this.resolverFactory = factory;

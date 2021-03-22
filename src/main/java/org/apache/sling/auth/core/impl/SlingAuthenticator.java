@@ -301,7 +301,7 @@ public class SlingAuthenticator implements Authenticator,
      * The listener for services registered with "sling.auth.requirements" to
      * update the internal authentication requirements
      */
-    private final SlingAuthenticatorServiceListener serviceListener;
+    private final AuthenticationRequirementsManager serviceListener;
 
     /**
      * AuthenticationInfoPostProcessor services
@@ -332,7 +332,7 @@ public class SlingAuthenticator implements Authenticator,
         this.metrics = new SlingAuthenticationMetrics(metricsService);
         this.resourceResolverFactory = resourceResolverFactory;
 
-        this.serviceListener = SlingAuthenticatorServiceListener.createListener(
+        this.serviceListener = AuthenticationRequirementsManager.createListener(
             bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory);
         
         this.modified(config);
