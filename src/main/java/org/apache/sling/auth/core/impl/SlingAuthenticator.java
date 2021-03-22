@@ -338,15 +338,6 @@ public class SlingAuthenticator implements Authenticator,
         this.modified(config);
     }
 
-    /**
-     * Constructor for unit tests
-     */
-    SlingAuthenticator() {
-        this.resourceResolverFactory = null;
-        this.metrics = null;
-        this.serviceListener = null;
-    }
-
     @Modified
     private void modified(final Config config) {
         if (!config.auth_sudo_cookie().equals(this.sudoCookieName)) {
