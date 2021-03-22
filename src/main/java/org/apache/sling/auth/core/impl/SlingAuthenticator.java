@@ -268,9 +268,6 @@ public class SlingAuthenticator implements Authenticator,
     /** The name of the impersonation cookie */
     private volatile String sudoCookieName;
 
-    /** Cache control flag */
-    private volatile boolean cacheControl;
-
     /**
      * The configured URI suffices indicating a authentication requests and
      * requiring redirects and thus returning <code>false</code> from the
@@ -1318,12 +1315,6 @@ public class SlingAuthenticator implements Authenticator,
             }
 
             response.addCookie(cookie);
-
-            // Tell a potential proxy server that this request is uncacheable
-            // due to the Set-Cookie header being sent
-            if (this.cacheControl) {
-                response.addHeader("Cache-Control", "no-cache=\"Set-Cookie\"");
-            }
         }
     }
 
