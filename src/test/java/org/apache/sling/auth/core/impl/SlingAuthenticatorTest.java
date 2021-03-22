@@ -26,9 +26,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.commons.metrics.MetricsService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.osgi.framework.BundleContext;
 
 import junitx.util.PrivateAccessor;
 
@@ -79,25 +81,52 @@ public class SlingAuthenticatorTest {
         checkUnQuote("\"string\ttab\"", "string\ttab");
     }
 
+    private SlingAuthenticator.Config createDefaultConfig() {
+        final SlingAuthenticator.Config config = Mockito.mock(SlingAuthenticator.Config.class);
+
+        Mockito.when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
+        Mockito.when(config.auth_sudo_parameter()).thenReturn("sudo");
+        Mockito.when(config.auth_annonymous()).thenReturn(true);
+        Mockito.when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
+        Mockito.when(config.auth_http_realm()).thenReturn("Sling (Development)");
+        Mockito.when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
+
+        return config;
+    }
+
     //SLING-4864
     @Test
     public void  test_isAnonAllowed() throws Throwable {
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator();
+        // anon is allowed by default
+        final SlingAuthenticator.Config config = createDefaultConfig();
 
-        PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
+        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), 
+            null, Mockito.mock(BundleContext.class), config);
 
-        authRequiredCache.addHolder(new AuthenticationRequirementHolder("/", false, null));
-
-        PrivateAccessor.setField(slingAuthenticator, "authRequiredCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getServerName()).thenReturn("localhost");
         Mockito.when(request.getServerPort()).thenReturn(80);
         Mockito.when(request.getScheme()).thenReturn("http");
 
-        Boolean allowed = (Boolean) PrivateAccessor.invoke(slingAuthenticator,"isAnonAllowed",  new Class[]{HttpServletRequest.class},new Object[]{request});
-        Assert.assertTrue(allowed);
+        Assert.assertTrue(slingAuthenticator.isAnonAllowed(request));
     }
 
+    @Test
+    public void  test_isAnonNotAllowed() throws Throwable {
+        // anon is allowed by default
+        final SlingAuthenticator.Config config = createDefaultConfig();
+        Mockito.when(config.auth_annonymous()).thenReturn(false);
+
+        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), 
+            null, Mockito.mock(BundleContext.class), config);
+
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getServerName()).thenReturn("localhost");
+        Mockito.when(request.getServerPort()).thenReturn(80);
+        Mockito.when(request.getScheme()).thenReturn("http");
+
+        Assert.assertFalse(slingAuthenticator.isAnonAllowed(request));
+    }
 
     /**
      * Test is OK for child node;

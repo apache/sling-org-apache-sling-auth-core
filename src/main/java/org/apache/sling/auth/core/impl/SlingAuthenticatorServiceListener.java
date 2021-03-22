@@ -55,7 +55,8 @@ import org.slf4j.LoggerFactory;
  * the service registry.
  *
  */
-public class SlingAuthenticatorServiceListener implements AllServiceListener, EventHandler {
+public class SlingAuthenticatorServiceListener extends PathBasedHolderCache<AuthenticationRequirementHolder>
+    implements AllServiceListener, EventHandler {
 
     /** Filter expression for auth requirements */
     private static final String FILTER_EXPR = "(".concat(AuthConstants.AUTH_REQUIREMENTS).concat("=*)");
@@ -71,9 +72,6 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
 
     /** Resource resolver factory */
     private final ResourceResolverFactory resolverFactory;
-
-    /** Auth requirements cache */
-    private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache;
 
     /** Cache for registration properties of auth requirements */
     private final Map<Long, Set<String>> regProps = new ConcurrentHashMap<>();
@@ -104,11 +102,9 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
     static SlingAuthenticatorServiceListener createListener(
         final BundleContext context,
         final Executor executor,
-        final ResourceResolverFactory factory,
-        final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache) {
+        final ResourceResolverFactory factory) {
 
-        final SlingAuthenticatorServiceListener listener = new SlingAuthenticatorServiceListener(authRequiredCache,
-                executor,
+        final SlingAuthenticatorServiceListener listener = new SlingAuthenticatorServiceListener(executor,
                 factory);
         try {
             context.addServiceListener(listener, FILTER_EXPR);
@@ -133,14 +129,11 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
 
     /**
      * Create a new listener
-     * @param authRequiredCache The cache
      * @param executor For updating
      * @param factory The resource resolver factory
      */
-    private SlingAuthenticatorServiceListener(final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache,
-            final Executor executor,
+    private SlingAuthenticatorServiceListener(final Executor executor,
             final ResourceResolverFactory factory) {
-        this.authRequiredCache = authRequiredCache;
         this.executor = executor;
         this.resolverFactory = factory;
         logger.debug("Started auth requirements listener");
@@ -151,6 +144,8 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
     }
 
     public void stop(final BundleContext bundleContext) {
+        this.clear();
+
         bundleContext.removeServiceListener(this);
         if ( this.serviceRegistration != null ) {
             this.serviceRegistration.unregister();
@@ -301,7 +296,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      */
     private void registerService(final List<AuthenticationRequirementHolder> authReqs) {
         for (AuthenticationRequirementHolder authReq : authReqs) {
-            authRequiredCache.addHolder(authReq);
+            this.addHolder(authReq);
         }
     }
 
@@ -382,7 +377,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                             // remove
                             final AuthenticationRequirementHolder holder = AuthenticationRequirementHolder.fromConfig(oldPath, ref);
                             authReqs.remove(holder);
-                            authRequiredCache.removeHolder(holder);
+                            this.removeHolder(holder);
                         }
                     }
                     for(final String path : paths) {
@@ -390,7 +385,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
                             // add
                             final AuthenticationRequirementHolder holder = AuthenticationRequirementHolder.fromConfig(path, ref);
                             authReqs.add(holder);
-                            authRequiredCache.addHolder(holder);
+                            this.addHolder(holder);
                         }
                     }
                     regProps.put(id, paths);
@@ -410,7 +405,7 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
         final List<AuthenticationRequirementHolder> authReqs = props.remove(id);
         if (authReqs != null) {
             for (final AuthenticationRequirementHolder authReq : authReqs) {
-                authRequiredCache.removeHolder(authReq);
+                this.removeHolder(authReq);
             }
         }
         regProps.remove(id);

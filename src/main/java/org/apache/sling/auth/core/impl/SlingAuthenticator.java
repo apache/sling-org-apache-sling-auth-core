@@ -237,7 +237,7 @@ public class SlingAuthenticator implements Authenticator,
      * <code>requestCredentials</code> and <code>dropCredentials</code> methods
      * will not send back a 401 response.
      */
-    private static final String HTTP_AUTH_PREEMPTIVE = "preemptive";
+    static final String HTTP_AUTH_PREEMPTIVE = "preemptive";
 
     /**
      * Default request URI suffix to expect to be handled by authentication
@@ -245,7 +245,7 @@ public class SlingAuthenticator implements Authenticator,
      * {@link #handleSecurity(HttpServletRequest, HttpServletResponse)} to
      * return <code>true</code>.
      */
-    private static final String DEFAULT_AUTH_URI_SUFFIX = "/j_security_check";
+    static final String DEFAULT_AUTH_URI_SUFFIX = "/j_security_check";
 
     /**
      * The name of the form submission parameter providing the new password of
@@ -262,17 +262,14 @@ public class SlingAuthenticator implements Authenticator,
 
     private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
 
-    // package protected for access in inner class ...
-    private final PathBasedHolderCache<AuthenticationRequirementHolder> authRequiredCache = new PathBasedHolderCache<AuthenticationRequirementHolder>();
-
     /** The name of the impersonation parameter */
-    private String sudoParameterName;
+    private volatile String sudoParameterName;
 
     /** The name of the impersonation cookie */
-    private String sudoCookieName;
+    private volatile String sudoCookieName;
 
     /** Cache control flag */
-    private boolean cacheControl;
+    private volatile boolean cacheControl;
 
     /**
      * The configured URI suffices indicating a authentication requests and
@@ -281,7 +278,7 @@ public class SlingAuthenticator implements Authenticator,
      * <p>
      * This will be <code>null</code> if there are no suffices to consider.
      */
-    private String[] authUriSuffices;
+    private volatile String[] authUriSuffices;
 
     /**
      * The name of the user to assume for anonymous access. By default this is
@@ -290,7 +287,7 @@ public class SlingAuthenticator implements Authenticator,
      *
      * @see #getAnonymousCredentials()
      */
-    private String anonUser;
+    private volatile String anonUser;
 
     /**
      * The password to use for anonymous access. This property is only used if
@@ -298,10 +295,10 @@ public class SlingAuthenticator implements Authenticator,
      *
      * @see #getAnonymousCredentials()
      */
-    private char[] anonPassword;
+    private volatile char[] anonPassword;
 
     /** HTTP Basic authentication handler */
-    private HttpBasicAuthenticationHandler httpBasicHandler;
+    private volatile HttpBasicAuthenticationHandler httpBasicHandler;
 
     /**
      * The listener for services registered with "sling.auth.requirements" to
@@ -337,10 +334,11 @@ public class SlingAuthenticator implements Authenticator,
             final Config config) {
         this.metrics = new SlingAuthenticationMetrics(metricsService);
         this.resourceResolverFactory = resourceResolverFactory;
-        modified(config);
 
-        serviceListener = SlingAuthenticatorServiceListener.createListener(
-            bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory, this.authRequiredCache);
+        this.serviceListener = SlingAuthenticatorServiceListener.createListener(
+            bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory);
+        
+        this.modified(config);
     }
 
     /**
@@ -353,61 +351,33 @@ public class SlingAuthenticator implements Authenticator,
     }
 
     @Modified
-    private void modified(Config config) {
-        String newCookie = config.auth_sudo_cookie();
-        if (!newCookie.equals(this.sudoCookieName)) {
+    private void modified(final Config config) {
+        if (!config.auth_sudo_cookie().equals(this.sudoCookieName)) {
             log.info(
                 "modified: Setting new cookie name for impersonation {} (was {})",
-                newCookie, this.sudoCookieName);
-            this.sudoCookieName = newCookie;
+                config.auth_sudo_cookie(), this.sudoCookieName);
+            this.sudoCookieName = config.auth_sudo_cookie();
         }
 
-        String newPar = config.auth_sudo_parameter();
-        if (!newPar.equals(this.sudoParameterName)) {
+        if (!config.auth_sudo_parameter().equals(this.sudoParameterName)) {
             log.info(
                 "modified: Setting new parameter name for impersonation {} (was {})",
-                newPar, this.sudoParameterName);
-            this.sudoParameterName = newPar;
+                config.auth_sudo_parameter(), this.sudoParameterName);
+            this.sudoParameterName = config.auth_sudo_parameter();
         }
 
-        authRequiredCache.clear();
-
-        final boolean anonAllowed = config.auth_annonymous();
-        authRequiredCache.addHolder(new AuthenticationRequirementHolder("/", !anonAllowed, null));
-
-        String[] authReqs = config.sling_auth_requirements();
-        if (authReqs != null) {
-            for (String authReq : authReqs) {
-                if (authReq != null && authReq.length() > 0) {
-                    authRequiredCache.addHolder(AuthenticationRequirementHolder.fromConfig(
-                        authReq, null));
-                }
-            }
-        }
-
-        final String anonUser = config.sling_auth_anonymous_user();
-        if (anonUser != null && anonUser.length() > 0) {
-            this.anonUser = anonUser;
+        if (config.sling_auth_anonymous_user() != null && config.sling_auth_anonymous_user().length() > 0) {
+            this.anonUser = config.sling_auth_anonymous_user();
             this.anonPassword = config.sling_auth_anonymous_password() == null ? "".toCharArray() : config.sling_auth_anonymous_password().toCharArray();
         } else {
             this.anonUser = null;
             this.anonPassword = null;
         }
 
-        authUriSuffices = config.auth_uri_suffix();
-        // don't require authentication for login/logout servlets
-        authRequiredCache.addHolder(new AuthenticationRequirementHolder(
-            LoginServlet.SERVLET_PATH, false, null));
-        authRequiredCache.addHolder(new AuthenticationRequirementHolder(
-            LogoutServlet.SERVLET_PATH, false, null));
-
-        // add all registered services
-        if (serviceListener != null) {
-            serviceListener.registerAllServices();
-        }
+        this.authUriSuffices = config.auth_uri_suffix();
 
         final String http;
-        if (anonAllowed) {
+        if (config.auth_annonymous()) {
             http = config.auth_http();
         } else {
             http = HTTP_AUTH_ENABLED;
@@ -415,17 +385,38 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         if (HTTP_AUTH_DISABLED.equals(http)) {
-            httpBasicHandler = null;
+            this.httpBasicHandler = null;
         } else {
-            final String realm = config.auth_http_realm();
-            httpBasicHandler = new HttpBasicAuthenticationHandler(realm, HTTP_AUTH_ENABLED.equals(http));
+            this.httpBasicHandler = new HttpBasicAuthenticationHandler(config.auth_http_realm(), HTTP_AUTH_ENABLED.equals(http));
+        }
+
+        // update auth requirments based on configuration
+        this.serviceListener.clear();
+        this.serviceListener.addHolder(new AuthenticationRequirementHolder("/", !config.auth_annonymous(), null));
+
+        if (config.sling_auth_requirements() != null) {
+            for (String authReq : config.sling_auth_requirements()) {
+                if (authReq != null && authReq.length() > 0) {
+                    this.serviceListener.addHolder(AuthenticationRequirementHolder.fromConfig(
+                        authReq, null));
+                }
+            }
+        }
+
+        // don't require authentication for login/logout servlets
+        this.serviceListener.addHolder(new AuthenticationRequirementHolder(
+            LoginServlet.SERVLET_PATH, false, null));
+        this.serviceListener.addHolder(new AuthenticationRequirementHolder(
+            LogoutServlet.SERVLET_PATH, false, null));
+
+        // add all registered services
+        if (serviceListener != null) {
+            serviceListener.registerAllServices();
         }
     }
 
     @Deactivate
     private void deactivate(final BundleContext bundleContext) {
-        this.authRequiredCache.clear();
-
         this.serviceListener.stop(bundleContext);
     }
 
@@ -693,7 +684,7 @@ public class SlingAuthenticator implements Authenticator,
     }
 
     List<AuthenticationRequirementHolder> getAuthenticationRequirements() {
-        return authRequiredCache.getHolders();
+        return this.serviceListener.getHolders();
     }
 
     /**
@@ -931,12 +922,11 @@ public class SlingAuthenticator implements Authenticator,
         return false;
     }
 
-    private boolean isAnonAllowed(HttpServletRequest request) {
+    boolean isAnonAllowed(HttpServletRequest request) {
 
         String path = getPath(request);
 
-        final Collection<AuthenticationRequirementHolder>[] holderSetArray = authRequiredCache
-                .findApplicableHolders(request);
+        final Collection<AuthenticationRequirementHolder>[] holderSetArray = this.serviceListener.findApplicableHolders(request);
         for (int m = 0; m < holderSetArray.length; m++) {
             final Collection<AuthenticationRequirementHolder> holders = holderSetArray[m];
             if (holders != null) {
