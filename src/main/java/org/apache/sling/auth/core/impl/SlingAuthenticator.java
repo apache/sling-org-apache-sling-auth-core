@@ -31,7 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import javax.jcr.SimpleCredentials;
@@ -68,7 +67,6 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.FieldOption;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
@@ -105,7 +103,7 @@ import org.slf4j.LoggerFactory;
  * Currently this class does not support multiple handlers for any one request
  * URL.
  */
-@Component(name = "org.apache.sling.engine.impl.auth.SlingAuthenticator",
+@Component(name = SlingAuthenticator.PID,
            service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class, SlingAuthenticator.class })
 @HttpWhiteboardContextSelect("(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=*)")
 @HttpWhiteboardListener
@@ -114,6 +112,9 @@ import org.slf4j.LoggerFactory;
 @Designate(ocd = SlingAuthenticator.Config.class)
 public class SlingAuthenticator implements Authenticator,
         AuthenticationSupport, ServletRequestListener {
+
+    /** The pid for the configuration */
+    public static final String PID = "org.apache.sling.engine.impl.auth.SlingAuthenticator";
 
     @ObjectClassDefinition(name = "Apache Sling Authentication Service",
           description = "Extracts user authentication details from the request with" +
@@ -301,7 +302,7 @@ public class SlingAuthenticator implements Authenticator,
      * The listener for services registered with "sling.auth.requirements" to
      * update the internal authentication requirements
      */
-    private final AuthenticationRequirementsManager serviceListener;
+    private final PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager;
 
     /**
      * AuthenticationInfoPostProcessor services
@@ -326,14 +327,14 @@ public class SlingAuthenticator implements Authenticator,
 
     @Activate
     public SlingAuthenticator(@Reference(policyOption = ReferencePolicyOption.GREEDY) final MetricsService metricsService,
+            @Reference AuthenticationRequirementsManager authReqManager,
             @Reference(policyOption = ReferencePolicyOption.GREEDY) final ResourceResolverFactory resourceResolverFactory,
             final BundleContext bundleContext,
             final Config config) {
         this.metrics = new SlingAuthenticationMetrics(metricsService);
         this.resourceResolverFactory = resourceResolverFactory;
 
-        this.serviceListener = AuthenticationRequirementsManager.createListener(
-            bundleContext, Executors.newSingleThreadExecutor(), resourceResolverFactory);
+        this.authenticationRequirementsManager = authReqManager;
         
         this.modified(config);
     }
@@ -377,35 +378,6 @@ public class SlingAuthenticator implements Authenticator,
         } else {
             this.httpBasicHandler = new HttpBasicAuthenticationHandler(config.auth_http_realm(), HTTP_AUTH_ENABLED.equals(http));
         }
-
-        // update auth requirments based on configuration
-        this.serviceListener.clear();
-        this.serviceListener.addHolder(new AuthenticationRequirementHolder("/", !config.auth_annonymous(), null));
-
-        if (config.sling_auth_requirements() != null) {
-            for (String authReq : config.sling_auth_requirements()) {
-                if (authReq != null && authReq.length() > 0) {
-                    this.serviceListener.addHolder(AuthenticationRequirementHolder.fromConfig(
-                        authReq, null));
-                }
-            }
-        }
-
-        // don't require authentication for login/logout servlets
-        this.serviceListener.addHolder(new AuthenticationRequirementHolder(
-            LoginServlet.SERVLET_PATH, false, null));
-        this.serviceListener.addHolder(new AuthenticationRequirementHolder(
-            LogoutServlet.SERVLET_PATH, false, null));
-
-        // add all registered services
-        if (serviceListener != null) {
-            serviceListener.registerAllServices();
-        }
-    }
-
-    @Deactivate
-    private void deactivate(final BundleContext bundleContext) {
-        this.serviceListener.stop(bundleContext);
     }
 
     // --------- AuthenticationSupport interface
@@ -671,10 +643,6 @@ public class SlingAuthenticator implements Authenticator,
         return handlerMap;
     }
 
-    List<AuthenticationRequirementHolder> getAuthenticationRequirements() {
-        return this.serviceListener.getHolders();
-    }
-
     /**
      * Returns the name of the user to assume for requests without credentials.
      * This may be <code>null</code> if not configured and the default anonymous
@@ -914,7 +882,7 @@ public class SlingAuthenticator implements Authenticator,
 
         String path = getPath(request);
 
-        final Collection<AuthenticationRequirementHolder>[] holderSetArray = this.serviceListener.findApplicableHolders(request);
+        final Collection<AuthenticationRequirementHolder>[] holderSetArray = this.authenticationRequirementsManager.findApplicableHolders(request);
         for (int m = 0; m < holderSetArray.length; m++) {
             final Collection<AuthenticationRequirementHolder> holders = holderSetArray[m];
             if (holders != null) {

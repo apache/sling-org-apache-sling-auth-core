@@ -37,7 +37,7 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
      */
     private final Map<String, Map<String, SortedSet<Type>>> cache = new ConcurrentHashMap<>();
 
-    public void clear() {
+    protected void clear() {
         cache.clear();
     }
 

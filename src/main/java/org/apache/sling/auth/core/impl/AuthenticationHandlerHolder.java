@@ -50,7 +50,7 @@ final class AuthenticationHandlerHolder extends
 
     AuthenticationHandlerHolder(final String fullPath,
             final AuthenticationHandler handler,
-            final ServiceReference serviceReference) {
+            final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
 
         final String browserOnly = Converters.standardConverter().convert(serviceReference.getProperty(AuthConstants.AUTH_HANDLER_BROWSER_ONLY)).to(String.class);

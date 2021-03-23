@@ -57,6 +57,7 @@ public class SlingAuthenticatorOsgiTest {
     public void before() throws Exception {
         ResourceResolver rr = mock(ResourceResolver.class);
         ResourceResolverFactory resourceResolverFactory = mock(ResourceResolverFactory.class);
+
         when(resourceResolverFactory.getResourceResolver(any(AuthenticationInfo.class))).thenReturn(rr);
 
         when(timer.time()).thenReturn(ctx);
@@ -66,6 +67,8 @@ public class SlingAuthenticatorOsgiTest {
 
         context.registerService(ResourceResolverFactory.class, resourceResolverFactory);
         context.registerService(MetricsService.class, metricsService);
+        context.registerInjectActivateService(AuthenticationRequirementsManager.class);
+        
         authenticator = context.registerInjectActivateService(SlingAuthenticator.class);
     }
 

@@ -19,9 +19,7 @@
 package org.apache.sling.auth.core.impl;
 
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sling.api.SlingConstants;
@@ -42,7 +41,11 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
@@ -55,6 +58,11 @@ import org.slf4j.LoggerFactory;
  * the service registry.
  *
  */
+@Component(service = {AuthenticationRequirementsManager.class, EventHandler.class},
+    configurationPid = SlingAuthenticator.PID,
+    property = {
+        EventConstants.EVENT_TOPIC + "=" + SlingConstants.TOPIC_RESOURCE_RESOLVER_MAPPING_CHANGED
+    })
 public class AuthenticationRequirementsManager 
     extends PathBasedHolderCache<AuthenticationRequirementHolder>
     implements AllServiceListener, EventHandler {
@@ -80,9 +88,6 @@ public class AuthenticationRequirementsManager
     /** Cache for registered holders for an auth requirement */
     private final Map<Long, List<AuthenticationRequirementHolder>> props = new ConcurrentHashMap<>();
 
-    /** Service registration for the event handler */
-    private ServiceRegistration<EventHandler> serviceRegistration;
-
     /** Processing queue for changes */
     private final Map<Long, Action> processingQueue = new LinkedHashMap<>();
 
@@ -93,65 +98,76 @@ public class AuthenticationRequirementsManager
     private final AtomicBoolean backgroundJobRunning = new AtomicBoolean(false);
 
     /**
-     * Create a new listener
-     * @param context Bundle context
-     * @param executor Executor service
-     * @param factory Resource resolver factory
-     * @param authRequiredCache The cache for the auth requirements
-     * @return
+     * Create a new manager
+     * @param executor For updating
+     * @param factory The resource resolver factory
      */
-    static AuthenticationRequirementsManager createListener(
-        final BundleContext context,
-        final Executor executor,
-        final ResourceResolverFactory factory) {
+    @Activate
+    public AuthenticationRequirementsManager(final BundleContext context,
+            @Reference ResourceResolverFactory factory,
+            final SlingAuthenticator.Config config) {
+        this(context, factory, config, Executors.newSingleThreadExecutor());
+    }
 
-        final AuthenticationRequirementsManager listener = new AuthenticationRequirementsManager(executor,
-                factory);
+    /**
+     * Create a new manager
+     * @param executor For updating
+     * @param factory The resource resolver factory
+     */
+    AuthenticationRequirementsManager(
+            final BundleContext context,
+            final ResourceResolverFactory factory,
+            final SlingAuthenticator.Config config,
+            final Executor executor) {
+        this.executor = executor;
+        this.resolverFactory = factory;
+        this.modified(config);
         try {
-            context.addServiceListener(listener, FILTER_EXPR);
-            final Dictionary<String, Object> props = new Hashtable<>();
-            props.put(EventConstants.EVENT_TOPIC, SlingConstants.TOPIC_RESOURCE_RESOLVER_MAPPING_CHANGED);
-            listener.setServiceRegistration(context.registerService(EventHandler.class, listener, props));
+            context.addServiceListener(this, FILTER_EXPR);
             ServiceReference<?>[] refs = context.getAllServiceReferences(null, FILTER_EXPR);
             if (refs != null) {
                 for (final ServiceReference<?> ref : refs) {
                     final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-                    listener.queue(id, new Action(ActionType.ADDED, ref));
+                    this.queue(id, new Action(ActionType.ADDED, ref));
                 }
             }
 
-            listener.schedule();
+            this.schedule();
 
-            return listener;
-        } catch (InvalidSyntaxException ise) {
+        } catch (final InvalidSyntaxException ise) {
+            // the filter expression is constants
         }
-        return null;
-    }
-
-    /**
-     * Create a new listener
-     * @param executor For updating
-     * @param factory The resource resolver factory
-     */
-    private AuthenticationRequirementsManager(final Executor executor,
-            final ResourceResolverFactory factory) {
-        this.executor = executor;
-        this.resolverFactory = factory;
         logger.debug("Started auth requirements listener");
     }
 
-    void setServiceRegistration(final ServiceRegistration<EventHandler> reg) {
-        this.serviceRegistration = reg;
+    @Modified
+    private void modified(final SlingAuthenticator.Config config) {
+        this.clear();
+        this.addHolder(new AuthenticationRequirementHolder("/", !config.auth_annonymous(), null));
+   
+        if (config.sling_auth_requirements() != null) {
+            for (String authReq : config.sling_auth_requirements()) {
+                if (authReq != null && authReq.length() > 0) {
+                    this.addHolder(AuthenticationRequirementHolder.fromConfig(
+                           authReq, null));
+                }
+            }
+        }
+        // don't require authentication for login/logout servlets
+        this.addHolder(new AuthenticationRequirementHolder(
+            LoginServlet.SERVLET_PATH, false, null));     
+        this.addHolder(new AuthenticationRequirementHolder(
+            LogoutServlet.SERVLET_PATH, false, null));     
+   
+        // add all registered services
+        this.registerAllServices();
     }
 
+    @Deactivate
     public void stop(final BundleContext bundleContext) {
         this.clear();
 
         bundleContext.removeServiceListener(this);
-        if ( this.serviceRegistration != null ) {
-            this.serviceRegistration.unregister();
-            this.serviceRegistration = null;
-        }
         queue(CLEAR, null);
         backgroundJobRunning.set(false);
         logger.debug("Stopped auth requirements listener");

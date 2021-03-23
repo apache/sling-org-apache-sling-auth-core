@@ -51,6 +51,9 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     /** The title for the web console */
     public static final String TITLE = "Authenticator";
 
+    @Reference(service = AuthenticationRequirementsManager.class)
+    private PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager;
+    
     @Reference
     private SlingAuthenticator slingAuthenticator;
 
@@ -115,7 +118,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
         pw.println("<th class='content'>Defining Service (Description or ID)</td>");
         pw.println("</tr>");
 
-        final List<AuthenticationRequirementHolder> holderList = slingAuthenticator.getAuthenticationRequirements();
+        final List<AuthenticationRequirementHolder> holderList = authenticationRequirementsManager.getHolders();
         for (final AuthenticationRequirementHolder req : holderList) {
 
             pw.println("<tr class='content'>");
