@@ -60,7 +60,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      */
     Map<String, List<String>> getAuthenticationHandlerMap() {
         final List<AbstractAuthenticationHandlerHolder> registeredHolders = this.getHolders();
-        final LinkedHashMap<String, List<String>> handlerMap = new LinkedHashMap<String, List<String>>();
+        final LinkedHashMap<String, List<String>> handlerMap = new LinkedHashMap<>();
         for (final AbstractAuthenticationHandlerHolder holder : registeredHolders) {
             final List<String> provider = handlerMap.computeIfAbsent(holder.fullPath, key -> new ArrayList<>());
             provider.add(holder.getProvider());
