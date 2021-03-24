@@ -44,7 +44,7 @@ public final class EngineAuthenticationHandlerHolder extends
 
     public EngineAuthenticationHandlerHolder(final String fullPath,
             final AuthenticationHandler handler,
-            final ServiceReference serviceReference) {
+            final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
         this.handler = handler;
     }

@@ -164,10 +164,10 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
                 for(final AbstractAuthenticationHandlerHolder holder : holderList) {
                     this.addHolder(holder);
                 }
-            }
 
-            // keep a copy of them for unregistration later
-            handlerMap.put(id, holderList);
+                // keep a copy of them for unregistration later
+                handlerMap.put(id, holderList);
+            }
         }
     }
 
