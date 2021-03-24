@@ -22,16 +22,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.login.AccountLockedException;
@@ -53,8 +48,6 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
-import org.apache.sling.auth.core.impl.engine.EngineAuthenticationHandlerHolder;
-import org.apache.sling.auth.core.spi.AbstractAuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
@@ -63,8 +56,6 @@ import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.apache.sling.commons.metrics.Timer;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.FieldOption;
@@ -86,7 +77,6 @@ import org.osgi.service.metatype.annotations.AttributeType;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.service.metatype.annotations.Option;
-import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -523,7 +513,7 @@ public class SlingAuthenticator implements Authenticator,
             final Collection<AbstractAuthenticationHandlerHolder> holderList = holdersArray[m];
             if ( holderList != null ) {
                 for (AbstractAuthenticationHandlerHolder holder : holderList) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)) {
+                    if (holder.isPathRequiresHandler(path)) {
                         log.debug("login: requesting authentication using handler: {}",
                             holder);
 
@@ -584,7 +574,7 @@ public class SlingAuthenticator implements Authenticator,
             final Collection<AbstractAuthenticationHandlerHolder> holderSet = holdersArray[m];
             if (holderSet != null) {
                 for (AbstractAuthenticationHandlerHolder holder : holderSet) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)) {
+                    if (holder.isPathRequiresHandler(path)) {
                         log.debug("logout: dropping authentication using handler: {}",
                             holder);
 
@@ -624,33 +614,6 @@ public class SlingAuthenticator implements Authenticator,
         }
     }
 
-    // ---------- WebConsolePlugin support
-
-    /**
-     * Returns the list of registered authentication handlers as a map
-     */
-    Map<String, List<String>> getAuthenticationHandler() {
-        List<AbstractAuthenticationHandlerHolder> registeredHolders = this.authHandlersManager.getHolders();
-        LinkedHashMap<String, List<String>> handlerMap = new LinkedHashMap<String, List<String>>();
-        for (AbstractAuthenticationHandlerHolder holder : registeredHolders) {
-            List<String> provider = handlerMap.get(holder.fullPath);
-            if (provider == null) {
-                provider = new ArrayList<String>();
-                handlerMap.put(holder.fullPath, provider);
-            }
-            provider.add(holder.getProvider());
-        }
-        if (httpBasicHandler != null) {
-            List<String> provider = handlerMap.get("/");
-            if (provider == null) {
-                provider = new ArrayList<String>();
-                handlerMap.put("/", provider);
-            }
-            provider.add(httpBasicHandler.toString());
-        }
-        return handlerMap;
-    }
-
     // ---------- internal
 
     /**
@@ -687,7 +650,7 @@ public class SlingAuthenticator implements Authenticator,
             final Collection<AbstractAuthenticationHandlerHolder> local = localArray[m];
             if (local != null) {
                 for (AbstractAuthenticationHandlerHolder holder : local) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)){
+                    if (holder.isPathRequiresHandler(path)){
                         final AuthenticationInfo authInfo = holder.extractCredentials(
                             request, response);
 
@@ -876,7 +839,7 @@ public class SlingAuthenticator implements Authenticator,
             final Collection<AuthenticationRequirementHolder> holders = holderSetArray[m];
             if (holders != null) {
                 for (AuthenticationRequirementHolder holder : holders) {
-                    if (isNodeRequiresAuthHandler(path, holder.path)) {
+                    if (holder.isPathRequiresHandler(path)) {
                         return !holder.requiresAuthentication();
                     }
                 }
@@ -886,28 +849,6 @@ public class SlingAuthenticator implements Authenticator,
         // fallback to anonymous not allowed (aka authentication required)
         return false;
     }
-
-   private boolean isNodeRequiresAuthHandler(String path, String holderPath) {
-        if (("/").equals(holderPath)) {
-            return true;
-        }
-
-        int holderPathLength = holderPath.length();
-
-        if (path.length() < holderPathLength) {
-            return false;
-        }
-
-        if (path.equals(holderPath)) {
-            return true;
-        }
-
-        if (path.startsWith(holderPath) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.')) {
-            return true;
-        }
-        return false;
-    }
-
 
     /**
      * Returns credentials to use for anonymous resource access. If an anonymous
@@ -1043,7 +984,7 @@ public class SlingAuthenticator implements Authenticator,
      * are implemented by this method:
      * <ul>
      * <li>If the request is a credentials validation request (see
-     * {@link AbstractAuthenticationHandler#isValidateRequest(HttpServletRequest)}
+     * {@link AuthUtil#isValidateRequest(HttpServletRequest)}
      * ) a 403/FORBIDDEN response is sent back.</li>
      * <li>If the request is not considered a
      * {@link #isBrowserRequest(HttpServletRequest) browser request} and the
@@ -1063,12 +1004,12 @@ public class SlingAuthenticator implements Authenticator,
      * client.</li>
      * </ul>
      * <p>
-     * If a 403/FORBIDDEN response is sent back the {@link AbstractAuthenticationHandler#X_REASON} header is
+     * If a 403/FORBIDDEN response is sent back the {@link AuthUtil#X_REASON} header is
      * set to a either the value of the
      * {@link AuthenticationHandler#FAILURE_REASON} request attribute or to some
      * generic description describing the reason. To actually send the response
      * the
-     * {@link AbstractAuthenticationHandler#sendInvalid(HttpServletRequest, HttpServletResponse)}
+     * {@link AuthUtil#sendInvalid(HttpServletRequest, HttpServletResponse)}
      * method is called.
      * <p>
      * This method is called in three situations:
@@ -1084,10 +1025,10 @@ public class SlingAuthenticator implements Authenticator,
      * @param request The current request
      * @param response The response to send the credentials request (or access
      *            denial to)
-     * @see AbstractAuthenticationHandler#isValidateRequest(HttpServletRequest)
+     * @see AuthUtil#isValidateRequest(HttpServletRequest)
      * @see #isBrowserRequest(HttpServletRequest)
      * @see #isAjaxRequest(HttpServletRequest)
-     * @see AbstractAuthenticationHandler#sendInvalid(HttpServletRequest,
+     * @see AuthUtil#sendInvalid(HttpServletRequest,
      *      HttpServletResponse)
      */
     private void doLogin(HttpServletRequest request,

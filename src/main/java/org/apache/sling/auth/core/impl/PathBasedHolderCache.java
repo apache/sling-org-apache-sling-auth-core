@@ -80,10 +80,12 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
     }
 
     public Collection<Type>[] findApplicableHolders(final HttpServletRequest request) {
-        final String hostname = request.getServerName()
-              + (request.getServerPort() != 80 && request.getServerPort() != 443
-                ? ":" + request.getServerPort()
-                : "");
+        final String hostname;
+        if ( request.getServerPort() != 80 && request.getServerPort() != 443 ) {
+            hostname = request.getServerName().concat(":").concat(String.valueOf(request.getServerPort()));
+        } else {
+            hostname = request.getServerName();
+        }
 
         @SuppressWarnings("unchecked")
         final SortedSet<Type>[] result = new SortedSet[4];

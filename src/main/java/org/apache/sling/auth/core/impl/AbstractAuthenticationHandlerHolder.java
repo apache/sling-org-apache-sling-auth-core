@@ -37,7 +37,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
         PathBasedHolder implements AuthenticationHandler {
 
     protected AbstractAuthenticationHandlerHolder(final String fullPath,
-            final ServiceReference serviceReference) {
+            final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
     }
 
@@ -194,5 +194,4 @@ public abstract class AbstractAuthenticationHandlerHolder extends
         }
         return oldValue;
     }
-
 }

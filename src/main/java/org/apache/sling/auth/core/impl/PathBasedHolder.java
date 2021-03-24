@@ -145,6 +145,31 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
     }
 
     /**
+     * Check if the holder matches the provided path
+     * @path The path to check
+     * @return {@code true} If the holder path matches this path.
+     */
+    public boolean isPathRequiresHandler(final String path) {
+        if (("/").equals(this.path)) {
+            return true;
+        }
+
+        final int holderPathLength = this.path.length();
+        if (path.length() < holderPathLength) {
+            return false;
+        }
+
+        if (path.equals(this.path)) {
+            return true;
+        }
+
+        if (path.startsWith(this.path) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.')) {
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Compares this instance to the <code>other</code> PathBasedHolder
      * instance. Comparison takes into account the {@link #path} first. If they
      * are not equal the result is returned: If the <code>other</code> path is
