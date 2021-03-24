@@ -41,19 +41,6 @@ import org.osgi.framework.ServiceReference;
 
 public class AuthenticationRequirementsManagerTest {
 
-    private SlingAuthenticator.Config createDefaultConfig() {
-        final SlingAuthenticator.Config config = mock(SlingAuthenticator.Config.class);
-
-        when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
-        when(config.auth_sudo_parameter()).thenReturn("sudo");
-        when(config.auth_annonymous()).thenReturn(true);
-        when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
-        when(config.auth_http_realm()).thenReturn("Sling (Development)");
-        when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
-
-        return config;
-    }
-    
     private void assertPaths(final PathBasedHolderCache<AuthenticationRequirementHolder> cache,
             final String[] paths,
             final ServiceReference<?>[] refs) {
@@ -128,7 +115,7 @@ public class AuthenticationRequirementsManagerTest {
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper), 
-            createDefaultConfig(), callable -> callable.run());
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         assertEquals(3, manager.getHolders().size());
 
@@ -151,7 +138,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path3")).thenReturn(Arrays.asList("/path3", "/path3a"));
 
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper), 
-                createDefaultConfig(), callable -> callable.run());
+                SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         // add
         final ServiceReference<?> ref = createServiceReference(new String[] {"/path1", "/path2"});
@@ -182,7 +169,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
         when(mapper.getAllMappings("/path3")).thenReturn(Collections.singleton("/path3"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper), 
-                createDefaultConfig(), callable -> callable.run());
+                 SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1", "/path1", "/path2"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -210,7 +197,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path4")).thenReturn(Collections.singleton("/path4"));
         when(mapper.getAllMappings("/path5")).thenReturn(Collections.singleton("/path5"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
-                createDefaultConfig(), callable -> callable.run());
+                  SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -246,7 +233,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path4")).thenReturn(Collections.singleton("/path4"));
         when(mapper.getAllMappings("/path5")).thenReturn(Collections.singleton("/path5"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
-                createDefaultConfig(), callable -> callable.run());
+                 SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1", "/path2", "/path3"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref1));
@@ -270,7 +257,7 @@ public class AuthenticationRequirementsManagerTest {
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path2", "/path3"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
-                createDefaultConfig(), callable -> callable.run());
+                SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
@@ -288,7 +275,7 @@ public class AuthenticationRequirementsManagerTest {
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path2", "/path3"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
-                createDefaultConfig(), callable -> callable.run());
+                SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
@@ -312,7 +299,7 @@ public class AuthenticationRequirementsManagerTest {
         final BundleContext context = mock(BundleContext.class);
 
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(null),
-                createDefaultConfig(), callable -> callable.run());
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref = createServiceReference(new String[] {"-/path1", "+/path2", "/path3"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
@@ -330,7 +317,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a", "/path2b"));
         when(mapper.getAllMappings("/path3")).thenReturn(Arrays.asList("/path3", "/path3a", "/path3b"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context, createFactoryForMapper(mapper),
-                createDefaultConfig(), callable -> callable.run());
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         final ServiceReference<?> ref = createServiceReference(new String[] {"-/path1", "+/path2", "/path3"});
         manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
@@ -357,7 +344,7 @@ public class AuthenticationRequirementsManagerTest {
         when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a"));
 
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
-            createDefaultConfig(), callable -> callable.run());
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
 
         // add
         final ServiceReference<?> ref = createServiceReference(new String[] {"+/path1", "-/path2"});

@@ -104,7 +104,7 @@ import org.slf4j.LoggerFactory;
  * URL.
  */
 @Component(name = SlingAuthenticator.PID,
-           service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class, SlingAuthenticator.class })
+           service = {Authenticator.class, AuthenticationSupport.class, ServletRequestListener.class})
 @HttpWhiteboardContextSelect("(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=*)")
 @HttpWhiteboardListener
 @ServiceDescription("Apache Sling Request Authenticator")
@@ -215,21 +215,20 @@ public class SlingAuthenticator implements Authenticator,
         String[] auth_uri_suffix() default DEFAULT_AUTH_URI_SUFFIX;
     }
 
-    /** default log */
+    /** default logger */
     private final Logger log = LoggerFactory.getLogger(SlingAuthenticator.class);
-
 
     /**
      * Value of the {@link Config#auth_http()} property to fully enable the built-in
      * HTTP Authentication Handler (value is "enabled").
      */
-    private static final String HTTP_AUTH_ENABLED = "enabled";
+    static final String HTTP_AUTH_ENABLED = "enabled";
 
     /**
      * Value of the {@link Config#auth_http()} property to completely disable the
      * built-in HTTP Authentication Handler (value is "disabled").
      */
-    private static final String HTTP_AUTH_DISABLED = "disabled";
+    static final String HTTP_AUTH_DISABLED = "disabled";
 
     /**
      * Value of the {@link Config#auth_http()} property to enable extracting the
@@ -260,8 +259,6 @@ public class SlingAuthenticator implements Authenticator,
      * handler to be called back on login failure or success.
      */
     private static final String AUTH_INFO_PROP_FEEDBACK_HANDLER = "$$sling.auth.AuthenticationFeedbackHandler$$";
-
-    private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlerCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
 
     /** The name of the impersonation parameter */
     private volatile String sudoParameterName;
@@ -299,19 +296,21 @@ public class SlingAuthenticator implements Authenticator,
     private volatile HttpBasicAuthenticationHandler httpBasicHandler;
 
     /**
-     * The listener for services registered with "sling.auth.requirements" to
+     * The manager for services registered with "sling.auth.requirements" to
      * update the internal authentication requirements
      */
     private final PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager;
+
+    /**
+     * Manager for authentication handlers.
+     */
+    private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlersManager;
 
     /**
      * AuthenticationInfoPostProcessor services
      */
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = AuthenticationInfoPostProcessor.class, fieldOption = FieldOption.REPLACE)
     private volatile List<AuthenticationInfoPostProcessor> authInfoPostProcessors = Collections.emptyList();
-
-    /** Handler map for authentication handlers */
-    private final Map<String, List<AbstractAuthenticationHandlerHolder>> handlerMap = new ConcurrentHashMap<>();
 
     /**
      * The event admin service.
@@ -328,6 +327,7 @@ public class SlingAuthenticator implements Authenticator,
     @Activate
     public SlingAuthenticator(@Reference(policyOption = ReferencePolicyOption.GREEDY) final MetricsService metricsService,
             @Reference AuthenticationRequirementsManager authReqManager,
+            @Reference AuthenticationHandlersManager authHandlerManager,
             @Reference(policyOption = ReferencePolicyOption.GREEDY) final ResourceResolverFactory resourceResolverFactory,
             final BundleContext bundleContext,
             final Config config) {
@@ -335,7 +335,7 @@ public class SlingAuthenticator implements Authenticator,
         this.resourceResolverFactory = resourceResolverFactory;
 
         this.authenticationRequirementsManager = authReqManager;
-        
+        this.authHandlersManager = authHandlerManager;
         this.modified(config);
     }
 
@@ -365,19 +365,27 @@ public class SlingAuthenticator implements Authenticator,
 
         this.authUriSuffices = config.auth_uri_suffix();
 
-        final String http;
-        if (config.auth_annonymous()) {
-            http = config.auth_http();
-        } else {
-            http = HTTP_AUTH_ENABLED;
+        if (!config.auth_annonymous()) {
             log.debug("modified: Anonymous Access is denied thus HTTP Basic Authentication is fully enabled");
         }
 
+        final String http = getHttpAuth(config);
         if (HTTP_AUTH_DISABLED.equals(http)) {
             this.httpBasicHandler = null;
         } else {
             this.httpBasicHandler = new HttpBasicAuthenticationHandler(config.auth_http_realm(), HTTP_AUTH_ENABLED.equals(http));
         }
+    }
+
+    public static String getHttpAuth(final Config config) {
+        final String http;
+        if (config.auth_annonymous()) {
+            http = config.auth_http();
+        } else {
+            http = HTTP_AUTH_ENABLED;
+        }
+
+        return http;
     }
 
     // --------- AuthenticationSupport interface
@@ -507,7 +515,7 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         // select path used for authentication handler selection
-        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
+        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlersManager
                 .findApplicableHolders(request);
         final String path = getHandlerSelectionPath(request);
         boolean done = false;
@@ -570,7 +578,7 @@ public class SlingAuthenticator implements Authenticator,
         setSudoCookie(request, response, new AuthenticationInfo("dummy", request.getRemoteUser()));
 
         final String path = getHandlerSelectionPath(request);
-        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlerCache
+        final Collection<AbstractAuthenticationHandlerHolder>[] holdersArray = this.authHandlersManager
                 .findApplicableHolders(request);
         for (int m = 0; m < holdersArray.length; m++) {
             final Collection<AbstractAuthenticationHandlerHolder> holderSet = holdersArray[m];
@@ -622,7 +630,7 @@ public class SlingAuthenticator implements Authenticator,
      * Returns the list of registered authentication handlers as a map
      */
     Map<String, List<String>> getAuthenticationHandler() {
-        List<AbstractAuthenticationHandlerHolder> registeredHolders = authHandlerCache.getHolders();
+        List<AbstractAuthenticationHandlerHolder> registeredHolders = this.authHandlersManager.getHolders();
         LinkedHashMap<String, List<String>> handlerMap = new LinkedHashMap<String, List<String>>();
         for (AbstractAuthenticationHandlerHolder holder : registeredHolders) {
             List<String> provider = handlerMap.get(holder.fullPath);
@@ -641,25 +649,6 @@ public class SlingAuthenticator implements Authenticator,
             provider.add(httpBasicHandler.toString());
         }
         return handlerMap;
-    }
-
-    /**
-     * Returns the name of the user to assume for requests without credentials.
-     * This may be <code>null</code> if not configured and the default anonymous
-     * user is to be used.
-     * <p>
-     * The configured password cannot be requested.
-     */
-    String getAnonUserName() {
-        return anonUser;
-    }
-
-    String getSudoCookieName() {
-        return sudoCookieName;
-    }
-
-    String getSudoParameterName() {
-        return sudoParameterName;
     }
 
     // ---------- internal
@@ -692,7 +681,7 @@ public class SlingAuthenticator implements Authenticator,
 
         String path = getPath(request);
 
-        final Collection<AbstractAuthenticationHandlerHolder>[] localArray = this.authHandlerCache
+        final Collection<AbstractAuthenticationHandlerHolder>[] localArray = this.authHandlersManager
                 .findApplicableHolders(request);
         for (int m = 0; m < localArray.length; m++) {
             final Collection<AbstractAuthenticationHandlerHolder> local = localArray[m];
@@ -1581,117 +1570,5 @@ public class SlingAuthenticator implements Authenticator,
             }
         }
         return builder.toString();
-    }
-
-    /**
-     * Bind authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     */
-    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> {
-            return new AuthenticationHandlerHolder(path,
-                handler,
-                ref);
-        });
-    }
-
-    /**
-     * Update authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     */
-    private void updatedAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        unbindAuthHandler(ref);
-        bindAuthHandler(handler, ref);
-    }
-
-    /**
-     * Unbind authentication handler
-     * @param ref Service Reference
-     */
-    private void unbindAuthHandler(final ServiceReference<Object> ref) {
-        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        internalUnbindAuthHandler(id);
-    }
-
-    /**
-     * Bind old engine authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     */
-    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> {
-            return new EngineAuthenticationHandlerHolder(path,
-                handler,
-                ref);
-        });
-    }
-
-    /**
-     * Update old engine authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     */
-    private void updatedEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        unbindEngineAuthHandler(ref);
-        bindEngineAuthHandler(handler, ref);
-    }
-
-    /**
-     * Unbind old engine authentication handler
-     * @param ref Service Reference
-     */
-    private void unbindEngineAuthHandler(final ServiceReference<Object> ref) {
-        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        internalUnbindAuthHandler(id);
-    }
-
-    /**
-     * Bind an authentication handler
-     * @param paths The paths
-     * @param id Unique id
-     * @param createFunction Creation callback
-     */
-    private void internalBindAuthHandler(final String[] paths, final String id, final Function<String, AbstractAuthenticationHandlerHolder> createFunction) {
-        if (paths != null && paths.length > 0) {
-
-            // generate the holders
-            ArrayList<AbstractAuthenticationHandlerHolder> holderList = new ArrayList<AbstractAuthenticationHandlerHolder>();
-            for (String path : paths) {
-                if (path != null && path.length() > 0) {
-                    holderList.add(createFunction.apply(path));
-                }
-            }
-            // register the holders
-            if ( !holderList.isEmpty() ) {
-                for(final AbstractAuthenticationHandlerHolder holder : holderList) {
-                    authHandlerCache.addHolder(holder);
-                }
-            }
-
-            // keep a copy of them for unregistration later
-            handlerMap.put(id, holderList);
-        }
-    }
-
-    /**
-     * Unbind authentication handler
-     * @param id Unqiue id
-     */
-    private void internalUnbindAuthHandler(final String id) {
-        final List<AbstractAuthenticationHandlerHolder> holders = handlerMap.remove(id);
-
-        if (holders != null) {
-            for (AbstractAuthenticationHandlerHolder holder : holders) {
-                authHandlerCache.removeHolder(holder);
-            }
-        }
     }
 }

@@ -68,6 +68,7 @@ public class SlingAuthenticatorOsgiTest {
         context.registerService(ResourceResolverFactory.class, resourceResolverFactory);
         context.registerService(MetricsService.class, metricsService);
         context.registerInjectActivateService(AuthenticationRequirementsManager.class);
+        context.registerInjectActivateService(AuthenticationHandlersManager.class);
         
         authenticator = context.registerInjectActivateService(SlingAuthenticator.class);
     }

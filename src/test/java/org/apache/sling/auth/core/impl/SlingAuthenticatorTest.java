@@ -36,6 +36,48 @@ import junitx.util.PrivateAccessor;
 
 public class SlingAuthenticatorTest {
 
+   /**
+     * Helper method to create a default configuration
+     */
+    public static SlingAuthenticator.Config createDefaultConfig() {
+        final SlingAuthenticator.Config config = Mockito.mock(SlingAuthenticator.Config.class);
+
+        Mockito.when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
+        Mockito.when(config.auth_sudo_parameter()).thenReturn("sudo");
+        Mockito.when(config.auth_annonymous()).thenReturn(true);
+        Mockito.when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
+        Mockito.when(config.auth_http_realm()).thenReturn("Sling (Development)");
+        Mockito.when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
+
+        return config;
+    }
+
+    private SlingAuthenticator createSlingAuthenticator() {
+        return createSlingAuthenticator(createDefaultConfig());
+    }
+
+    public SlingAuthenticator createSlingAuthenticator(final String... typeAndPathPairs) {
+        return createSlingAuthenticator(createDefaultConfig(), typeAndPathPairs);
+    }
+
+    private SlingAuthenticator createSlingAuthenticator(final SlingAuthenticator.Config config,
+             final String... typeAndPathPairs) {
+        final AuthenticationRequirementsManager requirements = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, config, callable -> callable.run());
+        final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
+        if ( typeAndPathPairs != null ) {
+            int i=0;
+            while ( i < typeAndPathPairs.length ) {
+                handlers.addHolder(buildAuthHolderForAuthTypeAndPath(typeAndPathPairs[i], typeAndPathPairs[i+1]));
+                i += 2;
+            }
+        }
+        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), requirements,
+            handlers,
+            null, Mockito.mock(BundleContext.class), config);
+
+        return slingAuthenticator;
+    }
+    
     @Test
     public void test_quoteCookieValue() throws UnsupportedEncodingException {
 
@@ -81,28 +123,11 @@ public class SlingAuthenticatorTest {
         checkUnQuote("\"string\ttab\"", "string\ttab");
     }
 
-    private SlingAuthenticator.Config createDefaultConfig() {
-        final SlingAuthenticator.Config config = Mockito.mock(SlingAuthenticator.Config.class);
-
-        Mockito.when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
-        Mockito.when(config.auth_sudo_parameter()).thenReturn("sudo");
-        Mockito.when(config.auth_annonymous()).thenReturn(true);
-        Mockito.when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
-        Mockito.when(config.auth_http_realm()).thenReturn("Sling (Development)");
-        Mockito.when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
-
-        return config;
-    }
-
     //SLING-4864
     @Test
     public void  test_isAnonAllowed() throws Throwable {
         // anon is allowed by default
-        final SlingAuthenticator.Config config = createDefaultConfig();
-
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, config, callable -> callable.run());
-        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-            null, Mockito.mock(BundleContext.class), config);
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getServerName()).thenReturn("localhost");
@@ -118,9 +143,7 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator.Config config = createDefaultConfig();
         Mockito.when(config.auth_annonymous()).thenReturn(false);
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, config, callable -> callable.run());
-        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-            null, Mockito.mock(BundleContext.class), config);
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(config);
 
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getServerName()).thenReturn("localhost");
@@ -136,18 +159,13 @@ public class SlingAuthenticatorTest {
      */
     @Test
     public void test_childNodeShouldHaveAuthenticationInfo() throws Throwable {
+
         final String AUTH_TYPE = "AUTH_TYPE_TEST";
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test/childnodetest";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -169,14 +187,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -198,14 +210,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test/";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -227,14 +233,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_CHILD_NODE = "/content/en/test.html";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -252,14 +252,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/";
         final String REQUEST_CHILD_NODE = "/content/en/test";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -279,15 +273,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH_LONGER = "/resource1.test2";
         final String REQUEST_CHILD_NODE = "/resource1.test2";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH, AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
@@ -322,14 +309,8 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH = "/content/en/test";
         final String REQUEST_NOT_PROTECTED_PATH = "/content/en/test2";
 
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authRequiredCache = new PathBasedHolderCache<AbstractAuthenticationHandlerHolder>();
-        authRequiredCache.addHolder(buildAuthHolderForAuthTypeAndPath(AUTH_TYPE, PROTECTED_PATH));
-
-        PrivateAccessor.setField(slingAuthenticator, "authHandlerCache", authRequiredCache);
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_NOT_PROTECTED_PATH);
 
@@ -345,9 +326,7 @@ public class SlingAuthenticatorTest {
     public void test_childNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test/test2";
         final String handlerPath = "/content/test";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -356,9 +335,7 @@ public class SlingAuthenticatorTest {
     public void test_siblingNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -367,9 +344,7 @@ public class SlingAuthenticatorTest {
     public void test_actualNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/content/test";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -378,9 +353,7 @@ public class SlingAuthenticatorTest {
     public void test_rootNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -389,9 +362,7 @@ public class SlingAuthenticatorTest {
     public void test_requestPathSelectorsAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/test.html";
         final String handlerPath = "/content/test";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -400,9 +371,7 @@ public class SlingAuthenticatorTest {
     public void test_requestPathSelectorsSiblingAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test2";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -411,9 +380,7 @@ public class SlingAuthenticatorTest {
     public void test_requestPathBackSlash() throws Throwable {
         final String requestPath = "/page1\\somesubepage";
         final String handlerPath = "/page";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertFalse( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }
@@ -422,9 +389,7 @@ public class SlingAuthenticatorTest {
     public void test_emptyNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "";
-        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, createDefaultConfig(), callable -> callable.run());
-        SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), manager,
-              null, Mockito.mock(BundleContext.class), createDefaultConfig());
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
         Assert.assertTrue( (boolean)PrivateAccessor.invoke(slingAuthenticator, "isNodeRequiresAuthHandler", new Class[] {String.class, String.class}, new Object[] {requestPath, handlerPath}));
     }

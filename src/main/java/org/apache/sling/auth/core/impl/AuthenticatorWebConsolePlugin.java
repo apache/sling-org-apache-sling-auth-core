@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.request.ResponseUtil;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.propertytypes.ServiceDescription;
@@ -37,6 +38,7 @@ import org.osgi.service.component.propertytypes.ServiceVendor;
 
 @SuppressWarnings("serial")
 @Component(service = Servlet.class,
+    configurationPid = SlingAuthenticator.PID,
     property = {
             "felix.webconsole.label=" + AuthenticatorWebConsolePlugin.LABEL,
             "felix.webconsole.title=" + AuthenticatorWebConsolePlugin.TITLE,
@@ -55,8 +57,15 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     private PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager;
     
     @Reference
-    private SlingAuthenticator slingAuthenticator;
+    private AuthenticationHandlersManager authenticationHoldersManager;
 
+    private final SlingAuthenticator.Config config;
+
+    @Activate
+    public AuthenticatorWebConsolePlugin(final SlingAuthenticator.Config config) {
+        this.config = config;
+    }
+    
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -96,7 +105,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
         pw.println("<th class='content' colspan='2'>Handler</td>");
         pw.println("</tr>");
 
-        final Map<String, List<String>> handlerMap = slingAuthenticator.getAuthenticationHandler();
+        final Map<String, List<String>> handlerMap = authenticationHoldersManager.getAuthenticationHandlerMap();
         for (final Map.Entry<String, List<String>> handler : handlerMap.entrySet()) {
             final String path = handler.getKey();
             for (final String name : handler.getValue()) {
@@ -131,9 +140,9 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     }
 
     private void printAuthenticationConfiguration(final PrintWriter pw) {
-        final String anonUser = slingAuthenticator.getAnonUserName();
-        final String sudoCookie = slingAuthenticator.getSudoCookieName();
-        final String sudoParam = slingAuthenticator.getSudoParameterName();
+        final String anonUser = (this.config.sling_auth_anonymous_user() != null && this.config.sling_auth_anonymous_user().isEmpty()) ? this.config.sling_auth_anonymous_user() : "(default)";
+        final String sudoCookie = this.config.auth_sudo_cookie();
+        final String sudoParam = this.config.auth_sudo_parameter();
 
         pw.println("<tr>");
         pw.println("<th class='content container' colspan='3'>Miscellaneous Configuration</td>");
@@ -149,7 +158,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
         pw.println("</tr>");
         pw.println("<tr>");
         pw.println("<td class='content'>Anonymous User Name</td>");
-        pw.printf("<td class='content' colspan='2'>%s</td>%n", (anonUser == null) ? "(default)" : ResponseUtil.escapeXml(anonUser));
+        pw.printf("<td class='content' colspan='2'>%s</td>%n", ResponseUtil.escapeXml(anonUser));
         pw.println("</tr>");
     }
 }
