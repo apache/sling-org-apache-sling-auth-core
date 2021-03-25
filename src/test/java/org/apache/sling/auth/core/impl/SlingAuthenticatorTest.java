@@ -21,9 +21,13 @@ package org.apache.sling.auth.core.impl;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletRequestEvent;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.commons.metrics.MetricsService;
@@ -320,6 +324,23 @@ public class SlingAuthenticatorTest {
          * The AUTH TYPE defined aboved should not be used for the path /test2.
          */
         Assert.assertFalse(AUTH_TYPE.equals(authInfo.getAuthType()));
+    }
+
+    @Test public void testServletRequestListener() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final ServletRequestEvent event = Mockito.mock(ServletRequestEvent.class);
+        final ServletRequest request = Mockito.mock(ServletRequest.class);
+        Mockito.when(event.getServletRequest()).thenReturn(request);
+
+        slingAuthenticator.requestInitialized(event);
+
+        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+
+        slingAuthenticator.requestDestroyed(event);
+        // verify resolver close, attribute removed
+        Mockito.verify(resolver).close();
+        Mockito.verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
     }
 
     //---------------------------- PRIVATE METHODS -----------------------------

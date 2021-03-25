@@ -117,14 +117,14 @@ public class SlingAuthenticator implements Authenticator,
                 description = "The name the HTTP Cookie to set with the value" +
                         " of the user which is to be impersonated. This cookie will always be a session" +
                         " cookie.")
-        String auth_sudo_cookie() default "sling.sudo";
+        String auth_sudo_cookie() default "sling.sudo"; // NOSONAR
 
         @AttributeDefinition(name = "Impersonation Parameter",
                 description = "The name of the request parameter initiating" +
                         " impersonation. Setting this parameter to a user id will result in using an" +
                         " impersonated session (instead of the actually authenticated session) and set" +
                         " a session cookie of the name defined in the Impersonation Cookie setting.")
-        String auth_sudo_parameter() default "sudo";
+        String auth_sudo_parameter() default "sudo"; // NOSONAR
 
         @AttributeDefinition(name = "Allow Anonymous Access",
                 description = "Whether default access as anonymous when no" +
@@ -135,7 +135,7 @@ public class SlingAuthenticator implements Authenticator,
                         " and needs not be explicitly listed. If anonymous access is allowed the entry" +
                         " added is \"-/\". Otherwise anonymous access is denied and \"+/\" is added to the" +
                         " list.")
-        boolean auth_annonymous() default true;
+        boolean auth_annonymous() default true; // NOSONAR
 
         @AttributeDefinition(name = "Authentication Requirements",
                 description = "Defines URL space subtrees which require" +
@@ -151,7 +151,7 @@ public class SlingAuthenticator implements Authenticator,
                         " run time with additional entries: One entry is added for the \"Allow Anonymous" +
                         " Access\" configuration. Other entries are added for any services setting the" +
                         " \"sling.auth.requirements\" service registration property.")
-        String[] sling_auth_requirements();
+        String[] sling_auth_requirements(); // NOSONAR
 
         @AttributeDefinition(name = "Anonymous User Name",
                 description = "Defines which user name to assume" +
@@ -162,7 +162,7 @@ public class SlingAuthenticator implements Authenticator,
                         " this user name. If the configured user name does not exist or is not" +
                         " allowed to access the resource data, anonymous requests may still be" +
                         " blocked. If anonymous access is not allowed, this property is ignored.")
-        String sling_auth_anonymous_user();
+        String sling_auth_anonymous_user(); // NOSONAR
 
         @AttributeDefinition(name = "Anonymous User Password",
                 description = "Password for the anonymous" +
@@ -170,7 +170,7 @@ public class SlingAuthenticator implements Authenticator,
                         " used if a non-empty anonymous user name is configured. If this property" +
                         " is not defined but a password is required, an empty password would be" +
                         " assumed.", type = AttributeType.PASSWORD)
-        String sling_auth_anonymous_password();
+        String sling_auth_anonymous_password(); // NOSONAR
 
         @AttributeDefinition(name = "HTTP Basic Authentication",
                 description = "Level of support for HTTP Basic Authentication. Such" +
@@ -185,13 +185,13 @@ public class SlingAuthenticator implements Authenticator,
                         @Option(label = "Enabled (Preemptive)", value = HTTP_AUTH_PREEMPTIVE),
                         @Option(label = "Disabled", value = HTTP_AUTH_DISABLED)
                 })
-        String auth_http() default HTTP_AUTH_PREEMPTIVE;
+        String auth_http() default HTTP_AUTH_PREEMPTIVE; // NOSONAR
 
         @AttributeDefinition(name = "Realm",
                 description = "HTTP BASIC authentication realm. This property" +
                         " is only used if the HTTP Basic Authentication support is not disabled. The" +
                         " default value is \"Sling (Development)\".")
-        String auth_http_realm() default "Sling (Development)";
+        String auth_http_realm() default "Sling (Development)"; // NOSONAR
 
         @AttributeDefinition(name = "Authentication URI Suffices",
                 description = "A list of request URI suffixes intended to" +
@@ -202,7 +202,7 @@ public class SlingAuthenticator implements Authenticator,
                         " being further processed after the authentication phase. The default is" +
                         " just \"/j_security_check\" which is the suffix defined by the Servlet API" +
                         " specification used for FORM based authentication.")
-        String[] auth_uri_suffix() default DEFAULT_AUTH_URI_SUFFIX;
+        String[] auth_uri_suffix() default DEFAULT_AUTH_URI_SUFFIX; // NOSONAR
     }
 
     /** default logger */
@@ -263,7 +263,7 @@ public class SlingAuthenticator implements Authenticator,
      * <p>
      * This will be <code>null</code> if there are no suffices to consider.
      */
-    private volatile String[] authUriSuffices;
+    private volatile String[] authUriSuffices; // NOSONAR
 
     /**
      * The name of the user to assume for anonymous access. By default this is
@@ -280,10 +280,10 @@ public class SlingAuthenticator implements Authenticator,
      *
      * @see #getAnonymousCredentials()
      */
-    private volatile char[] anonPassword;
+    private volatile char[] anonPassword; // NOSONAR
 
     /** HTTP Basic authentication handler */
-    private volatile HttpBasicAuthenticationHandler httpBasicHandler;
+    private volatile HttpBasicAuthenticationHandler httpBasicHandler; // NOSONAR
 
     /**
      * The manager for services registered with "sling.auth.requirements" to
@@ -300,13 +300,13 @@ public class SlingAuthenticator implements Authenticator,
      * AuthenticationInfoPostProcessor services
      */
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = AuthenticationInfoPostProcessor.class, fieldOption = FieldOption.REPLACE)
-    private volatile List<AuthenticationInfoPostProcessor> authInfoPostProcessors = Collections.emptyList();
+    private volatile List<AuthenticationInfoPostProcessor> authInfoPostProcessors = Collections.emptyList(); // NOSONAR
 
     /**
      * The event admin service.
      */
     @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
-    private volatile EventAdmin eventAdmin;
+    private volatile EventAdmin eventAdmin; // NOSONAR
 
     private final SlingAuthenticationMetrics metrics;
 
@@ -367,6 +367,11 @@ public class SlingAuthenticator implements Authenticator,
         }
     }
 
+    /**
+     * Get the configuration for the http auth
+     * @param config The configuration
+     * @return The http auth 
+     */
     public static String getHttpAuth(final Config config) {
         final String http;
         if (config.auth_annonymous()) {
