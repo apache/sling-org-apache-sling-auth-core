@@ -34,6 +34,7 @@ import org.apache.sling.commons.metrics.MetricsService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import junitx.util.PrivateAccessor;
@@ -64,9 +65,19 @@ public class SlingAuthenticatorTest {
         return createSlingAuthenticator(createDefaultConfig(), typeAndPathPairs);
     }
 
+    private static final long BUNDLE_ID = 732;
+
+    private BundleContext createBundleContext() {
+        final BundleContext context = Mockito.mock(BundleContext.class);
+        final Bundle bundle = Mockito.mock(Bundle.class);
+        Mockito.when(bundle.getBundleId()).thenReturn(BUNDLE_ID);
+        Mockito.when(context.getBundle()).thenReturn(bundle);
+        return context;
+    }
+
     private SlingAuthenticator createSlingAuthenticator(final SlingAuthenticator.Config config,
              final String... typeAndPathPairs) {
-        final AuthenticationRequirementsManager requirements = new AuthenticationRequirementsManager(Mockito.mock(BundleContext.class), null, config, callable -> callable.run());
+        final AuthenticationRequirementsManager requirements = new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
         final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
         if ( typeAndPathPairs != null ) {
             int i=0;

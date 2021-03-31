@@ -34,6 +34,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.mapping.ResourceMapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceEvent;
@@ -63,7 +64,7 @@ public class AuthenticationRequirementsManagerTest {
             if ( !found ) {
                 int index = 0 ;
                 while ( !found && index < paths.length ) {
-                    if (paths[index].equals(h.path) && refs[index].equals(h.serviceReference) ) {
+                    if (paths[index].equals(h.path) && ((refs[index] == null && h.serviceReference == null) || refs[index].equals(h.serviceReference)) ) {
                         found = true;
     
                         if ( requireAuth != null ) {
@@ -94,6 +95,10 @@ public class AuthenticationRequirementsManagerTest {
         }
         when(ref.compareTo(ref)).thenReturn(0);
 
+        final Bundle bundle = mock(Bundle.class);
+        when(bundle.getBundleId()).thenReturn(1L);
+        when(ref.getBundle()).thenReturn(bundle);
+        
         refs.add(ref);
         return ref;
     }
@@ -110,8 +115,18 @@ public class AuthenticationRequirementsManagerTest {
         return factory;
     }
 
-    @Test public void testAddRemoveRegistration() throws LoginException {
+    private static final long BUNDLE_ID = 732;
+
+    private BundleContext createBundleContext() {
         final BundleContext context = mock(BundleContext.class);
+        final Bundle bundle = mock(Bundle.class);
+        when(bundle.getBundleId()).thenReturn(BUNDLE_ID);
+        when(context.getBundle()).thenReturn(bundle);
+        return context;
+    }
+    
+    @Test public void testAddRemoveRegistration() throws LoginException {
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper), 
@@ -131,7 +146,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testAddUpdateRemoveRegistration() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a"));
         when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a"));
@@ -163,7 +178,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testDuplicateRegistration() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
         when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
@@ -189,7 +204,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testAddRemoveRegistrations() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
         when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
@@ -225,7 +240,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testModifyRegistration() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
         when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
@@ -253,7 +268,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testRegistrationWithMapping() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path2", "/path3"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
@@ -271,7 +286,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testRegistrationAndUpdatingMapping() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path2", "/path3"));
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
@@ -296,7 +311,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testAllowDeny() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
 
         final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(null),
             SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
@@ -310,7 +325,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testAllowDenyWithMapping() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
 
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a", "/path1b"));
@@ -338,7 +353,7 @@ public class AuthenticationRequirementsManagerTest {
     }
 
     @Test public void testSwitchAllowDeny() throws LoginException {
-        final BundleContext context = mock(BundleContext.class);
+        final BundleContext context = createBundleContext();
         final ResourceMapper mapper = mock(ResourceMapper.class);
         when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path1a"));
         when(mapper.getAllMappings("/path2")).thenReturn(Arrays.asList("/path2", "/path2a"));
@@ -366,5 +381,65 @@ public class AuthenticationRequirementsManagerTest {
         manager.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
 
         assertEquals(3, manager.getHolders().size());
+    }
+
+    @Test public void testIgnoreRegistrationFromAuthCoreBundle() throws LoginException {
+        final BundleContext context = createBundleContext();
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context, createFactoryForMapper(mapper), 
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
+
+        assertEquals(3, manager.getHolders().size());
+
+        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
+        when(ref.getBundle().getBundleId()).thenReturn(BUNDLE_ID);
+        manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        assertEquals(3, manager.getHolders().size());
+
+        manager.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
+
+        assertEquals(3, manager.getHolders().size());
+    }
+
+    @Test public void testInitialServices() throws Exception {
+        final BundleContext context = createBundleContext();
+
+        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
+
+        when(context.getAllServiceReferences(null, "(".concat(AuthConstants.AUTH_REQUIREMENTS).concat("=*)")))
+            .thenReturn(new ServiceReference[] {ref});
+
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context, createFactoryForMapper(mapper), 
+            SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
+
+        assertPaths(manager, new String[] {"/path1"},
+                           new ServiceReference<?>[] {ref});
+
+        manager.serviceChanged(new ServiceEvent(ServiceEvent.UNREGISTERING, ref));
+
+        assertEquals(3, manager.getHolders().size());
+    }
+
+    @Test public void testInitialConfiguration() throws Exception {
+        final BundleContext context = createBundleContext();
+
+        final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
+        when(config.sling_auth_requirements()).thenReturn(new String[] {"/path1", "-/path2"});
+
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+        when(mapper.getAllMappings("/path1")).thenReturn(Collections.singleton("/path1"));
+        when(mapper.getAllMappings("/path2")).thenReturn(Collections.singleton("/path2"));
+
+        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context, createFactoryForMapper(mapper), 
+                config, callable -> callable.run());
+
+        assertPaths(manager, new String[] {"/path1", "/path2"},
+                           new ServiceReference<?>[] {null, null},
+                           new boolean[] {true, false});
+
     }
 }

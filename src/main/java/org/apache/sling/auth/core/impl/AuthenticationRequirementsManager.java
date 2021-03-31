@@ -36,6 +36,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.api.resource.mapping.ResourceMapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.osgi.framework.AllServiceListener;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -97,6 +98,9 @@ public class AuthenticationRequirementsManager
     /** Flag to indicate whether processing queue is running */
     private final AtomicBoolean backgroundJobRunning = new AtomicBoolean(false);
 
+    /** Own bundle id */
+    private final long bundleId;
+
     /**
      * Create a new manager
      * @param executor For updating
@@ -119,6 +123,7 @@ public class AuthenticationRequirementsManager
             final ResourceResolverFactory factory,
             final SlingAuthenticator.Config config,
             final Executor executor) {
+        this.bundleId = context.getBundle().getBundleId();
         this.executor = executor;
         this.resolverFactory = factory;
         this.modified(config);
@@ -127,8 +132,11 @@ public class AuthenticationRequirementsManager
             ServiceReference<?>[] refs = context.getAllServiceReferences(null, FILTER_EXPR);
             if (refs != null) {
                 for (final ServiceReference<?> ref : refs) {
-                    final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-                    this.queue(id, new Action(ActionType.ADDED, ref));
+                    final Bundle bundle = ref.getBundle();
+                    if ( bundle != null && bundle.getBundleId() != this.bundleId ) {
+                        final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
+                        this.queue(id, new Action(ActionType.ADDED, ref));
+                    }
                 }
             }
 
@@ -184,10 +192,14 @@ public class AuthenticationRequirementsManager
      */
     @Override
     public void serviceChanged(final ServiceEvent event) {
+        final Bundle bundle = event.getServiceReference().getBundle();
+        if ( bundle != null && bundle.getBundleId() == this.bundleId ) {
+            // ignore all services from this bundle
+            return;
+        }
         // modification of service properties, unregistration of the
         // service or service properties does not contain requirements
-        // property any longer (new event with type 8 added in OSGi Core
-        // 4.2)
+        // property any longer (new event with type 8 added in OSGi Core 4.2)
         final Long id = (Long)event.getServiceReference().getProperty(Constants.SERVICE_ID);
         if ((event.getType() & (ServiceEvent.UNREGISTERING | ServiceEvent.MODIFIED_ENDMATCH)) != 0) {
             queue(id, new Action(ActionType.REMOVED, event.getServiceReference()));
