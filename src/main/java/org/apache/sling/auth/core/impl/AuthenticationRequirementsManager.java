@@ -390,7 +390,7 @@ public class AuthenticationRequirementsManager
     private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref) {
         final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-        if ( authReqPaths.length > 0 ) {
+        if ( authReqPaths != null && authReqPaths.length > 0 ) {
             final Set<String> oldPaths = regProps.get(id);
             if ( oldPaths == null ) {
                 addService(mapper, ref);
