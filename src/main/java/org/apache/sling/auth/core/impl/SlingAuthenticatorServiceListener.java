@@ -364,9 +364,13 @@ public class SlingAuthenticatorServiceListener implements AllServiceListener, Ev
      * @param ref The service reference
      */
     private void modifiedService(final ResourceMapper mapper, final ServiceReference<?> ref) {
+
+        logger.info("reference is null = " + (ref ==null ? true:false));
+        logger.info("AUTH Requirements = " + ref.getProperty(AuthConstants.AUTH_REQUIREMENTS));
         final String[] authReqPaths = Converters.standardConverter().convert(ref.getProperty(AuthConstants.AUTH_REQUIREMENTS)).to(String[].class);
         final Long id = (Long)ref.getProperty(Constants.SERVICE_ID);
-        if ( authReqPaths.length > 0 ) {
+        logger.info("authReqPaths is null = " + (authReqPaths ==null ? true:false));
+        if ( authReqPaths != null && authReqPaths.length > 0 ) {
             final Set<String> oldPaths = regProps.get(id);
             if ( oldPaths == null ) {
                 addService(mapper, ref);
