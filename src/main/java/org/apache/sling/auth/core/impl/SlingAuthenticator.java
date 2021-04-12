@@ -1159,6 +1159,7 @@ public class SlingAuthenticator implements Authenticator,
      * Sends the session cookie for the name session with the given age in
      * seconds. This sends a Version 1 cookie.
      *
+     * @param request The {@link HttpServletRequest}
      * @param response The {@link HttpServletResponse} on which to send
      *            back the cookie.
      * @param user The name of the user to impersonate as. This will be quoted
@@ -1175,7 +1176,9 @@ public class SlingAuthenticator implements Authenticator,
      * @param owner The name of the user originally authenticated in the request
      *            and who is now impersonating as <i>user</i>.
      */
-    private void sendSudoCookie(HttpServletResponse response,
+    private void sendSudoCookie(
+            HttpServletRequest request,    
+            HttpServletResponse response,
             final String user, final int maxAge, final String path,
             final String owner) {
 
@@ -1199,7 +1202,9 @@ public class SlingAuthenticator implements Authenticator,
         }
 
         if (quotedUser != null) {
-            Cookie cookie = new Cookie(this.sudoCookieName, quotedUser);
+            final Cookie cookie = new Cookie(this.sudoCookieName, quotedUser);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(request.isSecure());
             cookie.setMaxAge(maxAge);
             cookie.setPath((path == null || path.length() == 0) ? "/" : path);
             try {
@@ -1314,14 +1319,14 @@ public class SlingAuthenticator implements Authenticator,
                 // active due to cookie setting
 
                 // clear impersonation
-                this.sendSudoCookie(res, "", 0, req.getContextPath(), authInfo.getUser());
+                this.sendSudoCookie(req, res, "", 0, req.getContextPath(), authInfo.getUser());
 
             } else if (currentSudo == null || !currentSudo.equals(sudo)) {
                 // Parameter set to a name. As the cookie is not set yet
                 // or is set to another name, send the cookie with current sudo
 
                 // (re-)set impersonation
-                this.sendSudoCookie(res, sudo, -1, req.getContextPath(),
+                this.sendSudoCookie(req, res, sudo, -1, req.getContextPath(),
                         sudo);
             }
         }
