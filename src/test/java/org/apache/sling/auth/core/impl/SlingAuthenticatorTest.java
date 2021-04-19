@@ -419,6 +419,21 @@ public class SlingAuthenticatorTest {
         assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
+    @Test public void testSetSudoCookieSudoBeforeNoSudoAfter() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+        
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
+        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
+        ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(res).addCookie(argument.capture());
+        assertEquals("\"\"", argument.getValue().getValue());
+    }
+
     //---------------------------- PRIVATE METHODS -----------------------------
 
     /**
