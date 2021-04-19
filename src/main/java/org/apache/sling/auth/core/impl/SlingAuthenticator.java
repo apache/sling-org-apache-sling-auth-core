@@ -1306,32 +1306,32 @@ public class SlingAuthenticator implements Authenticator,
      * @return <code>true</code> if the cookie has been set or cleared or
      *         <code>false</code> if the cookie is not modified.
      */
-    private boolean setSudoCookie(HttpServletRequest req,
+    boolean setSudoCookie(HttpServletRequest req,
             HttpServletResponse res, AuthenticationInfo authInfo) {
-        String sudo = (String) authInfo.get(ResourceResolverFactory.USER_IMPERSONATION);
-        String currentSudo = getSudoCookieValue(req);
+        final String sudo = (String) authInfo.get(ResourceResolverFactory.USER_IMPERSONATION);
+        final String currentSudo = getSudoCookieValue(req);
+
+        boolean changed = false;
 
         // set the (new) impersonation
-        final boolean setCookie = sudo != currentSudo;
-        if (setCookie) {
-            if (sudo == null) {
-                // Parameter set to "-" to clear impersonation, which was
-                // active due to cookie setting
+        if (sudo == null && currentSudo != null) {
+            // Parameter set to "-" to clear impersonation, which was
+            // active due to cookie setting
 
-                // clear impersonation
-                this.sendSudoCookie(req, res, "", 0, req.getContextPath(), authInfo.getUser());
+            // clear impersonation
+            this.sendSudoCookie(req, res, "", 0, req.getContextPath(), authInfo.getUser());
+            changed = true;
 
-            } else if (currentSudo == null || !currentSudo.equals(sudo)) {
-                // Parameter set to a name. As the cookie is not set yet
-                // or is set to another name, send the cookie with current sudo
+        } else if (sudo != null && !sudo.equals(currentSudo)) {
+            // Parameter set to a name. As the cookie is not set yet
+            // or is set to another name, send the cookie with current sudo
 
-                // (re-)set impersonation
-                this.sendSudoCookie(req, res, sudo, -1, req.getContextPath(),
-                        sudo);
-            }
+            // (re-)set impersonation
+            this.sendSudoCookie(req, res, sudo, -1, req.getContextPath(), sudo);
+            changed = true;
         }
 
-        return setCookie;
+        return changed;
     }
 
     /**

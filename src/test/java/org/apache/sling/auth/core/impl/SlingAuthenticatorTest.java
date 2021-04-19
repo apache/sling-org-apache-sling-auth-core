@@ -18,21 +18,31 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -352,6 +362,61 @@ public class SlingAuthenticatorTest {
         // verify resolver close, attribute removed
         Mockito.verify(resolver).close();
         Mockito.verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
+    }
+
+    @Test public void testSetSudoCookieNoSudoBeforeNoSudoAfter() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
+        Mockito.verify(res, never()).addCookie(Mockito.any());
+    }
+
+    @Test public void testSetSudoCookieNoSudoBeforeSudoAfter() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+        info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
+        
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
+        ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(res).addCookie(argument.capture());
+        assertEquals("\"newsudo\"", argument.getValue().getValue());
+    }
+
+    @Test public void testSetSudoCookieSudoBeforeSameSudoAfter() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+        info.put(ResourceResolverFactory.USER_IMPERSONATION, "oldsudo");
+        
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
+        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
+        Mockito.verify(res, never()).addCookie(Mockito.any());
+    }
+
+    @Test public void testSetSudoCookieSudoBeforeNewSudoAfter() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+        info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
+        
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
+        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
+        ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(res).addCookie(argument.capture());
+        assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
     //---------------------------- PRIVATE METHODS -----------------------------
