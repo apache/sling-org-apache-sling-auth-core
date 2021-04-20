@@ -434,6 +434,30 @@ public class SlingAuthenticatorTest {
         assertEquals("\"\"", argument.getValue().getValue());
     }
 
+    @Test public void testSudoCookieFlags() {
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
+        final AuthenticationInfo info = new AuthenticationInfo("basic");
+        info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
+        
+        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+        Mockito.when(req.isSecure()).thenReturn(true);
+        SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
+        ArgumentCaptor<Cookie> argument1 = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(res).addCookie(argument1.capture());
+        assertTrue(argument1.getValue().isHttpOnly());
+        assertTrue(argument1.getValue().getSecure());
+
+        res = Mockito.mock(SlingHttpServletResponse.class);
+        Mockito.when(req.isSecure()).thenReturn(false);
+        assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
+        ArgumentCaptor<Cookie> argument2 = ArgumentCaptor.forClass(Cookie.class);
+        Mockito.verify(res).addCookie(argument2.capture());
+        assertTrue(argument2.getValue().isHttpOnly());
+        assertFalse(argument2.getValue().getSecure());
+    }
+
     //---------------------------- PRIVATE METHODS -----------------------------
 
     /**

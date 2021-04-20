@@ -54,10 +54,10 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     public static final String TITLE = "Authenticator";
 
     @Reference(service = AuthenticationRequirementsManager.class)
-    private PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager;
+    private PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager; // NOSONAR
     
     @Reference
-    private AuthenticationHandlersManager authenticationHoldersManager;
+    private AuthenticationHandlersManager authenticationHoldersManager; // NOSONAR
 
     private final SlingAuthenticator.Config config;
 

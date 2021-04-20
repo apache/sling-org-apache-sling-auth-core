@@ -66,7 +66,7 @@ public class LogoutServlet extends SlingAllMethodsServlet {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-    private volatile Authenticator authenticator;
+    private volatile Authenticator authenticator; // NOSONAR
 
     /**
      * The servlet is registered on this path.
