@@ -7,3 +7,12 @@
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
 The Sling Authentication Service bundle provides the basic mechanisms to authenticate HTTP requests with a JCR repository. The algorithms for extracting authentication details from the requests is extensible by implementing an AuthenticationHandler interface.
+
+## Installation
+
+This bundle should be installed into an OSGi framework together with the Apache Sling Framework.
+Beyond Apache Sling it has the following requirements (bundles to be installed in at least this version as well):
+- Apache Commons Codec 1.13.2
+- Apache Sling Commons Metrics 1.2.8 (starting with version 1.5.2)
+- io.dropwizard.metrics:metrics-core:3.2.6 (starting with version 1.5.2)
+
