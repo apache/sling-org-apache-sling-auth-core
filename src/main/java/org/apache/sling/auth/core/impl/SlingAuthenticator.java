@@ -28,10 +28,6 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 
-import javax.jcr.SimpleCredentials;
-import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.AccountNotFoundException;
-import javax.security.auth.login.CredentialExpiredException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
@@ -50,6 +46,7 @@ import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
+import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
 import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
@@ -902,7 +899,7 @@ public class SlingAuthenticator implements Authenticator,
                 // request authentication information and send 403 (Forbidden)
                 // if no handler can request authentication information.
 
-                AuthenticationHandler.FAILURE_REASON_CODES code = getFailureReasonFromException(authInfo, reason);
+                FAILURE_REASON_CODES code = FailureCodesMapper.getFailureReason(authInfo, reason);
                 String message = null;
                 switch (code) {
 				case ACCOUNT_LOCKED:
@@ -917,6 +914,9 @@ public class SlingAuthenticator implements Authenticator,
 				case PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY:
                     message = "Password expired and new password found in password history";
 					break;
+				case EXPIRED_TOKEN:
+				    message = "Expired authentication token";
+				    break;
 				case UNKNOWN:
 				case INVALID_LOGIN:
 				default:
@@ -951,38 +951,7 @@ public class SlingAuthenticator implements Authenticator,
 
     }
 
-    /**
-     * Try to determine the failure reason from the thrown exception
-     */
-    private AuthenticationHandler.FAILURE_REASON_CODES getFailureReasonFromException(final AuthenticationInfo authInfo, Exception reason) {
-        AuthenticationHandler.FAILURE_REASON_CODES code = null;
-        if (reason.getClass().getName().contains("TooManySessionsException")) {
-        	// not a login failure just unavailable service
-        	code = null;
-        } else if (reason instanceof LoginException) {
-            if (reason.getCause() instanceof CredentialExpiredException) {
-                // force failure attribute to be set so handlers can
-                // react to this special circumstance
-                Object creds = authInfo.get("user.jcr.credentials");
-                if (creds instanceof SimpleCredentials && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
-                    code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY;
-                } else {
-                    code = AuthenticationHandler.FAILURE_REASON_CODES.PASSWORD_EXPIRED;
-                }
-            } else if (reason.getCause() instanceof AccountLockedException) {
-                code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_LOCKED;
-            } else if (reason.getCause() instanceof AccountNotFoundException) {
-                code = AuthenticationHandler.FAILURE_REASON_CODES.ACCOUNT_NOT_FOUND;
-            }
 
-            if (code == null) {
-            	// default to invalid login as the reason
-            	code = AuthenticationHandler.FAILURE_REASON_CODES.INVALID_LOGIN;
-            }
-        }
-
-        return code;
-    }
 
     /**
      * Tries to request credentials from the client. The following mechanisms
@@ -1093,6 +1062,10 @@ public class SlingAuthenticator implements Authenticator,
         AuthUtil.sendInvalid(request, response);
     }
 
+    private boolean isExpiredToken(HttpServletRequest request) {
+        return FAILURE_REASON_CODES.EXPIRED_TOKEN == request.getAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+    }
+
     /**
      * Returns <code>true</code> if the current request was referred to by the
      * same URL as the current request has. This is assumed to be caused by a
@@ -1104,6 +1077,10 @@ public class SlingAuthenticator implements Authenticator,
      *         <code>false</code> otherwise
      */
     private boolean isLoginLoop(final HttpServletRequest request) {
+
+        if  (isExpiredToken(request))
+            return false;
+
         String referer = request.getHeader("Referer");
         if (referer != null) {
             StringBuffer sb = request.getRequestURL();
@@ -1421,9 +1398,9 @@ public class SlingAuthenticator implements Authenticator,
      */
     private void postLoginFailedEvent(final HttpServletRequest request, final AuthenticationInfo authInfo, Exception reason) {
         // The reason for the failure may be useful to downstream subscribers.
-        AuthenticationHandler.FAILURE_REASON_CODES reason_code = getFailureReasonFromException(authInfo, reason);
-        //if reason_code is null, it is problem some non-login related failure, so don't send the event
-        if (reason_code != null) {
+        FAILURE_REASON_CODES reasonCode = FailureCodesMapper.getFailureReason(authInfo, reason);
+        //if reason code is unknowm, it is problem some non-login related failure, so don't send the event
+        if (reasonCode != FAILURE_REASON_CODES.UNKNOWN) {
         	final Dictionary<String, Object> properties = new Hashtable<>();
             if (authInfo.getUser() != null) {
                 properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
@@ -1431,7 +1408,7 @@ public class SlingAuthenticator implements Authenticator,
             if (authInfo.getAuthType() != null) {
                 properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
             }
-           	properties.put("reason_code", reason_code.name());
+           	properties.put("reason_code", reasonCode.name());
 
             EventAdmin localEA = this.eventAdmin;
             if (localEA != null) {
