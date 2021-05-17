@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.osgi.annotation.versioning.ConsumerType;
 
+import aQute.bnd.annotation.baseline.BaselineIgnore;
+
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used
  * by the authentication implementation to support plugin various ways of
@@ -116,16 +118,22 @@ public interface AuthenticationHandler {
      *     change initial password is enabled</li>
      *     <li><code>account_locked</code>: the account was disabled or locked</li>
      *     <li><code>account_not_found</code>: the account was not found (not the same as username password mismatch)</li>
+     *     <li><code>expired_token</code>: the token credentials used have expired</li>
      * </ul>
      * @since 1.1.0
      */
+    // When adding a new field to the enum bnd will require a minor version bump
+    // That's unfortunately too much for an SPI package and should really have no impact
+    // on implementors since the enum values are not exposed from any public API
+    @BaselineIgnore("1.2.3")
     enum FAILURE_REASON_CODES {
         INVALID_LOGIN,
         PASSWORD_EXPIRED,
         PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY,
         UNKNOWN,
         ACCOUNT_LOCKED,
-        ACCOUNT_NOT_FOUND;
+        ACCOUNT_NOT_FOUND,
+        EXPIRED_TOKEN;
 
         @Override
         public String toString() {
