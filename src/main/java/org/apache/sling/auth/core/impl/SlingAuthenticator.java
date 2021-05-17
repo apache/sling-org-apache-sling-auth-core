@@ -370,7 +370,7 @@ public class SlingAuthenticator implements Authenticator,
     /**
      * Get the configuration for the http auth
      * @param config The configuration
-     * @return The http auth 
+     * @return The http auth
      */
     public static String getHttpAuth(final Config config) {
         final String http;
@@ -1177,7 +1177,7 @@ public class SlingAuthenticator implements Authenticator,
      *            and who is now impersonating as <i>user</i>.
      */
     private void sendSudoCookie(
-            HttpServletRequest request,    
+            HttpServletRequest request,
             HttpServletResponse response,
             final String user, final int maxAge, final String path,
             final String owner) {
@@ -1405,7 +1405,7 @@ public class SlingAuthenticator implements Authenticator,
     }
 
     private void postLoginEvent(final AuthenticationInfo authInfo) {
-        final Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        final Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
         properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
 
@@ -1424,7 +1424,7 @@ public class SlingAuthenticator implements Authenticator,
         AuthenticationHandler.FAILURE_REASON_CODES reason_code = getFailureReasonFromException(authInfo, reason);
         //if reason_code is null, it is problem some non-login related failure, so don't send the event
         if (reason_code != null) {
-        	final Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        	final Dictionary<String, Object> properties = new Hashtable<>();
             if (authInfo.getUser() != null) {
                 properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
             }
