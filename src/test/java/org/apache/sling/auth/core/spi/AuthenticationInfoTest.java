@@ -58,9 +58,19 @@ public class AuthenticationInfoTest {
     public void testDOING_AUTH() {
         final AuthenticationInfo da = AuthenticationInfo.DOING_AUTH;
         Assert.assertEquals("DOING_AUTH", da.getAuthType());
-        da.clear();
+        try {
+            da.clear();
+            fail("Expected an UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
         Assert.assertEquals("DOING_AUTH", da.getAuthType());
-        da.put("test", "test");
+        try {
+            da.put("test", "test");
+            fail("Expected an UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
         assertFalse(da.containsKey("test"));
     }
 
@@ -68,9 +78,19 @@ public class AuthenticationInfoTest {
     public void testFAIL_AUTH() {
         final AuthenticationInfo fa = AuthenticationInfo.FAIL_AUTH;
         Assert.assertEquals("FAIL_AUTH", fa.getAuthType());
-        fa.clear();
+        try {
+            fa.clear();
+            fail("Expected an UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
         Assert.assertEquals("FAIL_AUTH", fa.getAuthType());
-        fa.put("test", "test");
+        try {
+            fa.put("test", "test");
+            fail("Expected an UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
         assertFalse(fa.containsKey("test"));
     }
 

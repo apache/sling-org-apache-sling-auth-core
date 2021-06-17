@@ -248,7 +248,7 @@ public final class AuthUtil {
         }
 
         if (params == null) {
-            params = new HashMap<String, String>();
+            params = new HashMap<>();
         }
 
         // ensure the login resource is provided with the redirect
@@ -501,15 +501,12 @@ public final class AuthUtil {
         final String path = (query > 0) ? localTarget.substring(0, query) : localTarget;
 
         ResourceResolver resolver = getResourceResolver(request);
-        if (resolver != null) {
-            // assume all is fine if the path resolves to a resource
-            if (!ResourceUtil.isNonExistingResource(resolver.resolve(request, path))) {
-                return true;
-            }
-
-            // not resolving to a resource, check for illegal characters
+        // assume all is fine if the path resolves to a resource
+        if (resolver != null && !ResourceUtil.isNonExistingResource(resolver.resolve(request, path))) {
+            return true;
         }
 
+        // not resolving to a resource, check for illegal characters
         final Pattern illegal = Pattern.compile("[<>'\"]");
         if (illegal.matcher(path).find()) {
             getLog().warn("isRedirectValid: Redirect target '{}' must not contain any of <>'\"", target);
@@ -559,10 +556,7 @@ public final class AuthUtil {
      */
     public static boolean isBrowserRequest(final HttpServletRequest request) {
         final String userAgent = request.getHeader(USER_AGENT);
-        if (userAgent != null && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA))) {
-            return true;
-        }
-        return false;
+        return userAgent != null && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA));
     }
 
     /**

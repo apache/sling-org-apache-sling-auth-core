@@ -19,7 +19,7 @@
 package org.apache.sling.auth.core.impl;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -133,7 +133,7 @@ class HttpBasicAuthenticationHandler extends
      */
     public boolean requestCredentials(HttpServletRequest request,
             HttpServletResponse response) {
-        return fullSupport ? sendUnauthorized(response) : false;
+        return fullSupport && sendUnauthorized(response);
     }
 
     /**
@@ -329,18 +329,9 @@ class HttpBasicAuthenticationHandler extends
 
         // we cannot use default base64, since we need iso encoding
         // (nb: ISO-8859-1 is required as per API spec to be available)
-        String decoded;
-        try {
-            byte[] encoded = authInfo.getBytes("ISO-8859-1");
-            byte[] bytes = Base64.decodeBase64(encoded);
-            decoded = new String(bytes, "ISO-8859-1");
-        } catch (UnsupportedEncodingException uee) {
-            // unexpected
-            log.error(
-                "extractAuthentication: Cannot en/decode authentication info",
-                uee);
-            return null;
-        }
+        byte[] encoded = authInfo.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] bytes = Base64.decodeBase64(encoded);
+        String decoded = new String(bytes, StandardCharsets.ISO_8859_1);
 
         final int colIdx = decoded.indexOf(':');
         final String userId;

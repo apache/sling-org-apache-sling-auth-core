@@ -178,28 +178,28 @@ public class SlingAuthenticatorTest {
         Assert.assertFalse(slingAuthenticator.isAnonAllowed(request));
     }
 
+    private void assertAuthInfo(String protectedPath, String requestChildNode) throws Throwable {
+        final String authType = "AUTH_TYPE_TEST";
+        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(authType, protectedPath);
+
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        buildExpectationsForRequest(request, requestChildNode);
+
+        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
+                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
+        /**
+         * The AUTH TYPE defined above should be used for the path /test and his children: eg /test/childnode.
+         */
+        Assert.assertEquals(authType, authInfo.getAuthType());
+    }
+
     /**
      * Test is OK for child node;
      * @throws Throwable
      */
     @Test
     public void test_childNodeShouldHaveAuthenticationInfo() throws Throwable {
-
-        final String AUTH_TYPE = "AUTH_TYPE_TEST";
-        final String PROTECTED_PATH = "/content/en/test";
-        final String REQUEST_CHILD_NODE = "/content/en/test/childnodetest";
-
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
-
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
-
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
-        /**
-         * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
-         */
-        Assert.assertTrue(AUTH_TYPE.equals(authInfo.getAuthType()));
+        assertAuthInfo("/content/en/test", "/content/en/test/childnodetest");
     }
 
     /**
@@ -208,21 +208,7 @@ public class SlingAuthenticatorTest {
      */
     @Test
     public void test_childNodeShouldHaveAuthenticationInfo2() throws Throwable {
-        final String AUTH_TYPE = "AUTH_TYPE_TEST";
-        final String PROTECTED_PATH = "/content/en/test";
-        final String REQUEST_CHILD_NODE = "/content/en/test";
-
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
-
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
-
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
-        /**
-         * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
-         */
-        Assert.assertTrue(AUTH_TYPE.equals(authInfo.getAuthType()));
+        assertAuthInfo("/content/en/test", "/content/en/test");
     }
 
     /**
@@ -231,21 +217,7 @@ public class SlingAuthenticatorTest {
      */
     @Test
     public void test_childNodeShouldHaveAuthenticationInfo3() throws Throwable {
-        final String AUTH_TYPE = "AUTH_TYPE_TEST";
-        final String PROTECTED_PATH = "/content/en/test";
-        final String REQUEST_CHILD_NODE = "/content/en/test/";
-
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
-
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
-
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
-        /**
-         * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
-         */
-        Assert.assertTrue(AUTH_TYPE.equals(authInfo.getAuthType()));
+        assertAuthInfo("/content/en/test", "/content/en/test/");
     }
 
     /**
@@ -254,40 +226,12 @@ public class SlingAuthenticatorTest {
      */
     @Test
     public void test_childNodeShouldHaveAuthenticationInfo4() throws Throwable {
-        final String AUTH_TYPE = "AUTH_TYPE_TEST";
-        final String PROTECTED_PATH = "/content/en/test";
-        final String REQUEST_CHILD_NODE = "/content/en/test.html";
-
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
-
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
-
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
-        /**
-         * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
-         */
-        Assert.assertTrue(AUTH_TYPE.equals(authInfo.getAuthType()));
+        assertAuthInfo("/content/en/test", "/content/en/test.html");
     }
 
     @Test
     public void test_childNodeShouldHaveAuthenticationInfoRoot() throws Throwable {
-        final String AUTH_TYPE = "AUTH_TYPE_TEST";
-        final String PROTECTED_PATH = "/";
-        final String REQUEST_CHILD_NODE = "/content/en/test";
-
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
-
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
-
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
-        /**
-         * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
-         */
-        Assert.assertTrue(AUTH_TYPE.equals(authInfo.getAuthType()));
+        assertAuthInfo("/", "/content/en/test");
     }
 
     @Test
@@ -308,7 +252,7 @@ public class SlingAuthenticatorTest {
         /**
          * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
          */
-        Assert.assertTrue(AUTH_TYPE_LONGER.equals(authInfo.getAuthType()));
+        Assert.assertEquals(AUTH_TYPE_LONGER, authInfo.getAuthType());
     }
 
 
@@ -344,7 +288,7 @@ public class SlingAuthenticatorTest {
         /**
          * The AUTH TYPE defined aboved should not be used for the path /test2.
          */
-        Assert.assertFalse(AUTH_TYPE.equals(authInfo.getAuthType()));
+        Assert.assertNotEquals(AUTH_TYPE, authInfo.getAuthType());
     }
 
     @Test public void testServletRequestListener() {

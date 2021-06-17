@@ -60,17 +60,17 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      */
     Map<String, List<String>> getAuthenticationHandlerMap() {
         final List<AbstractAuthenticationHandlerHolder> registeredHolders = this.getHolders();
-        final LinkedHashMap<String, List<String>> handlerMap = new LinkedHashMap<>();
+        final LinkedHashMap<String, List<String>> ahMap = new LinkedHashMap<>();
         for (final AbstractAuthenticationHandlerHolder holder : registeredHolders) {
-            final List<String> provider = handlerMap.computeIfAbsent(holder.fullPath, key -> new ArrayList<>());
+            final List<String> provider = ahMap.computeIfAbsent(holder.fullPath, key -> new ArrayList<>());
             provider.add(holder.getProvider());
         }
         if (httpSupport != null) {
-            final List<String> provider = handlerMap.computeIfAbsent("/", key -> new ArrayList<>());
+            final List<String> provider = ahMap.computeIfAbsent("/", key -> new ArrayList<>());
             provider.add("HTTP Basic Authentication Handler ("
-                + (httpSupport ? "enabled" : "preemptive") + ")");
+                + (Boolean.TRUE.equals(httpSupport) ? "enabled" : "preemptive") + ")");
         }
-        return handlerMap;
+        return ahMap;
     }
 
     /**
@@ -82,11 +82,9 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
     private void bindAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> {
-            return new AuthenticationHandlerHolder(path,
+        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path,
                 handler,
-                ref);
-        });
+                ref));
     }
 
     /**
@@ -94,6 +92,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param ref Service reference
      * @param handler The handler
      */
+    @SuppressWarnings("unused")
     private void updatedAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
         unbindAuthHandler(ref);
         bindAuthHandler(handler, ref);
@@ -112,23 +111,26 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * Bind old engine authentication handler
      * @param ref Service reference
      * @param handler The handler
+     * @deprecated use {@link #bindAuthHandler(AuthenticationHandler, ServiceReference)} instead
      */
+    @Deprecated
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
     private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> {
-            return new EngineAuthenticationHandlerHolder(path,
+        internalBindAuthHandler(paths, id, path -> new EngineAuthenticationHandlerHolder(path,
                 handler,
-                ref);
-        });
+                ref));
     }
 
     /**
      * Update old engine authentication handler
      * @param ref Service reference
      * @param handler The handler
+     * @deprecated use {@link #updatedAuthHandler(AuthenticationHandler, ServiceReference)} instead
      */
+    @SuppressWarnings("unused")
+    @Deprecated
     private void updatedEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         unbindEngineAuthHandler(ref);
         bindEngineAuthHandler(handler, ref);
@@ -153,7 +155,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
         if (paths != null && paths.length > 0) {
 
             // generate the holders
-            ArrayList<AbstractAuthenticationHandlerHolder> holderList = new ArrayList<AbstractAuthenticationHandlerHolder>();
+            ArrayList<AbstractAuthenticationHandlerHolder> holderList = new ArrayList<>();
             for (String path : paths) {
                 if (path != null && path.length() > 0) {
                     holderList.add(createFunction.apply(path));

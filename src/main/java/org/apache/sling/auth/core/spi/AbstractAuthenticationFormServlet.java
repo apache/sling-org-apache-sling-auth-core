@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -56,7 +58,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      * fill in with per-request data. This field is set by the
      * {@link #getRawForm()} method when first loading the form.
      */
-    private volatile String rawForm;
+    private final AtomicReference<String> rawForm = new AtomicReference<>();
 
     /**
      * Prepares and returns the login form. The response is sent as an UTF-8
@@ -98,22 +100,30 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
         handle(request, response);
     }
 
-    private void handle(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        // reset the response first
-        response.reset();
+    private void handle(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            // reset the response first
+            response.reset();
 
-        // setup the response for HTML and cache prevention
-        response.setContentType("text/html");
-        response.setCharacterEncoding("UTF-8");
-        response.setHeader("Cache-Control", "no-cache");
-        response.addHeader("Cache-Control", "no-store");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
+            // setup the response for HTML and cache prevention
+            response.setContentType("text/html");
+            response.setCharacterEncoding("UTF-8");
+            response.setHeader("Cache-Control", "no-cache");
+            response.addHeader("Cache-Control", "no-store");
+            response.setHeader("Pragma", "no-cache");
+            response.setHeader("Expires", "0");
 
-        // send the form and flush
-        response.getWriter().print(getForm(request));
-        response.flushBuffer();
+            // send the form and flush
+            response.getWriter().print(getForm(request));
+            response.flushBuffer();
+        } catch (IOException ioe) {
+            log("Unexpected exception caught", ioe);
+            try {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } catch (IOException ioe2) {
+                log("Unexpected exception caught while sending the error", ioe2);
+            }
+        }
     }
 
     /**
@@ -262,42 +272,43 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      *             class loader cannot provide the form data.
      */
     private String getRawForm() throws IOException {
-        if (rawForm == null) {
-            InputStream ins = null;
-            try {
-                // try a custom login page first.
-                ins = getClass().getResourceAsStream(getCustomFormPath());
-                if (ins == null) {
-                    // try the standard login page
-                    ins = getClass().getResourceAsStream(getDefaultFormPath());
-                }
-
-                if (ins != null) {
+        String value = rawForm.get();
+        if (value == null) {
+            try (InputStream ins = getLoginFormStream();
+                    Reader r = ins == null ? null : new InputStreamReader(ins, StandardCharsets.UTF_8)) {
+                if (r != null) {
                     StringBuilder builder = new StringBuilder();
-                    Reader r = new InputStreamReader(ins, "UTF-8");
+
                     char[] cbuf = new char[1024];
                     int rd = 0;
                     while ((rd = r.read(cbuf)) >= 0) {
                         builder.append(cbuf, 0, rd);
                     }
 
-                    rawForm = builder.toString();
-                }
-            } finally {
-                if (ins != null) {
-                    try {
-                        ins.close();
-                    } catch (IOException ignore) {
-                    }
+                    value = builder.toString();
+                    rawForm.set(value);
                 }
             }
 
-            if (rawForm == null) {
+            if (value == null) {
                 throw new IOException("Failed reading form template");
             }
         }
+        return value;
+    }
 
-        return rawForm;
+    /**
+     * Get login form resource as an input stream
+     * @return login form input stream or null if not found
+     */
+    private InputStream getLoginFormStream() {
+        // try a custom login page first.
+        InputStream ins = getClass().getResourceAsStream(getCustomFormPath());
+        if (ins == null) {
+            // try the standard login page
+            ins = getClass().getResourceAsStream(getDefaultFormPath());
+        }
+        return ins;
     }
 
     /**

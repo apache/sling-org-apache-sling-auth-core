@@ -24,9 +24,9 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -448,7 +448,7 @@ public class SlingAuthenticator implements Authenticator,
         try {
             postProcess(authInfo, request, response);
         } catch (LoginException e) {
-        	postLoginFailedEvent(request, authInfo, e);
+        	postLoginFailedEvent(authInfo, e);
 
             handleLoginFailure(request, response, authInfo, e);
             return false;
@@ -657,9 +657,13 @@ public class SlingAuthenticator implements Authenticator,
                             request, response);
 
                         if (authInfo != null) {
-                            // add the feedback handler to the info (may be null)
-                            authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER,
-                                holder.getFeedbackHandler());
+                            // skip the put call for known read-only objects
+                            if (authInfo != AuthenticationInfo.DOING_AUTH &&
+                                    authInfo != AuthenticationInfo.FAIL_AUTH) {
+                                // add the feedback handler to the info (may be null)
+                                authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER,
+                                    holder.getFeedbackHandler());
+                            }
 
                             return authInfo;
                         }
@@ -752,7 +756,7 @@ public class SlingAuthenticator implements Authenticator,
             return processRequest;
 
         } catch (LoginException re) {
-        	postLoginFailedEvent(request, authInfo, re);
+        	postLoginFailedEvent(authInfo, re);
 
             // handle failure feedback before proceeding to handling the
             // failed login internally
@@ -933,9 +937,11 @@ public class SlingAuthenticator implements Authenticator,
 
         } else {
 
-            // general problem, send a 500 Internal Server Error
-            log.error("handleLoginFailure: Unable to authenticate " + user,
-                reason);
+            if (log.isErrorEnabled()) {
+                // general problem, send a 500 Internal Server Error
+                log.error(String.format("handleLoginFailure: Unable to authenticate %s", user),
+                    reason);
+            }
 
             try {
                 response.sendError(
@@ -1169,12 +1175,12 @@ public class SlingAuthenticator implements Authenticator,
         } catch (IllegalArgumentException iae) {
             log.error(
                 "sendSudoCookie: Failed to quote value '{}' of cookie {}: {}",
-                new Object[] { user, this.sudoCookieName, iae.getMessage() });
+                user, this.sudoCookieName, iae.getMessage());
             return;
         } catch (UnsupportedEncodingException e) {
             log.error(
                     "sendSudoCookie: Failed to quote value '{}' of cookie {}: {}",
-                    new Object[] { user, this.sudoCookieName, e.getMessage() });
+                    user, this.sudoCookieName, e.getMessage());
                 return;
         }
 
@@ -1382,7 +1388,7 @@ public class SlingAuthenticator implements Authenticator,
     }
 
     private void postLoginEvent(final AuthenticationInfo authInfo) {
-        final Dictionary<String, Object> properties = new Hashtable<>();
+        final Map<String, Object> properties = new HashMap<>();
         properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
         properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
 
@@ -1396,12 +1402,12 @@ public class SlingAuthenticator implements Authenticator,
      * Post an event to let subscribers know that a login failure has occurred.  For examples, subscribers
      * to the {@link AuthConstants#TOPIC_LOGIN_FAILED} event topic may be used to implement a failed login throttling solution.
      */
-    private void postLoginFailedEvent(final HttpServletRequest request, final AuthenticationInfo authInfo, Exception reason) {
+    private void postLoginFailedEvent(final AuthenticationInfo authInfo, Exception reason) {
         // The reason for the failure may be useful to downstream subscribers.
         FAILURE_REASON_CODES reasonCode = FailureCodesMapper.getFailureReason(authInfo, reason);
         //if reason code is unknowm, it is problem some non-login related failure, so don't send the event
         if (reasonCode != FAILURE_REASON_CODES.UNKNOWN) {
-        	final Dictionary<String, Object> properties = new Hashtable<>();
+        	final Map<String, Object> properties = new HashMap<>();
             if (authInfo.getUser() != null) {
                 properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
             }

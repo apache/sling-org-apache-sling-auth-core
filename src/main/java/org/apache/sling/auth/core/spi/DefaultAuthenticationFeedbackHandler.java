@@ -141,6 +141,7 @@ public class DefaultAuthenticationFeedbackHandler implements
     @Override
     public void authenticationFailed(HttpServletRequest request,
             HttpServletResponse response, AuthenticationInfo authInfo) {
+        // no op
     }
 
     /**

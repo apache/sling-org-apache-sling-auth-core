@@ -55,7 +55,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
     private static final long serialVersionUID = -8797082194403667968L;
 
     /** default log */
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final transient Logger log = LoggerFactory.getLogger(getClass());
 
     @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile Authenticator authenticator; // NOSONAR
@@ -64,7 +64,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
      * The servlet is registered on this path, and the authenticator allows any
      * requests to that path, without authentication
      */
-    public static final String SERVLET_PATH = "/system/sling/login";
+    public static final String SERVLET_PATH = "/system/sling/login"; // NOSONAR
 
     @Override
     protected void service(SlingHttpServletRequest request,
@@ -89,13 +89,13 @@ public class LoginServlet extends SlingAllMethodsServlet {
             }
         }
 
-        Authenticator authenticator = this.authenticator;
-        if (authenticator != null) {
+        Authenticator authenticatorRef = this.authenticator;
+        if (authenticatorRef != null) {
             try {
 
                 // set the login resource to select the authenticator
                 AuthUtil.setLoginResourceAttribute(request, null);
-                authenticator.login(request, response);
+                authenticatorRef.login(request, response);
                 return;
 
             } catch (IllegalStateException ise) {
@@ -125,12 +125,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
             return true;
         }
 
-        // login servlet is addressed
-        if (resourcePath.startsWith(SERVLET_PATH)) {
-            return true;
-        }
-
-        // not a prefix
-        return false;
+        // check if login servlet is addressed
+        return resourcePath.startsWith(SERVLET_PATH);
     }
 }
