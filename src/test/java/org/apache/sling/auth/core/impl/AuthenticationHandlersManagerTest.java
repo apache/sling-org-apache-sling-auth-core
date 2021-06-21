@@ -94,6 +94,7 @@ public class AuthenticationHandlersManagerTest {
 
     private final List<ServiceReference<?>> refs = new ArrayList<>();
 
+    @SuppressWarnings("deprecation")
     private ServiceReference<?> createServiceReference(final String[] paths) {
         final ServiceReference<?> ref = mock(ServiceReference.class);
         when(ref.getProperty(org.apache.sling.engine.auth.AuthenticationHandler.PATH_PROPERTY)).thenReturn(paths);
@@ -192,6 +193,7 @@ public class AuthenticationHandlersManagerTest {
         assertTrue(manager.getHolders().isEmpty());
     }
 
+    @Deprecated
     @Test public void testAddRemoveRegistrationLegacy() throws Throwable {
         final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
         when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
@@ -212,6 +214,7 @@ public class AuthenticationHandlersManagerTest {
         assertTrue(manager.getHolders().isEmpty());
     }
 
+    @Deprecated
     @Test public void testAddUpdateRemoveRegistrationLegacy() throws Throwable {
         final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
         when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
@@ -242,6 +245,7 @@ public class AuthenticationHandlersManagerTest {
         assertTrue(manager.getHolders().isEmpty());
     }
 
+    @Deprecated
     @Test public void testDuplicateRegistrationLegacy() throws Throwable {
         final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
         when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
