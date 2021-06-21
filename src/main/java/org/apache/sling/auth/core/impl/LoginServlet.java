@@ -82,8 +82,8 @@ public class LoginServlet extends SlingAllMethodsServlet {
             if (isSelf(resourcePath)) {
                 String redirectTarget = request.getContextPath() + "/";
                 log.warn(
-                    "doGet: Redirecting to {} to prevent login loop for resource {}",
-                    redirectTarget, resourcePath);
+                    "doGet: Redirecting to {} to prevent login loop for resource",
+                    redirectTarget);
                 response.sendRedirect(redirectTarget);
                 return;
             }

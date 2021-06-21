@@ -1375,7 +1375,7 @@ public class SlingAuthenticator implements Authenticator,
         // falling back to the request context path (or /) if not set or invalid
         String target = AuthUtil.getLoginResource(request, request.getContextPath());
         if (!AuthUtil.isRedirectValid(request, target)) {
-            log.warn("redirectAfterLogout: Desired redirect target '{}' is invalid; redirecting to '/'", target);
+            log.warn("redirectAfterLogout: Desired redirect target is invalid; redirecting to '/'");
             target = request.getContextPath() + "/";
         }
 
