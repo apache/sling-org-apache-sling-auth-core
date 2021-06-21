@@ -86,39 +86,39 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
     protected PathBasedHolder(final String url,
             final ServiceReference<?> serviceReference) {
 
-        String path = url;
-        String host = "";
-        String protocol = "";
+        String newPath = url;
+        String newHost = "";
+        String newProtocol = "";
 
         // check for protocol prefix in the full path
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-            int idxProtocolEnd = path.indexOf("://");
-            protocol = path.substring(0, idxProtocolEnd);
-            path = path.substring(idxProtocolEnd + 1);
+        if (newPath.startsWith("http://") || newPath.startsWith("https://")) {
+            int idxProtocolEnd = newPath.indexOf("://");
+            newProtocol = newPath.substring(0, idxProtocolEnd);
+            newPath = newPath.substring(idxProtocolEnd + 1);
         }
 
         // check for host prefix in the full path
-        if (path.startsWith("//")) {
-            int idxHostEnd = path.indexOf("/", 2);
-            idxHostEnd = idxHostEnd == -1 ? path.length() : idxHostEnd;
+        if (newPath.startsWith("//")) {
+            int idxHostEnd = newPath.indexOf("/", 2);
+            idxHostEnd = idxHostEnd == -1 ? newPath.length() : idxHostEnd;
 
-            if (path.length() > 2) {
-                host = path.substring(2, idxHostEnd);
-                if (idxHostEnd < path.length()) {
-                    path = path.substring(idxHostEnd);
+            if (newPath.length() > 2) {
+                newHost = newPath.substring(2, idxHostEnd);
+                if (idxHostEnd < newPath.length()) {
+                    newPath = newPath.substring(idxHostEnd);
                 } else {
-                    path = "/";
+                    newPath = "/";
                 }
             } else {
-                path = "/";
+                newPath = "/";
             }
         }
 
         // assign the fields
         this.fullPath = url;
-        this.path = path;
-        this.host = host;
-        this.protocol = protocol;
+        this.path = newPath;
+        this.host = newHost;
+        this.protocol = newProtocol;
         this.serviceReference = serviceReference;
     }
 
@@ -163,10 +163,7 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
             return true;
         }
 
-        if (path.startsWith(this.path) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.')) {
-            return true;
-        }
-        return false;
+        return path.startsWith(this.path) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.');
     }
     
     /**

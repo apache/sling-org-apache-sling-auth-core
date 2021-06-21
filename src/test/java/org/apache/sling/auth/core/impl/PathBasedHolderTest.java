@@ -18,6 +18,7 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -60,66 +61,57 @@ public class PathBasedHolderTest {
         assertTrue(holder.isPathRequiresHandler(requestPath));
     }
 
+    private void assertPathRequiresHandler(boolean expected, String requestPath, String handlerPath) {
+        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
+        assertEquals(expected, holder.isPathRequiresHandler(requestPath));
+    }
+
     @Test
     public void test_siblingNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertFalse(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(false, requestPath, handlerPath);
     }
 
     @Test
     public void test_actualNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/content/test";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertTrue(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(true, requestPath, handlerPath);
     }
 
     @Test
     public void test_rootNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "/";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertTrue(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(true, requestPath, handlerPath);
     }
 
     @Test
     public void test_requestPathSelectorsAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/test.html";
         final String handlerPath = "/content/test";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertTrue(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(true, requestPath, handlerPath);
     }
 
     @Test
     public void test_requestPathSelectorsSiblingAreTakenInConsideration() throws Throwable {
         final String requestPath = "/content/test.selector1.selector2.html/en/2016/09/19/test.html";
         final String handlerPath = "/content/test2";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertFalse(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(false, requestPath, handlerPath);
     }
 
     @Test
     public void test_requestPathBackSlash() throws Throwable {
         final String requestPath = "/page1\\somesubepage";
         final String handlerPath = "/page";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertFalse(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(false, requestPath, handlerPath);
     }
 
     @Test
     public void test_emptyNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test";
         final String handlerPath = "";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
-
-        assertTrue(holder.isPathRequiresHandler(requestPath));
+        assertPathRequiresHandler(true, requestPath, handlerPath);
     }
 }

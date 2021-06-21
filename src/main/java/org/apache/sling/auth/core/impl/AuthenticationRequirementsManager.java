@@ -183,7 +183,7 @@ public class AuthenticationRequirementsManager
 
     private void schedule() {
         if ( this.backgroundJobRunning.compareAndSet(false, true) ) {
-            this.executor.execute(() -> processQueue());
+            this.executor.execute(this::processQueue);
         }
     }
 
@@ -369,7 +369,7 @@ public class AuthenticationRequirementsManager
             final Set<String> paths = buildPathsSet(mapper, authReqPaths);
 
             if ( !paths.isEmpty() ) {
-                final List<AuthenticationRequirementHolder> authReqList = new ArrayList<AuthenticationRequirementHolder>();
+                final List<AuthenticationRequirementHolder> authReqList = new ArrayList<>();
                 for(final String authReq : paths) {
                     authReqList.add(AuthenticationRequirementHolder.fromConfig(authReq, ref));
                 }

@@ -28,25 +28,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 
-public class PathBasedHolderCache<Type extends PathBasedHolder> {
+public class PathBasedHolderCache<T extends PathBasedHolder> {
 
     /**
      * The cache is a concurrent map of concurrent maps.
      * As the final value, the sorted set is replaced on each change, reading of the
      * cache does not need to be synchronized. Updating of the cache is synchronized.
      */
-    private final Map<String, Map<String, SortedSet<Type>>> cache = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, SortedSet<T>>> cache = new ConcurrentHashMap<>();
 
     protected void clear() {
         cache.clear();
     }
 
-    public synchronized void addHolder(final Type holder) {
-        final Map<String, SortedSet<Type>> byHostMap = cache.computeIfAbsent(holder.protocol, protocol -> new ConcurrentHashMap<>());
+    public synchronized void addHolder(final T holder) {
+        final Map<String, SortedSet<T>> byHostMap = cache.computeIfAbsent(holder.protocol, protocol -> new ConcurrentHashMap<>());
 
         // preset with current list
-        final SortedSet<Type> currentPathSet = byHostMap.get(holder.host);
-        final SortedSet<Type> byPathSet = new TreeSet<Type>();
+        final SortedSet<T> currentPathSet = byHostMap.get(holder.host);
+        final SortedSet<T> byPathSet = new TreeSet<>();
         if (currentPathSet != null) {
             byPathSet.addAll(currentPathSet);
         }
@@ -58,14 +58,14 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
         byHostMap.put(holder.host, byPathSet);
     }
 
-    public synchronized void removeHolder(final Type holder) {
-        final Map<String, SortedSet<Type>> byHostMap = cache.get(holder.protocol);
+    public synchronized void removeHolder(final T holder) {
+        final Map<String, SortedSet<T>> byHostMap = cache.get(holder.protocol);
         if (byHostMap != null) {
-            final SortedSet<Type> byPathSet = byHostMap.get(holder.host);
+            final SortedSet<T> byPathSet = byHostMap.get(holder.host);
             if (byPathSet != null) {
 
                 // create a new set without the removed holder
-                final SortedSet<Type> set = new TreeSet<Type>();
+                final SortedSet<T> set = new TreeSet<>();
                 set.addAll(byPathSet);
                 set.remove(holder);
 
@@ -79,7 +79,7 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
         }
     }
 
-    public Collection<Type>[] findApplicableHolders(final HttpServletRequest request) {
+    public Collection<T>[] findApplicableHolders(final HttpServletRequest request) {
         final String hostname;
         if ( request.getServerPort() != 80 && request.getServerPort() != 443 ) {
             hostname = request.getServerName().concat(":").concat(String.valueOf(request.getServerPort()));
@@ -88,14 +88,14 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
         }
 
         @SuppressWarnings("unchecked")
-        final SortedSet<Type>[] result = new SortedSet[4];
+        final SortedSet<T>[] result = new SortedSet[4];
 
-        final Map<String, SortedSet<Type>> byHostMap = cache.get(request.getScheme());
+        final Map<String, SortedSet<T>> byHostMap = cache.get(request.getScheme());
         if ( byHostMap != null ) {
             result[0] = byHostMap.get(hostname);
             result[1] = byHostMap.get("");
         }
-        final Map<String, SortedSet<Type>> defaultByHostMap = cache.get("");
+        final Map<String, SortedSet<T>> defaultByHostMap = cache.get("");
         if ( defaultByHostMap != null ) {
             result[2] = defaultByHostMap.get(hostname);
             result[3] = defaultByHostMap.get("");
@@ -103,10 +103,10 @@ public class PathBasedHolderCache<Type extends PathBasedHolder> {
         return result;
     }
 
-    public List<Type> getHolders() {
-        final List<Type> result = new ArrayList<Type>();
-        for (Map<String, SortedSet<Type>> byHostEntry : cache.values()) {
-            for (SortedSet<Type> holderSet : byHostEntry.values()) {
+    public List<T> getHolders() {
+        final List<T> result = new ArrayList<>();
+        for (Map<String, SortedSet<T>> byHostEntry : cache.values()) {
+            for (SortedSet<T> holderSet : byHostEntry.values()) {
                 result.addAll(holderSet);
             }
         }

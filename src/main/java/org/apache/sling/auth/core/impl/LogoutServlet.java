@@ -56,14 +56,14 @@ public class LogoutServlet extends SlingAllMethodsServlet {
     public @interface Config {
 
         @AttributeDefinition(name = "Method", description = "Supported Methods")
-        String[] sling_servlet_methods() default {"GET", "POST"};
+        String[] sling_servlet_methods() default {"GET", "POST"}; // NOSONAR
     }
 
     /** serialization UID */
     private static final long serialVersionUID = -1L;
 
     /** default log */
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final transient Logger log = LoggerFactory.getLogger(getClass());
 
     @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
     private volatile Authenticator authenticator; // NOSONAR
@@ -71,17 +71,17 @@ public class LogoutServlet extends SlingAllMethodsServlet {
     /**
      * The servlet is registered on this path.
      */
-    public static final String SERVLET_PATH = "/system/sling/logout";
+    public static final String SERVLET_PATH = "/system/sling/logout"; // NOSONAR
 
     @Override
     protected void service(SlingHttpServletRequest request,
             SlingHttpServletResponse response) {
 
-        final Authenticator authenticator = this.authenticator;
-        if (authenticator != null) {
+        final Authenticator authenticatorRef = this.authenticator;
+        if (authenticatorRef != null) {
             try {
                 AuthUtil.setLoginResourceAttribute(request, null);
-                authenticator.logout(request, response);
+                authenticatorRef.logout(request, response);
                 return;
             } catch (IllegalStateException ise) {
                 log.error("service: Response already committed, cannot logout");

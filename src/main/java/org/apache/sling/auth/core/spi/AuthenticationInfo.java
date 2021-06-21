@@ -18,8 +18,13 @@
  */
 package org.apache.sling.auth.core.spi;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.apache.sling.api.resource.ResourceResolverFactory;
 
@@ -49,7 +54,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * If this value is returned, the request should be considered finished and
      * no further actions should be taken on this request.
      */
-    public static final AuthenticationInfo DOING_AUTH = new ReadOnlyAuthenticationInfo(
+    public static final AuthenticationInfo DOING_AUTH = new ReadOnlyAuthenticationInfo( // NOSONAR
         "DOING_AUTH");
 
     /**
@@ -63,7 +68,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * example OpenID identify failed to validate or some authentication cookie
      * expired).
      */
-    public static final AuthenticationInfo FAIL_AUTH = new ReadOnlyAuthenticationInfo(
+    public static final AuthenticationInfo FAIL_AUTH = new ReadOnlyAuthenticationInfo( // NOSONAR
         "FAIL_AUTH");
 
     /**
@@ -279,12 +284,17 @@ public class AuthenticationInfo extends HashMap<String, Object> {
 
     /**
      * The <code>ReadOnlyAuthenticationInfo</code> extends the
-     * {@link AuthenticationInfo} class overwriting the
-     * {@link #put(String, Object)} method such that no property is ever set.
-     * This acts like kind of a read-only wrapper.
+     * {@link AuthenticationInfo} class overwriting all of the
+     * methods that may change the state.
+     * This acts like kind of a read-only immutable wrapper.
      */
     private static final class ReadOnlyAuthenticationInfo extends
             AuthenticationInfo {
+
+        private final transient Map<String, Object> unmodifiableMap;  // NOSONAR
+
+        // used to guard against stack overflow
+        private final transient ThreadLocal<Boolean> stackGuard = new ThreadLocal<>();
 
         /**
          * Creates an instance of this read-only class with the given
@@ -294,36 +304,137 @@ public class AuthenticationInfo extends HashMap<String, Object> {
          */
         ReadOnlyAuthenticationInfo(final String authType) {
             super(authType);
+            // create an unmodifiable wrapper in order to delegate
+            //  all the public api calls that may change the state
+            unmodifiableMap = Collections.unmodifiableMap(this);
         }
 
-        /**
-         * Does not put the property into the map
-         */
         @Override
         public Object put(String key, Object value) {
-            return null;
+            return unmodifiableMap.put(key, value);
         }
 
-        /**
-         * Sets/adds non of the properties
-         */
         @Override
         public void putAll(Map<? extends String, ? extends Object> m) {
+            unmodifiableMap.putAll(m);
         }
 
-        /**
-         * Does not clear the properties
-         */
-        @Override
-        public void clear() {
-        }
-
-        /**
-         * Removes nothing
-         */
         @Override
         public Object remove(Object key) {
-            return null;
+            return unmodifiableMap.remove(key);
         }
+
+        @Override
+        public void clear() {
+            unmodifiableMap.clear();
+        }
+
+        @Override
+        public Set<String> keySet() {
+            if (Boolean.TRUE.equals(stackGuard.get())) {
+                return super.keySet();
+            } else {
+                try {
+                    stackGuard.set(Boolean.TRUE);
+                    return unmodifiableMap.keySet();
+                } finally {
+                    stackGuard.remove();
+                }
+            }
+        }
+
+        @Override
+        public Collection<Object> values() {
+            if (Boolean.TRUE.equals(stackGuard.get())) {
+                return super.values();
+            } else {
+                try {
+                    stackGuard.set(Boolean.TRUE);
+                    return unmodifiableMap.values();
+                } finally {
+                    stackGuard.remove();
+                }
+            }
+        }
+
+        @Override
+        public Set<Entry<String, Object>> entrySet() {
+            if (Boolean.TRUE.equals(stackGuard.get())) {
+                return super.entrySet();
+            } else {
+                try {
+                    stackGuard.set(Boolean.TRUE);
+                    return unmodifiableMap.entrySet();
+                } finally {
+                    stackGuard.remove();
+                }
+            }
+        }
+
+        @Override
+        public Object putIfAbsent(String key, Object value) {
+            return unmodifiableMap.putIfAbsent(key, value);
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            return unmodifiableMap.remove(key, value);
+        }
+
+        @Override
+        public boolean replace(String key, Object oldValue, Object newValue) {
+            return unmodifiableMap.replace(key, oldValue, newValue);
+        }
+
+        @Override
+        public Object replace(String key, Object value) {
+            return unmodifiableMap.replace(key, value);
+        }
+
+        @Override
+        public Object computeIfAbsent(String key, Function<? super String, ? extends Object> mappingFunction) {
+            return unmodifiableMap.computeIfAbsent(key, mappingFunction);
+        }
+
+        @Override
+        public Object computeIfPresent(String key,
+                BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
+            return unmodifiableMap.computeIfPresent(key, remappingFunction);
+        }
+
+        @Override
+        public Object compute(String key,
+                BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
+            return unmodifiableMap.compute(key, remappingFunction);
+        }
+
+        @Override
+        public Object merge(String key, Object value,
+                BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
+            return unmodifiableMap.merge(key, value, remappingFunction);
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super String, ? super Object, ? extends Object> function) {
+            unmodifiableMap.replaceAll(function);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = super.hashCode();
+            result = prime * result;
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (!super.equals(obj))
+                return false;
+            return getClass() == obj.getClass();
+        }
+
     }
 }

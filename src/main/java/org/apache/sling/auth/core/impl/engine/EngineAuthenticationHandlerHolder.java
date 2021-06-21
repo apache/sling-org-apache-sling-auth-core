@@ -19,6 +19,7 @@
 package org.apache.sling.auth.core.impl.engine;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -89,19 +90,23 @@ public final class EngineAuthenticationHandlerHolder extends
     }
 
     @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Objects.hash(handler);
+        return result;
+    }
+
+    @Override
     public boolean equals(Object obj) {
-
-        // equality is the base class equality (based on the fullpath)
-        // and the encapsulated holders being the same.
-        if (super.equals(obj)) {
-            if (obj.getClass() == getClass()) {
-                EngineAuthenticationHandlerHolder other = (EngineAuthenticationHandlerHolder) obj;
-                return other.handler == handler;
-            }
-        }
-
-        // handlers are not the same, so the holders are not the same
-        return false;
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        EngineAuthenticationHandlerHolder other = (EngineAuthenticationHandlerHolder) obj;
+        return Objects.equals(handler, other.handler);
     }
 
     @Override

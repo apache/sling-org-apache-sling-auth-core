@@ -55,7 +55,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
 
     @Reference(service = AuthenticationRequirementsManager.class)
     private PathBasedHolderCache<AuthenticationRequirementHolder> authenticationRequirementsManager; // NOSONAR
-    
+
     @Reference
     private AuthenticationHandlersManager authenticationHoldersManager; // NOSONAR
 
@@ -65,7 +65,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     public AuthenticatorWebConsolePlugin(final SlingAuthenticator.Config config) {
         this.config = config;
     }
-    
+
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -78,63 +78,71 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
+        try {
+            PrintWriter pw = resp.getWriter();
 
-        PrintWriter pw = resp.getWriter();
+            pw.println("<table class='content' width='100%' cellspacing='0' cellpadding='0'>");
 
-        pw.println("<table class='content' width='100%' cellspacing='0' cellpadding='0'>");
+            printAuthenticationHandler(pw);
 
-        printAuthenticationHandler(pw);
+            pw.println("<tr><td colspan='2'>&nbsp;</td></tr>");
 
-        pw.println("<tr><td colspan='2'>&nbsp;</td></tr>");
+            printAuthenticationRequirements(pw);
 
-        printAuthenticationRequirements(pw);
+            pw.println("<tr><td colspan='2'>&nbsp;</td></tr>");
 
-        pw.println("<tr><td colspan='2'>&nbsp;</td></tr>");
+            printAuthenticationConfiguration(pw);
 
-        printAuthenticationConfiguration(pw);
-
-        pw.println("</table>");
+            pw.println("</table>");
+        } catch (IOException ioe) {
+            log("Unexpected exception caught", ioe);
+            try {
+                resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            } catch (IOException ioe2) {
+                log("Unexpected exception caught while sending the error", ioe2);
+            }
+        }
     }
 
     private void printAuthenticationHandler(final PrintWriter pw) {
-        pw.println("<tr>");
+        tr(pw);
         pw.println("<th class='content container' colspan='3'>Registered Authentication Handler</td>");
-        pw.println("</tr>");
-        pw.println("<tr>");
+        endTr(pw);
+        tr(pw);
         pw.println("<th class='content'>Path</td>");
         pw.println("<th class='content' colspan='2'>Handler</td>");
-        pw.println("</tr>");
+        endTr(pw);
 
         final Map<String, List<String>> handlerMap = authenticationHoldersManager.getAuthenticationHandlerMap();
         for (final Map.Entry<String, List<String>> handler : handlerMap.entrySet()) {
             final String path = handler.getKey();
             for (final String name : handler.getValue()) {
                 pw.println("<tr class='content'>");
-                pw.printf("<td class='content'>%s</td>%n", ResponseUtil.escapeXml(path));
-                pw.printf("<td class='content' colspan='2'>%s</td>%n", ResponseUtil.escapeXml(name));
-                pw.println("</tr>");
+                td(pw, path);
+                td(pw, name, 2);
+                endTr(pw);
             }
         }
     }
 
     private void printAuthenticationRequirements(final PrintWriter pw) {
-        pw.println("<tr>");
+        tr(pw);
         pw.println("<th class='content container' colspan='3'>Authentication Requirement Configuration</td>");
-        pw.println("</tr>");
-        pw.println("<tr>");
+        endTr(pw);
+        tr(pw);
         pw.println("<th class='content'>Path</td>");
         pw.println("<th class='content'>Authentication Required</td>");
         pw.println("<th class='content'>Defining Service (Description or ID)</td>");
-        pw.println("</tr>");
+        endTr(pw);
 
         final List<AuthenticationRequirementHolder> holderList = authenticationRequirementsManager.getHolders();
         for (final AuthenticationRequirementHolder req : holderList) {
 
             pw.println("<tr class='content'>");
-            pw.printf("<td class='content'>%s</td>%n", ResponseUtil.escapeXml(req.fullPath));
-            pw.printf("<td class='content'>%s</td>%n", (req.requiresAuthentication() ? "Yes" : "No"));
-            pw.printf("<td class='content'>%s</td>%n", ResponseUtil.escapeXml(req.getProvider()));
-            pw.println("</tr>");
+            td(pw, req.fullPath);
+            td(pw, (req.requiresAuthentication() ? "Yes" : "No"));
+            td(pw, req.getProvider());
+            endTr(pw);
 
         }
     }
@@ -144,21 +152,41 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
         final String sudoCookie = this.config.auth_sudo_cookie();
         final String sudoParam = this.config.auth_sudo_parameter();
 
-        pw.println("<tr>");
+        tr(pw);
         pw.println("<th class='content container' colspan='3'>Miscellaneous Configuration</td>");
-        pw.println("</tr>");
-        pw.println("</tr>");
-        pw.println("<tr>");
+        endTr(pw);
+        endTr(pw);
+        tr(pw);
         pw.println("<td class='content'>Impersonation Cookie</td>");
-        pw.printf("<td class='content' colspan='2'>%s</td>%n", ResponseUtil.escapeXml(sudoCookie));
-        pw.println("</tr>");
-        pw.println("<tr>");
+        td(pw, sudoCookie, 2);
+        endTr(pw);
+        tr(pw);
         pw.println("<td class='content'>Impersonation Parameter</td>");
-        pw.printf("<td class='content' colspan='2'>%s</td>%n", ResponseUtil.escapeXml(sudoParam));
-        pw.println("</tr>");
-        pw.println("<tr>");
+        td(pw, sudoParam, 2);
+        endTr(pw);
+        tr(pw);
         pw.println("<td class='content'>Anonymous User Name</td>");
-        pw.printf("<td class='content' colspan='2'>%s</td>%n", ResponseUtil.escapeXml(anonUser));
+        td(pw, anonUser, 2);
+        endTr(pw);
+    }
+
+    private void td(final PrintWriter pw, String content) {
+        td(pw, content, -1);
+    }
+    private void td(final PrintWriter pw, String content, int colspan) {
+        if (colspan > 1) {
+            pw.printf("<td class='content' colspan='%d'>%s</td>%n", colspan, ResponseUtil.escapeXml(content));
+        } else {
+            pw.printf("<td class='content'>%s</td>%n", ResponseUtil.escapeXml(content));
+        }
+    }
+
+    private void tr(final PrintWriter pw) {
+        pw.println("<tr>");
+    }
+
+    private void endTr(final PrintWriter pw) {
         pw.println("</tr>");
     }
+
 }
