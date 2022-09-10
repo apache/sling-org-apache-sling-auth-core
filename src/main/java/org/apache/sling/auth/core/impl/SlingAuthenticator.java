@@ -353,7 +353,7 @@ public class SlingAuthenticator implements Authenticator,
         this.authUriSuffices = config.auth_uri_suffix();
 
         if (!config.auth_annonymous()) {
-            log.debug("modified: Anonymous Access is denied thus HTTP Basic Authentication is fully enabled");
+            log.info("modified: Anonymous Access is denied thus HTTP Basic Authentication is fully enabled");
         }
 
         final String http = getHttpAuth(config);
@@ -829,7 +829,7 @@ public class SlingAuthenticator implements Authenticator,
 
         // If we get here, anonymous access is not allowed: redirect
         // to the login servlet
-        log.info("getAnonymousResolver: Anonymous access not allowed by configuration - requesting credentials");
+        log.debug("getAnonymousResolver: Anonymous access not allowed by configuration - requesting credentials");
         doLogin(request, response);
 
         // fallback to no session
