@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>org.apache.sling.auth.core</artifactId>
-    <version>1.5.7-SNAPSHOT</version>
+    <version>1.5.9-SNAPSHOT</version>
 
     <name>Apache Sling Auth Core</name>
     <description>
@@ -42,7 +42,7 @@
     <properties>
         <site.jira.version.id>12315268</site.jira.version.id>
         <site.javadoc.exclude>**.impl.**</site.javadoc.exclude>
-        <project.build.outputTimestamp>2021-07-15T17:38:18Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2022-09-17T14:15:29Z</project.build.outputTimestamp>
     </properties>
 
     <scm>
