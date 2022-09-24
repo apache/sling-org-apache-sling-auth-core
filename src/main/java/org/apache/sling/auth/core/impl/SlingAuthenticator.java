@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
+import org.apache.sling.auth.core.LoginEventDecorator;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
@@ -309,6 +311,12 @@ public class SlingAuthenticator implements Authenticator,
 
     private final ResourceResolverFactory resourceResolverFactory;
 
+    /**
+     * LoginEventDecorator services
+     */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = LoginEventDecorator.class, fieldOption = FieldOption.REPLACE)
+    private volatile List<LoginEventDecorator> loginEventDecorators = new ArrayList<>(); // NOSONAR
+
     // ---------- SCR integration
 
     @Activate
@@ -448,7 +456,7 @@ public class SlingAuthenticator implements Authenticator,
         try {
             postProcess(authInfo, request, response);
         } catch (LoginException e) {
-        	postLoginFailedEvent(authInfo, e);
+            postLoginFailedEvent(request, authInfo, e);
 
             handleLoginFailure(request, response, authInfo, e);
             return false;
@@ -723,7 +731,7 @@ public class SlingAuthenticator implements Authenticator,
             final boolean impersChanged = setSudoCookie(request, response, authInfo);
 
             if (sendLoginEvent != null) {
-                postLoginEvent(authInfo);
+                postLoginEvent(request, authInfo);
             }
 
             // provide the resource resolver to the feedback handler
@@ -756,7 +764,7 @@ public class SlingAuthenticator implements Authenticator,
             return processRequest;
 
         } catch (LoginException re) {
-        	postLoginFailedEvent(authInfo, re);
+            postLoginFailedEvent(request, authInfo, re);
 
             // handle failure feedback before proceeding to handling the
             // failed login internally
@@ -1387,10 +1395,16 @@ public class SlingAuthenticator implements Authenticator,
         }
     }
 
-    private void postLoginEvent(final AuthenticationInfo authInfo) {
+    private void postLoginEvent(final HttpServletRequest request, final AuthenticationInfo authInfo) {
         final Map<String, Object> properties = new HashMap<>();
         properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
         properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
+
+        // allow extensions to supply additional properties
+        final List<LoginEventDecorator> localList = this.loginEventDecorators;
+        for (final LoginEventDecorator decorator : localList) {
+            decorator.decorateLoginEvent(request, authInfo, properties);
+        }
 
         EventAdmin localEA = this.eventAdmin;
         if (localEA != null) {
@@ -1402,19 +1416,26 @@ public class SlingAuthenticator implements Authenticator,
      * Post an event to let subscribers know that a login failure has occurred.  For examples, subscribers
      * to the {@link AuthConstants#TOPIC_LOGIN_FAILED} event topic may be used to implement a failed login throttling solution.
      */
-    private void postLoginFailedEvent(final AuthenticationInfo authInfo, Exception reason) {
+    private void postLoginFailedEvent(final HttpServletRequest request,
+            final AuthenticationInfo authInfo, Exception reason) {
         // The reason for the failure may be useful to downstream subscribers.
         FAILURE_REASON_CODES reasonCode = FailureCodesMapper.getFailureReason(authInfo, reason);
         //if reason code is unknowm, it is problem some non-login related failure, so don't send the event
         if (reasonCode != FAILURE_REASON_CODES.UNKNOWN) {
-        	final Map<String, Object> properties = new HashMap<>();
+            final Map<String, Object> properties = new HashMap<>();
             if (authInfo.getUser() != null) {
                 properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
             }
             if (authInfo.getAuthType() != null) {
                 properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
             }
-           	properties.put("reason_code", reasonCode.name());
+            properties.put("reason_code", reasonCode.name());
+
+            // allow extensions to supply additional properties
+            final List<LoginEventDecorator> localList = this.loginEventDecorators;
+            for (final LoginEventDecorator decorator : localList) {
+                decorator.decorateLoginFailedEvent(request, authInfo, properties);
+            }
 
             EventAdmin localEA = this.eventAdmin;
             if (localEA != null) {
