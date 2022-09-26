@@ -31,6 +31,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
@@ -43,10 +44,15 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
     /** Handler map for authentication handlers */
     private final Map<String, List<AbstractAuthenticationHandlerHolder>> handlerMap = new ConcurrentHashMap<>();
     
-    private final Boolean httpSupport;
+    private volatile Boolean httpSupport;
 
     @Activate
     public AuthenticationHandlersManager(final SlingAuthenticator.Config config) {
+        this.modified(config);
+    }
+
+    @Modified
+    public void modified(final SlingAuthenticator.Config config) {
         final String http = SlingAuthenticator.getHttpAuth(config);
         if (SlingAuthenticator.HTTP_AUTH_DISABLED.equals(http)) {
             this.httpSupport = null;

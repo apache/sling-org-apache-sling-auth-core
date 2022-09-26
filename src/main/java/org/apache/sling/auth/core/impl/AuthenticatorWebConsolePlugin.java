@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.sling.api.request.ResponseUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.propertytypes.ServiceDescription;
 import org.osgi.service.component.propertytypes.ServiceVendor;
@@ -59,10 +60,15 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     @Reference
     private AuthenticationHandlersManager authenticationHoldersManager; // NOSONAR
 
-    private final SlingAuthenticator.Config config;
+    private volatile SlingAuthenticator.Config config;
 
     @Activate
     public AuthenticatorWebConsolePlugin(final SlingAuthenticator.Config config) {
+        this.modified(config);
+    }
+
+    @Modified
+    public void modified(final SlingAuthenticator.Config config) {
         this.config = config;
     }
 
