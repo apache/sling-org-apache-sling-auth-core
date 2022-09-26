@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 
 import javax.jcr.Credentials;
+import javax.jcr.LoginException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 
@@ -35,20 +36,26 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class DefaultLoginsHealthCheckTest {
-    
+
     private Result getTestResult(String login) throws Exception {
         final DefaultLoginsHealthCheck c = new DefaultLoginsHealthCheck();
-        SetField.set(c, "logins", Arrays.asList(new String[] { login }));
-        
+        if (login == null) {
+            SetField.set(c, "logins", Arrays.asList(new String[0]));
+        } else {
+            SetField.set(c, "logins", Arrays.asList(new String[] { login }));
+        }
+
         final SlingRepository repo = Mockito.mock(SlingRepository.class);
         SetField.set(c, "repository", repo);
         final Session s = Mockito.mock(Session.class);
         Mockito.when(repo.login(ArgumentMatchers.any(Credentials.class))).thenAnswer(new Answer<Session>() {
             @Override
-            public Session answer(InvocationOnMock invocation) {
+            public Session answer(InvocationOnMock invocation) throws LoginException {
                 final SimpleCredentials c = (SimpleCredentials)invocation.getArguments()[0];
-                if("admin".equals(c.getUserID())) {
+                if ("admin".equals(c.getUserID())) {
                     return s;
+                } else if ("throw".equals(c.getUserID())) {
+                    throw new LoginException("Login Failed");
                 }
                 return null;
             }
@@ -56,14 +63,36 @@ public class DefaultLoginsHealthCheckTest {
         
         return c.execute();
     }
-    
+
     @Test
     public void testHealthCheckFails() throws Exception {
         assertFalse("Expecting failed check", getTestResult("admin:admin").isOk());
     }
-    
+
     @Test
     public void testHealthCheckSucceeds() throws Exception {
         assertTrue("Expecting successful check", getTestResult("FOO:bar").isOk());
     }
+
+    @Test
+    public void testHealthCheckInvalidLogins() throws Exception {
+        Result testResult = getTestResult("FOO");
+        assertFalse("Expecting successful check", testResult.isOk());
+        assertTrue("Expected warning in the ResultLog", testResult.toString().contains("WARN Expected login in the form username:password, got [FOO]"));
+    }
+
+    @Test
+    public void testHealthCheckEmptyLogins() throws Exception {
+        Result testResult = getTestResult(null);
+        assertFalse("Expecting failed check", testResult.isOk());
+        assertTrue("Expected warning in the ResultLog", testResult.toString().contains("WARN Did not check any logins, configured logins=[]"));
+    }
+
+    @Test
+    public void testHealthCheckSucceedsWithLoginException() throws Exception {
+        Result testResult = getTestResult("throw:loginexception");
+        assertTrue("Expecting successful check", testResult.isOk());
+        assertTrue("Expected debug in the ResultLog", testResult.toString().contains("DEBUG Login as [throw] failed, as expected"));
+    }
+
 }
