@@ -1,3 +1,7 @@
-Import-Package: !javax.jcr,*
+# SLING-11446 - keep hc related imports optional
+Import-Package: !javax.jcr,\
+    org.apache.felix.hc.api;resolution:=optional,\
+    org.apache.sling.jcr.api;resolution:=optional,\
+    *
 DynamicImport-Package: javax.jcr
 Bundle-DocURL: http://sling.apache.org/site/authentication.html
