@@ -349,7 +349,9 @@ public class AuthenticationRequirementsManager
 
                     if ( mapper != null ) {
                         for(final String mappedPath : mapper.getAllMappings(authReq)) {
-                            paths.add(prefix == null ? mappedPath : prefix.concat(mappedPath));
+                            // ResouceMapper may return empty path in some cases see SLING-11867
+                            String nonEmptyMappedPath = mappedPath.isEmpty() ? "/" : mappedPath;
+                            paths.add(prefix == null ? nonEmptyMappedPath : prefix.concat(nonEmptyMappedPath));
                         }
                     }
                 }
