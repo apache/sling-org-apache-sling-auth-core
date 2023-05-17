@@ -158,6 +158,8 @@ public class AuthenticationRequirementsManager
                 if (authReq != null && authReq.length() > 0) {
                     this.addHolder(AuthenticationRequirementHolder.fromConfig(
                            authReq, null));
+                } else {
+                    logger.warn("Ignoring null/empty config for auth requirements");
                 }
             }
         }
@@ -371,6 +373,10 @@ public class AuthenticationRequirementsManager
             if ( !paths.isEmpty() ) {
                 final List<AuthenticationRequirementHolder> authReqList = new ArrayList<>();
                 for(final String authReq : paths) {
+                    if (authReq == null || authReq.isEmpty()) {
+                        logger.warn("Ignoring null/empty path while adding auth requirements for service {}", id);
+                        continue;
+                    }
                     authReqList.add(AuthenticationRequirementHolder.fromConfig(authReq, ref));
                 }
 
@@ -402,7 +408,9 @@ public class AuthenticationRequirementsManager
                     final List<AuthenticationRequirementHolder> authReqs = props.get(id);
                     // compare sets
                     for(final String oldPath : oldPaths) {
-                        if ( !paths.contains(oldPath) ) {
+                        if (oldPath == null || oldPath.isEmpty()) {
+                            continue;
+                        } else if ( !paths.contains(oldPath) ) {
                             // remove
                             final AuthenticationRequirementHolder holder = AuthenticationRequirementHolder.fromConfig(oldPath, ref);
                             authReqs.remove(holder);
@@ -410,7 +418,9 @@ public class AuthenticationRequirementsManager
                         }
                     }
                     for(final String path : paths) {
-                        if ( !oldPaths.contains(path) ) {
+                        if (path == null || path.isEmpty()) {
+                          logger.warn("Ignoring null/empty path while updating the auth requirements for service {}", id);
+                        } else if ( !oldPaths.contains(path) ) {
                             // add
                             final AuthenticationRequirementHolder holder = AuthenticationRequirementHolder.fromConfig(path, ref);
                             authReqs.add(holder);

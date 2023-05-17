@@ -310,6 +310,42 @@ public class AuthenticationRequirementsManagerTest {
         assertEquals(3, manager.getHolders().size());
     }
 
+    // see SLING-11867
+    @Test public void testRegistrationWithEmptyMapping() throws LoginException {
+        final BundleContext context = createBundleContext();
+        final ResourceMapper mapper = mock(ResourceMapper.class);
+
+        // Resourcemapper returns empty mapping
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", ""));
+
+        final AuthenticationRequirementsManager manager = new AuthenticationRequirementsManager(context,  createFactoryForMapper(mapper),
+                SlingAuthenticatorTest.createDefaultConfig(), callable -> callable.run());
+
+        // register
+        final ServiceReference<?> ref = createServiceReference(new String[] {"+/path1"});
+        manager.serviceChanged(new ServiceEvent(ServiceEvent.REGISTERED, ref));
+
+        // empty path "" returned by resourcemapper should have been ignored
+        assertPaths(manager, new String[] {"/path1"},
+                new ServiceReference<?>[] {ref},
+                new boolean[] {true});
+
+        // update mapper
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", "/path5"));
+        manager.handleEvent(null);
+        assertPaths(manager, new String[] {"/path1", "/path5"},
+                new ServiceReference<?>[] {ref, ref},
+                new boolean[] {true, true});
+
+        // update mapper - now again with empty mapping to test the case of modified
+        // empty "" should be ignored
+        when(mapper.getAllMappings("/path1")).thenReturn(Arrays.asList("/path1", ""));
+        manager.handleEvent(null);
+        assertPaths(manager, new String[] {"/path1"},
+                new ServiceReference<?>[] {ref},
+                new boolean[] {true});
+    }
+
     @Test public void testAllowDeny() throws LoginException {
         final BundleContext context = createBundleContext();
 
