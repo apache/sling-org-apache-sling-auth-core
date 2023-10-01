@@ -33,6 +33,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 public class SlingAuthenticationMetricsTest {
 
     private Meter successMeter = mock(Meter.class);
@@ -75,12 +78,12 @@ public class SlingAuthenticationMetricsTest {
     }
 
     @Test
-    public void testAuthenticationTimerContext() {
-        Timer.Context timerContext = metrics.authenticationTimerContext();
-        timerContext.stop();
+    public void testAuthenticationTimerContext() throws IOException {
+        Closeable timerContext = metrics.authenticationTimerContext();
+        timerContext.close();
 
         verify(timer).time();
-        verify(ctx).stop();
+        verify(ctx).close();
         verifyNoMoreInteractions(timer, ctx);
         verifyNoInteractions(successMeter, failedMeter);
     }

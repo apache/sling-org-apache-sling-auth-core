@@ -39,7 +39,6 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
-import org.apache.sling.commons.metrics.MetricsService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -96,7 +95,7 @@ public class SlingAuthenticatorTest {
                 i += 2;
             }
         }
-        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(Mockito.mock(MetricsService.class), requirements,
+        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(requirements,
             handlers,
             null, Mockito.mock(BundleContext.class), config);
 

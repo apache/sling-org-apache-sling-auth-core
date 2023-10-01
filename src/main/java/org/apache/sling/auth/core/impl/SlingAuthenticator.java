@@ -18,6 +18,7 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -52,8 +53,6 @@ import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
 import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
-import org.apache.sling.commons.metrics.MetricsService;
-import org.apache.sling.commons.metrics.Timer;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -307,7 +306,8 @@ public class SlingAuthenticator implements Authenticator,
     @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
     private volatile EventAdmin eventAdmin; // NOSONAR
 
-    private final SlingAuthenticationMetrics metrics;
+    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
+    private volatile SlingAuthenticationMetrics metricsService;
 
     private final ResourceResolverFactory resourceResolverFactory;
 
@@ -320,13 +320,11 @@ public class SlingAuthenticator implements Authenticator,
     // ---------- SCR integration
 
     @Activate
-    public SlingAuthenticator(@Reference(policyOption = ReferencePolicyOption.GREEDY) final MetricsService metricsService,
-            @Reference AuthenticationRequirementsManager authReqManager,
+    public SlingAuthenticator(@Reference AuthenticationRequirementsManager authReqManager,
             @Reference AuthenticationHandlersManager authHandlerManager,
             @Reference(policyOption = ReferencePolicyOption.GREEDY) final ResourceResolverFactory resourceResolverFactory,
             final BundleContext bundleContext,
             final Config config) {
-        this.metrics = new SlingAuthenticationMetrics(metricsService);
         this.resourceResolverFactory = resourceResolverFactory;
 
         this.authenticationRequirementsManager = authReqManager;
@@ -421,8 +419,9 @@ public class SlingAuthenticator implements Authenticator,
             request.removeAttribute(REQUEST_ATTRIBUTE_RESOLVER);
         }
 
-        Timer.Context ctx = metrics.authenticationTimerContext();
         boolean process = false;
+        final SlingAuthenticationMetrics local = this.metricsService;
+        final Closeable ctx = local != null ? local.authenticationTimerContext() : null;
         try {
             process = doHandleSecurity(request, response);
             if (process && expectAuthenticationHandler(request)) {
@@ -433,8 +432,14 @@ public class SlingAuthenticator implements Authenticator,
                 process = false;
             }
         } finally {
-            ctx.stop();
-            metrics.authenticateCompleted(process);
+            if (local != null) {
+                try {
+                    ctx.close();
+                } catch (final IOException e) {
+                    // ignore
+                }
+                local.authenticateCompleted(process);
+            }
         }
         return process;
     }

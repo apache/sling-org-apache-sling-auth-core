@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,6 +90,7 @@ public class SlingAuthenticatorOsgiTest {
 
         context.registerService(ResourceResolverFactory.class, resourceResolverFactory);
         context.registerService(MetricsService.class, metricsService);
+        context.registerInjectActivateService(SlingAuthenticationMetrics.class);
         context.registerInjectActivateService(AuthenticationRequirementsManager.class);
 
         //register a test auth handler
@@ -101,7 +103,7 @@ public class SlingAuthenticatorOsgiTest {
     }
 
     @Test
-    public void testHandleSecurity() {
+    public void testHandleSecurity() throws IOException {
         HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getServletPath()).thenReturn("/");
         when(req.getServerName()).thenReturn("localhost");
@@ -113,7 +115,7 @@ public class SlingAuthenticatorOsgiTest {
         authenticator.handleSecurity(req, resp);
 
         verify(timer).time();
-        verify(ctx).stop();
+        verify(ctx).close();
         verify(successMeter).mark();
         verifyNoMoreInteractions(timer, successMeter, ctx);
         verifyNoInteractions((failedMeter));

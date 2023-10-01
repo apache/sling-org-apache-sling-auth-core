@@ -16,12 +16,18 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import java.io.Closeable;
+
 import org.apache.sling.commons.metrics.Meter;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.apache.sling.commons.metrics.Timer;
 import org.jetbrains.annotations.NotNull;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
-class SlingAuthenticationMetrics {
+@Component(service = SlingAuthenticationMetrics.class)
+public class SlingAuthenticationMetrics {
 
     static final String AUTHENTICATE_TIMER_NAME = "sling.auth.core.authenticate.timer";
     static final String AUTHENTICATE_SUCCESS_METER_NAME = "sling.auth.core.authenticate.success";
@@ -31,14 +37,15 @@ class SlingAuthenticationMetrics {
     private final Meter authenticateSuccess;
     private final Meter authenticateFailed;
 
-    SlingAuthenticationMetrics(@NotNull MetricsService metricsService) {
+    @Activate
+    public SlingAuthenticationMetrics(@Reference @NotNull MetricsService metricsService) {
         authenticateTimer = metricsService.timer(AUTHENTICATE_TIMER_NAME);
         authenticateSuccess = metricsService.meter(AUTHENTICATE_SUCCESS_METER_NAME);
         authenticateFailed = metricsService.meter(AUTHENTICATE_FAILED_METER_NAME);
     }
 
     @NotNull
-    Timer.Context authenticationTimerContext() {
+    Closeable authenticationTimerContext() {
         return authenticateTimer.time();
     }
 
