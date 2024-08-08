@@ -663,7 +663,7 @@ public class SlingAuthenticator implements Authenticator,
                     if (holder.isPathRequiresHandler(path)){
                         final AuthenticationInfo authInfo = holder.extractCredentials(
                             request, response);
-                            log.debug("getAuthenticationInfo: Selected class {} to perform authentication", holder.getHandler().getClass().getName());
+                            log.debug("getAuthenticationInfo: Selected class {} to perform authentication", Optional.ofNullable(holder.getHandler()).map(h -> h.getClass().getName()).orElse("null"));
                         if (authInfo != null) {
                             // skip the put call for known read-only objects
                             if (authInfo != AuthenticationInfo.DOING_AUTH &&
