@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -672,10 +673,10 @@ public class SlingAuthenticator implements Authenticator,
                                 authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER,
                                     holder.getFeedbackHandler());
                             }
-                            log.debug("getAuthenticationInfo: Selected class {} returned non null result returning as authenticated result {}", holder.getHandler().getClass().getName(), authInfo);
+                            log.debug("getAuthenticationInfo: Selected class {} returned non null result returning as authenticated result {}", Optional.ofNullable(holder.getHandler()).map(h -> getClass().getName()).orElse(null) , authInfo);
                             return authInfo;
                         }
-                        log.debug("getAuthenticationInfo: Selected class {} returned null", holder.getHandler().getClass().getName());
+                        log.debug("getAuthenticationInfo: Selected class {} returned null", Optional.ofNullable(holder.getHandler()).map(h -> getClass().getName()).orElse(null));
                     }
                 }
             }
