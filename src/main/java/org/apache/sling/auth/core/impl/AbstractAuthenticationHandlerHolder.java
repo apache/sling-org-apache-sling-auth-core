@@ -194,4 +194,6 @@ public abstract class AbstractAuthenticationHandlerHolder extends
         }
         return oldValue;
     }
+
+    public abstract AuthenticationHandler getHandler();
 }

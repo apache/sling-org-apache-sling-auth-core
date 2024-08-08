@@ -38,6 +38,7 @@ import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.junit.Assert;
@@ -448,6 +449,11 @@ public class SlingAuthenticatorTest {
             protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
             }
+
+            @Override
+            public AuthenticationHandler getHandler() {
+                return new SimpleAuthHandler();
+            }
         };
     }
 
@@ -459,5 +465,28 @@ public class SlingAuthenticatorTest {
     private void checkUnQuote(final String value, final String expected) {
         final String actual = SlingAuthenticator.unquoteCookieValue(value);
         Assert.assertEquals(expected, actual);
+    }
+
+    class SimpleAuthHandler implements AuthenticationHandler {
+
+        @Override
+        public AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'extractCredentials'");
+        }
+
+        @Override
+        public boolean requestCredentials(HttpServletRequest request, HttpServletResponse response)
+                throws IOException {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'requestCredentials'");
+        }
+
+        @Override
+        public void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'dropCredentials'");
+        }
+
     }
 }
