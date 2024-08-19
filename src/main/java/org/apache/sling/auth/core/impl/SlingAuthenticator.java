@@ -664,7 +664,6 @@ public class SlingAuthenticator implements Authenticator,
                     if (holder.isPathRequiresHandler(path)){
                         final AuthenticationInfo authInfo = holder.extractCredentials(
                             request, response);
-                            log.debug("getAuthenticationInfo: Selected class {} to perform authentication", Optional.ofNullable(holder.getHandler()).map(h -> h.getClass().getName()).orElse("null"));
                         if (authInfo != null) {
                             // skip the put call for known read-only objects
                             if (authInfo != AuthenticationInfo.DOING_AUTH &&
@@ -673,10 +672,8 @@ public class SlingAuthenticator implements Authenticator,
                                 authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER,
                                     holder.getFeedbackHandler());
                             }
-                            log.debug("getAuthenticationInfo: Selected class {} returned non null result returning as authenticated result {}", Optional.ofNullable(holder.getHandler()).map(h -> getClass().getName()).orElse(null) , authInfo);
                             return authInfo;
                         }
-                        log.debug("getAuthenticationInfo: Selected class {} returned null", Optional.ofNullable(holder.getHandler()).map(h -> getClass().getName()).orElse(null));
                     }
                 }
             }

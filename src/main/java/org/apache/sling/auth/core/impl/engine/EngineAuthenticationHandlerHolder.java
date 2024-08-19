@@ -114,9 +114,4 @@ public final class EngineAuthenticationHandlerHolder extends
         return handler.toString() + " (Legacy API Handler)";
     }
 
-    @Override
-    public org.apache.sling.auth.core.spi.AuthenticationHandler getHandler() {
-       return null;
-    }
-
 }

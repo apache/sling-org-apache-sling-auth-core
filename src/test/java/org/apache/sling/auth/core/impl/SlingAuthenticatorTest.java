@@ -449,11 +449,6 @@ public class SlingAuthenticatorTest {
             protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
             }
-
-            @Override
-            public AuthenticationHandler getHandler() {
-                return new SimpleAuthHandler();
-            }
         };
     }
 
