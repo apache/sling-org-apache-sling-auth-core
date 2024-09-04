@@ -465,20 +465,17 @@ public class SlingAuthenticatorTest {
 
         @Override
         public AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response) {
-            // TODO Auto-generated method stub
             throw new UnsupportedOperationException("Unimplemented method 'extractCredentials'");
         }
 
         @Override
         public boolean requestCredentials(HttpServletRequest request, HttpServletResponse response)
                 throws IOException {
-            // TODO Auto-generated method stub
             throw new UnsupportedOperationException("Unimplemented method 'requestCredentials'");
         }
 
         @Override
         public void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
-            // TODO Auto-generated method stub
             throw new UnsupportedOperationException("Unimplemented method 'dropCredentials'");
         }
 
