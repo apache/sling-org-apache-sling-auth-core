@@ -31,6 +31,8 @@ import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.converter.Converters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The <code>AuthenticationHandlerHolder</code> class represents an
@@ -48,6 +50,8 @@ final class AuthenticationHandlerHolder extends
 
     // whether requestCredentials only for browsers
     private final boolean browserOnlyRequestCredentials;
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     AuthenticationHandlerHolder(final String fullPath,
             final AuthenticationHandler handler,
@@ -74,6 +78,7 @@ final class AuthenticationHandlerHolder extends
     @Override
     public AuthenticationInfo doExtractCredentials(HttpServletRequest request,
             HttpServletResponse response) {
+        logger.debug("doExtractCredentials: Using AuthenticationHandler class {} to extract credentials", handler.toString());
         return handler.extractCredentials(request, response);
     }
 
@@ -83,6 +88,7 @@ final class AuthenticationHandlerHolder extends
 
         // call handler if ok by its authentication type
         if (doesRequestCredentials(request)) {
+            logger.debug("doRequestCredentials: Using AuthenticationHandler class {} to request credentials", handler.toString());
             return handler.requestCredentials(request, response);
         }
 
@@ -93,6 +99,7 @@ final class AuthenticationHandlerHolder extends
     @Override
     public void doDropCredentials(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
+        logger.debug("doDropCredentials: Using AuthenticationHandler class {} to drop credentials", handler.toString());
         handler.dropCredentials(request, response);
     }
 

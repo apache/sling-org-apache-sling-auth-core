@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestEvent;
@@ -668,7 +669,6 @@ public class SlingAuthenticator implements Authenticator,
                     if (holder.isPathRequiresHandler(path)){
                         final AuthenticationInfo authInfo = holder.extractCredentials(
                             request, response);
-
                         if (authInfo != null) {
                             // skip the put call for known read-only objects
                             if (authInfo != AuthenticationInfo.DOING_AUTH &&
@@ -677,7 +677,6 @@ public class SlingAuthenticator implements Authenticator,
                                 authInfo.put(AUTH_INFO_PROP_FEEDBACK_HANDLER,
                                     holder.getFeedbackHandler());
                             }
-
                             return authInfo;
                         }
                     }
