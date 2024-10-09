@@ -105,6 +105,7 @@ public class SlingAuthenticatorOsgiTest {
     @Test
     public void testHandleSecurity() throws IOException {
         HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getRequestURL()).thenReturn(new StringBuffer("/"));
         when(req.getServletPath()).thenReturn("/");
         when(req.getServerName()).thenReturn("localhost");
         when(req.getServerPort()).thenReturn(80);
@@ -131,6 +132,7 @@ public class SlingAuthenticatorOsgiTest {
                     // provide test authInfo 
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "admin", "admin".toCharArray());
                     authInfo.put(AuthConstants.AUTH_INFO_LOGIN, Boolean.TRUE);
+                    when(req.getRequestURL()).thenReturn(new StringBuffer("/test"));
                     when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
                 },
                 () -> testEventHandler.collectedEvents(AuthConstants.TOPIC_LOGIN),
@@ -147,6 +149,7 @@ public class SlingAuthenticatorOsgiTest {
                 (req, resp) -> {
                     // provide invalid test authInfo 
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "invalid", "invalid".toCharArray());
+                    when(req.getRequestURL()).thenReturn(new StringBuffer("/testing"));
                     when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
                     // throw exception to trigger FailedLogin event
                     try {
