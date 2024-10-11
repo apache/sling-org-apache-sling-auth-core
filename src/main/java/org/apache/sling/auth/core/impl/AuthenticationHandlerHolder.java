@@ -167,8 +167,8 @@ final class AuthenticationHandlerHolder extends
     }
 
     private void logDebugMessage(String functionName, HttpServletRequest request) {
-        String message = functionName + ": Using AuthenticationHandler class {} to request credentials for request {} {}";
         if (logger.isDebugEnabled()) {
+            String message = functionName + ": Using AuthenticationHandler class {} to request credentials for request {} {}";
             logger.debug(message, handler, request.getMethod() ,request.getRequestURL());
         }
     }
