@@ -78,7 +78,7 @@ final class AuthenticationHandlerHolder extends
     @Override
     public AuthenticationInfo doExtractCredentials(HttpServletRequest request,
             HttpServletResponse response) {
-        this.logDebugMessage("doExtractCredentials: Using AuthenticationHandler class {} to extract credentials for request {} {}", request);
+        this.logDebugMessage("doExtractCredentials", request);
         return handler.extractCredentials(request, response);
     }
 
@@ -88,7 +88,7 @@ final class AuthenticationHandlerHolder extends
 
         // call handler if ok by its authentication type
         if (doesRequestCredentials(request)) {
-            this.logDebugMessage("doRequestCredentials: Using AuthenticationHandler class {} to request credentials for request {} {}", request);
+            this.logDebugMessage("doRequestCredentials", request);
             return handler.requestCredentials(request, response);
         }
 
@@ -99,7 +99,7 @@ final class AuthenticationHandlerHolder extends
     @Override
     public void doDropCredentials(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        this.logDebugMessage("doDropCredentials: Using AuthenticationHandler class {} to drop credentials for request {} {}", request);
+        this.logDebugMessage("doDropCredentials", request);
         handler.dropCredentials(request, response);
     }
 
@@ -166,7 +166,8 @@ final class AuthenticationHandlerHolder extends
         return requestLogin == null || authType.equals(requestLogin);
     }
 
-    private void logDebugMessage(String message, HttpServletRequest request) {
+    private void logDebugMessage(String functionName, HttpServletRequest request) {
+        String message = functionName + ": Using AuthenticationHandler class {} to request credentials for request {} {}";
         if (logger.isDebugEnabled()) {
             logger.debug(message, handler, request.getMethod() ,request.getRequestURL());
         }
