@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core.impl.engine;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.engine.auth.Authenticator;
 import org.apache.sling.engine.auth.NoAuthenticationHandlerException;

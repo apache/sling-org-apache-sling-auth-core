@@ -26,9 +26,9 @@
  * the new {@link org.apache.sling.auth.core.spi.AuthenticationHandler}
  * interface.
  *
- * @version 2.0.6
+ * @version 3.0.0
  */
-@org.osgi.annotation.versioning.Version("2.0.6")
+@org.osgi.annotation.versioning.Version("3.0.0")
 package org.apache.sling.engine.auth;
 
 

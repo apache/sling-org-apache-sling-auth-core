@@ -18,7 +18,7 @@ package org.apache.sling.auth.core;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.jetbrains.annotations.NotNull;

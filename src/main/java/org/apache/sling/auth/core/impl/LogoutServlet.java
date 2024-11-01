@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core.impl;
 
-import javax.servlet.Servlet;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;

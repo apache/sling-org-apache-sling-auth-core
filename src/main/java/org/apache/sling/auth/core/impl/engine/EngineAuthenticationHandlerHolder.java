@@ -21,8 +21,8 @@ package org.apache.sling.auth.core.impl.engine;
 import java.io.IOException;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.impl.AbstractAuthenticationHandlerHolder;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;

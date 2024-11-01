@@ -20,8 +20,8 @@ package org.apache.sling.engine.auth;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used

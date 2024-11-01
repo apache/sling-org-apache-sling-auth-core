@@ -22,7 +22,7 @@ import javax.jcr.Credentials;
 
 /**
  * The <code>AuthenticationInfo</code> defines the data returned from the
- * {@link AuthenticationHandler#authenticate(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+ * {@link AuthenticationHandler#authenticate(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
  * method.
  *
  * @deprecated see {@link AuthenticationHandler}
@@ -32,7 +32,7 @@ public class AuthenticationInfo {
 
     /**
      * This object is returned by the
-     * {@link AuthenticationHandler#authenticate(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+     * {@link AuthenticationHandler#authenticate(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
      * method to indicate an ongoing authentication transaction.
      */
     public static final AuthenticationInfo DOING_AUTH = new AuthenticationInfo();

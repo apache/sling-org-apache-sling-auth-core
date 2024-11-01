@@ -31,8 +31,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -60,7 +60,7 @@ public final class AuthUtil {
      * This header is known to be set by JQuery, ExtJS and Prototype. Other
      * client-side JavaScript framework most probably also set it.
      *
-     * @see #isAjaxRequest(javax.servlet.http.HttpServletRequest)
+     * @see #isAjaxRequest(jakarta.servlet.http.HttpServletRequest)
      */
     private static final String X_REQUESTED_WITH = "X-Requested-With";
 
@@ -68,7 +68,7 @@ public final class AuthUtil {
      * The expected value of the {@link #X_REQUESTED_WITH} request header to
      * identify a request as an Ajax request.
      *
-     * @see #isAjaxRequest(javax.servlet.http.HttpServletRequest)
+     * @see #isAjaxRequest(jakarta.servlet.http.HttpServletRequest)
      */
     private static final String XML_HTTP_REQUEST = "XMLHttpRequest";
 

@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * The <code>AuthConstants</code> provides a collection of constants used to
@@ -70,9 +70,9 @@ public final class AuthConstants {
      * Service Registration property which may be set by an
      * {@link org.apache.sling.auth.core.spi.AuthenticationHandler} service to
      * indicate whether its
-     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler#requestCredentials(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler#requestCredentials(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
      * method supports non-browser requests (according to
-     * {@link AuthUtil#isBrowserRequest(javax.servlet.http.HttpServletRequest)}
+     * {@link AuthUtil#isBrowserRequest(jakarta.servlet.http.HttpServletRequest)}
      * or not.
      * <p>
      * For backwards compatibility with existing
@@ -96,7 +96,7 @@ public final class AuthConstants {
      * Marker property in the
      * {@link org.apache.sling.auth.core.spi.AuthenticationInfo} object returned
      * by the
-     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler#extractCredentials(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler#extractCredentials(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
      * method indicating a first authentication considered to be a login.
      * <p>
      * By setting this property to any non-<code>null</code> value an
