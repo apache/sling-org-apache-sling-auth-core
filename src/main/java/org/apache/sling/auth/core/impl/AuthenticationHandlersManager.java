@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import org.apache.sling.auth.core.impl.engine.EngineAuthenticationHandlerHolder;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -110,44 +109,6 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      */
     private void unbindAuthHandler(final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        internalUnbindAuthHandler(id);
-    }
-
-    /**
-     * Bind old engine authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     * @deprecated use {@link #bindAuthHandler(AuthenticationHandler, ServiceReference)} instead
-     */
-    @Deprecated
-    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> new EngineAuthenticationHandlerHolder(path,
-                handler,
-                ref));
-    }
-
-    /**
-     * Update old engine authentication handler
-     * @param ref Service reference
-     * @param handler The handler
-     * @deprecated use {@link #updatedAuthHandler(AuthenticationHandler, ServiceReference)} instead
-     */
-    @SuppressWarnings("unused")
-    @Deprecated
-    private void updatedEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
-        unbindEngineAuthHandler(ref);
-        bindEngineAuthHandler(handler, ref);
-    }
-
-    /**
-     * Unbind old engine authentication handler
-     * @param ref Service Reference
-     */
-    private void unbindEngineAuthHandler(final ServiceReference<Object> ref) {
-        final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
         internalUnbindAuthHandler(id);
     }
 

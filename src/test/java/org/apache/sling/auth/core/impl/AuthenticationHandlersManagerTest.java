@@ -94,10 +94,8 @@ public class AuthenticationHandlersManagerTest {
 
     private final List<ServiceReference<?>> refs = new ArrayList<>();
 
-    @SuppressWarnings("deprecation")
     private ServiceReference<?> createServiceReference(final String[] paths) {
         final ServiceReference<?> ref = mock(ServiceReference.class);
-        when(ref.getProperty(org.apache.sling.engine.auth.AuthenticationHandler.PATH_PROPERTY)).thenReturn(paths);
         when(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).thenReturn(paths);
         when(ref.getProperty(org.osgi.framework.Constants.SERVICE_ID)).thenReturn(serviceId);
         serviceId++;
@@ -189,90 +187,6 @@ public class AuthenticationHandlersManagerTest {
                            new ServiceReference<?>[] {ref1, ref1});
 
         PrivateAccessor.invoke(manager, "unbindAuthHandler",
-                new Class[]{ServiceReference.class}, new Object[]{ref1}); 
-        assertTrue(manager.getHolders().isEmpty());
-    }
-
-    @Deprecated
-    @Test public void testAddRemoveRegistrationLegacy() throws Throwable {
-        final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
-        when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
-        final AuthenticationHandlersManager manager = new AuthenticationHandlersManager(config);
-
-        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1"});
-        final org.apache.sling.engine.auth.AuthenticationHandler handler = mock(org.apache.sling.engine.auth.AuthenticationHandler.class);
-
-        PrivateAccessor.invoke(manager, "bindEngineAuthHandler",
-                new Class[]{org.apache.sling.engine.auth.AuthenticationHandler.class, ServiceReference.class}, new Object[]{handler, ref}); 
-
-        assertPaths(manager, new String[] {"/path1"},
-                           new ServiceReference<?>[] {ref});
-
-        PrivateAccessor.invoke(manager, "unbindEngineAuthHandler",
-                new Class[]{ServiceReference.class}, new Object[]{ref}); 
-
-        assertTrue(manager.getHolders().isEmpty());
-    }
-
-    @Deprecated
-    @Test public void testAddUpdateRemoveRegistrationLegacy() throws Throwable {
-        final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
-        when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
-        final AuthenticationHandlersManager manager = new AuthenticationHandlersManager(config);
-
-        final ServiceReference<?> ref = createServiceReference(new String[] {"/path1", "/path2"});
-        final org.apache.sling.engine.auth.AuthenticationHandler handler = mock(org.apache.sling.engine.auth.AuthenticationHandler.class);
-
-        // add
-        PrivateAccessor.invoke(manager, "bindEngineAuthHandler",
-                new Class[]{org.apache.sling.engine.auth.AuthenticationHandler.class, ServiceReference.class}, new Object[]{handler, ref}); 
-
-        assertPaths(manager, new String[] {"/path1", "/path2"},
-                           new ServiceReference<?>[] {ref, ref});
-
-        // update
-        when(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).thenReturn(new String[] {"/path2", "/path3"});
-        PrivateAccessor.invoke(manager, "updatedEngineAuthHandler",
-                new Class[]{org.apache.sling.engine.auth.AuthenticationHandler.class, ServiceReference.class}, new Object[]{handler, ref}); 
-
-        assertPaths(manager, new String[] {"/path2", "/path3"},
-                new ServiceReference<?>[] {ref, ref});
-
-        // remmove
-        PrivateAccessor.invoke(manager, "unbindEngineAuthHandler",
-                new Class[]{ServiceReference.class}, new Object[]{ref}); 
-
-        assertTrue(manager.getHolders().isEmpty());
-    }
-
-    @Deprecated
-    @Test public void testDuplicateRegistrationLegacy() throws Throwable {
-        final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
-        when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_DISABLED);
-        final AuthenticationHandlersManager manager = new AuthenticationHandlersManager(config);
-
-        final org.apache.sling.engine.auth.AuthenticationHandler handler = mock(org.apache.sling.engine.auth.AuthenticationHandler.class);
-
-        // add
-        final ServiceReference<?> ref1 = createServiceReference(new String[] {"/path1", "/path1", "/path2"});
-        // add
-        PrivateAccessor.invoke(manager, "bindEngineAuthHandler",
-                new Class[]{org.apache.sling.engine.auth.AuthenticationHandler.class, ServiceReference.class}, new Object[]{handler, ref1}); 
-
-        final ServiceReference<?> ref2 = createServiceReference(new String[] {"/path2", "/path3"});
-        // add
-        PrivateAccessor.invoke(manager, "bindEngineAuthHandler",
-                new Class[]{org.apache.sling.engine.auth.AuthenticationHandler.class, ServiceReference.class}, new Object[]{handler, ref2}); 
-        assertPaths(manager, new String[] {"/path1", "/path2", "/path2", "/path3"},
-                           new ServiceReference<?>[] {ref1, ref1, ref2, ref2});
-
-        PrivateAccessor.invoke(manager, "unbindEngineAuthHandler",
-                new Class[]{ServiceReference.class}, new Object[]{ref2}); 
-
-        assertPaths(manager, new String[] {"/path1", "/path2"},
-                           new ServiceReference<?>[] {ref1, ref1});
-
-        PrivateAccessor.invoke(manager, "unbindEngineAuthHandler",
                 new Class[]{ServiceReference.class}, new Object[]{ref1}); 
         assertTrue(manager.getHolders().isEmpty());
     }
