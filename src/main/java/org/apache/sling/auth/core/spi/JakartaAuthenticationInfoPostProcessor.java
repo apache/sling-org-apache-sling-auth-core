@@ -16,8 +16,8 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingException;
 import org.apache.sling.api.resource.LoginException;
@@ -26,7 +26,7 @@ import org.osgi.annotation.versioning.ConsumerType;
 /**
  * Service interface which allows bundles to modify the {@code AuthenticationInfo} object
  * right after one {@code AuthenticationHandler} has returned an {{@code AuthenticationInfo}
- * from the {@link AuthenticationHandler#extractCredentials(HttpServletRequest, HttpServletResponse)}
+ * from the {@link JakartaAuthenticationHandler#extractCredentials(HttpServletRequest, HttpServletResponse)}
  * method or an anonymous {@code AuthenticationInfo} has been created. This service is called
  * before the {@code ResourceResolver} is created and any login into the resource providers
  * (such as a JCR repository or other data store) happens. However, the {@code AuthenticationHandler}
@@ -34,11 +34,10 @@ import org.osgi.annotation.versioning.ConsumerType;
  * the {@code AuthenticationInfo}.
  * This service interface is useful to access and modify the {{@code AuthenticationInfo} before
  * it is passed to the {@code ResourceResolverFactory} to create a {@code ResourceResolver}.
- * @deprecated Use {@link JakartaAuthenticationInfoPostProcessor} instead
+ * @since 1.3.0
  */
-@Deprecated
 @ConsumerType
-public interface AuthenticationInfoPostProcessor {
+public interface JakartaAuthenticationInfoPostProcessor {
 
     /**
      * The name under which an implementation of this interface must be

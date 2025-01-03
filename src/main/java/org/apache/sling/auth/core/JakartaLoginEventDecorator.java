@@ -18,7 +18,7 @@ package org.apache.sling.auth.core;
 
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.jetbrains.annotations.NotNull;
@@ -27,11 +27,10 @@ import org.osgi.annotation.versioning.ConsumerType;
 /**
  * Components should implement this interface to customize properties
  * in the Login and/or LoginFailed event
- * @deprecated Use {@link JakartaLoginEventDecorator} instead
+ * @since 1.6.0
  */
-@Deprecated
 @ConsumerType
-public interface LoginEventDecorator {
+public interface JakartaLoginEventDecorator {
 
     /**
      * Called to allow the component to modify the login event properties

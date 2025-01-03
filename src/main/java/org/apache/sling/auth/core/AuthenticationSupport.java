@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -94,7 +94,7 @@ public interface AuthenticationSupport {
      * because anonymous authentication fails or because anonymous
      * authentication is not allowed for the request, the parameter is ignored
      * and the
-     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)}
+     * {@link org.apache.sling.auth.core.spi.JakartaAuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)}
      * method is called to request authentication.
      */
     static final String REDIRECT_PARAMETER = "sling.auth.redirect";
@@ -115,8 +115,30 @@ public interface AuthenticationSupport {
      * @return <code>true</code> if authentication succeeded and the request
      *         attributes are set. If <code>false</code> is returned the request
      *         is immediately terminated and no request attributes are set.
+     * @since 1.6.0
      */
     boolean handleSecurity(HttpServletRequest request,
             HttpServletResponse response);
 
+    /**
+     * Handles security on behalf of a custom OSGi Http Service
+     * <code>HttpContext</code> instance extracting credentials from the request
+     * using any registered
+     * {@link org.apache.sling.auth.core.spi.AuthenticationHandler} services.
+     * If the credentials can be extracted and used to log into the JCR
+     * repository this method sets the request attributes required by the OSGi
+     * Http Service specification plus the {@link #REQUEST_ATTRIBUTE_RESOLVER}
+     * attribute.
+     *
+     * @param request The HTTP request to be authenticated
+     * @param response The HTTP response to send any response to in case of
+     *            problems.
+     * @return <code>true</code> if authentication succeeded and the request
+     *         attributes are set. If <code>false</code> is returned the request
+     *         is immediately terminated and no request attributes are set.
+     * @deprecated Use {@link #handleSecurity(HttpServletRequest, HttpServletResponse)}
+     */
+    @Deprecated
+    boolean handleSecurity(javax.servlet.http.HttpServletRequest request,
+        javax.servlet.http.HttpServletResponse response);
 }

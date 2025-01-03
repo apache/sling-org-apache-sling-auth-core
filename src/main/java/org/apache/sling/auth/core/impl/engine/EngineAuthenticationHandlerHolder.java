@@ -21,12 +21,16 @@ package org.apache.sling.auth.core.impl.engine;
 import java.io.IOException;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.felix.http.javaxwrappers.HttpServletRequestWrapper;
+import org.apache.felix.http.javaxwrappers.HttpServletResponseWrapper;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.impl.AbstractAuthenticationHandlerHolder;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
 import org.apache.sling.engine.auth.AuthenticationHandler;
 import org.osgi.framework.ServiceReference;
 
@@ -51,9 +55,24 @@ public final class EngineAuthenticationHandlerHolder extends
     }
 
     @Override
-    protected AuthenticationFeedbackHandler getFeedbackHandler() {
+    protected JakartaAuthenticationFeedbackHandler getFeedbackHandler() {
         if (handler instanceof AuthenticationFeedbackHandler) {
-            return (AuthenticationFeedbackHandler) handler;
+            return new JakartaAuthenticationFeedbackHandler() {
+
+                @Override
+                public void authenticationFailed(HttpServletRequest request,
+                        HttpServletResponse response, AuthenticationInfo authInfo) {
+                    ((AuthenticationFeedbackHandler) handler).authenticationFailed(
+                        new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response), authInfo);
+                }
+
+                @Override
+                public boolean authenticationSucceeded(HttpServletRequest request,
+                        HttpServletResponse response, AuthenticationInfo authInfo) {
+                    return ((AuthenticationFeedbackHandler) handler).authenticationSucceeded(
+                        new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response), authInfo);
+                }
+            };
         }
         return null;
     }
@@ -62,7 +81,7 @@ public final class EngineAuthenticationHandlerHolder extends
             HttpServletResponse response) {
 
         org.apache.sling.engine.auth.AuthenticationInfo engineAuthInfo = handler.authenticate(
-            request, response);
+            new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response));
         if (engineAuthInfo == null) {
             return null;
         } else if (engineAuthInfo == org.apache.sling.engine.auth.AuthenticationInfo.DOING_AUTH) {
@@ -81,7 +100,7 @@ public final class EngineAuthenticationHandlerHolder extends
 
     public boolean doRequestCredentials(HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        return handler.requestAuthentication(request, response);
+        return handler.requestAuthentication(new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response));
     }
 
     public void doDropCredentials(HttpServletRequest request,

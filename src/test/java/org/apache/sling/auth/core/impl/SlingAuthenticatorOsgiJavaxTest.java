@@ -23,12 +23,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,9 +42,9 @@ import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthConstants;
-import org.apache.sling.auth.core.JakartaLoginEventDecorator;
+import org.apache.sling.auth.core.LoginEventDecorator;
+import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
-import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.apache.sling.commons.metrics.Meter;
 import org.apache.sling.commons.metrics.MetricsService;
 import org.apache.sling.commons.metrics.Timer;
@@ -58,10 +54,11 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 
-public class SlingAuthenticatorOsgiTest {
+public class SlingAuthenticatorOsgiJavaxTest {
 
     @Rule
     public final OsgiContext context = new OsgiContext();
@@ -71,7 +68,7 @@ public class SlingAuthenticatorOsgiTest {
     private Timer.Context ctx = mock(Timer.Context.class);
     private Timer timer = mock(Timer.class);
     private final MetricsService metricsService = mock(MetricsService.class);
-    private final JakartaAuthenticationHandler testAuthHandler = mock(JakartaAuthenticationHandler.class);
+    private final AuthenticationHandler testAuthHandler = mock(AuthenticationHandler.class);
     private final TestEventHandler testEventHandler = new TestEventHandler();
     private final ResourceResolverFactory resourceResolverFactory = mock(ResourceResolverFactory.class);
 
@@ -94,32 +91,12 @@ public class SlingAuthenticatorOsgiTest {
         context.registerInjectActivateService(AuthenticationRequirementsManager.class);
 
         //register a test auth handler
-        context.registerService(JakartaAuthenticationHandler.class, testAuthHandler, Collections.singletonMap(JakartaAuthenticationHandler.PATH_PROPERTY, new String[] {"/"}));
+        context.registerService(AuthenticationHandler.class, testAuthHandler, Collections.singletonMap(AuthenticationHandler.PATH_PROPERTY, new String[] {"/"}));
         context.registerService(EventHandler.class, testEventHandler);
-        context.registerService(JakartaLoginEventDecorator.class, new TestLoginEventDecorator());
+        context.registerService(LoginEventDecorator.class, new TestLoginEventDecorator());
 
         context.registerInjectActivateService(AuthenticationHandlersManager.class);
         authenticator = context.registerInjectActivateService(SlingAuthenticator.class);
-    }
-
-    @Test
-    public void testHandleSecurity() throws IOException {
-        HttpServletRequest req = mock(HttpServletRequest.class);
-        when(req.getRequestURL()).thenReturn(new StringBuffer("/"));
-        when(req.getServletPath()).thenReturn("/");
-        when(req.getServerName()).thenReturn("localhost");
-        when(req.getServerPort()).thenReturn(80);
-        when(req.getScheme()).thenReturn("http");
-        when(req.getRequestURI()).thenReturn("http://localhost:80/");
-
-        HttpServletResponse resp = mock(HttpServletResponse.class);
-        authenticator.handleSecurity(req, resp);
-
-        verify(timer).time();
-        verify(ctx).close();
-        verify(successMeter).mark();
-        verifyNoMoreInteractions(timer, successMeter, ctx);
-        verifyNoInteractions((failedMeter));
     }
 
     /**
@@ -133,7 +110,7 @@ public class SlingAuthenticatorOsgiTest {
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "admin", "admin".toCharArray());
                     authInfo.put(AuthConstants.AUTH_INFO_LOGIN, Boolean.TRUE);
                     when(req.getRequestURL()).thenReturn(new StringBuffer("/test"));
-                    when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
+                    when(testAuthHandler.extractCredentials(Mockito.any(), Mockito.any())).thenReturn(authInfo);
                 },
                 () -> testEventHandler.collectedEvents(AuthConstants.TOPIC_LOGIN),
                 event -> assertEquals("test1Value", event.getProperty("test1"))
@@ -150,7 +127,7 @@ public class SlingAuthenticatorOsgiTest {
                     // provide invalid test authInfo
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "invalid", "invalid".toCharArray());
                     when(req.getRequestURL()).thenReturn(new StringBuffer("/testing"));
-                    when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
+                    when(testAuthHandler.extractCredentials(Mockito.any(), Mockito.any())).thenReturn(authInfo);
                     // throw exception to trigger FailedLogin event
                     try {
                         when(resourceResolverFactory.getResourceResolver(authInfo)).thenThrow(new LoginException("Test LoginFailed"));
@@ -235,16 +212,16 @@ public class SlingAuthenticatorOsgiTest {
     /**
      * Test login event decorator that adds a test value to the event properties
      */
-    static class TestLoginEventDecorator implements JakartaLoginEventDecorator {
+    static class TestLoginEventDecorator implements LoginEventDecorator {
 
         @Override
-        public @NotNull void decorateLoginEvent(@NotNull HttpServletRequest request,
+        public @NotNull void decorateLoginEvent(@NotNull javax.servlet.http.HttpServletRequest request,
                 @NotNull AuthenticationInfo authInfo, @NotNull Map<String, Object> eventProperties) {
             eventProperties.put("test1", "test1Value");
         }
 
         @Override
-        public @NotNull void decorateLoginFailedEvent(@NotNull HttpServletRequest request,
+        public @NotNull void decorateLoginFailedEvent(@NotNull javax.servlet.http.HttpServletRequest request,
                 @NotNull AuthenticationInfo authInfo, @NotNull Map<String, Object> eventProperties) {
             eventProperties.put("test2", "test2Value");
         }

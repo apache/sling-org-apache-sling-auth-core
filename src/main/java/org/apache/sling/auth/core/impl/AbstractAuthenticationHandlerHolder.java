@@ -20,12 +20,12 @@ package org.apache.sling.auth.core.impl;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
-import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.osgi.framework.ServiceReference;
 
 /**
@@ -33,8 +33,9 @@ import org.osgi.framework.ServiceReference;
  * represent authentication handlers (both legacy and new ones) for use in the
  * {@link SlingAuthenticator}.
  */
-public abstract class AbstractAuthenticationHandlerHolder extends
-        PathBasedHolder implements AuthenticationHandler {
+public abstract class AbstractAuthenticationHandlerHolder
+        extends PathBasedHolder
+        implements JakartaAuthenticationHandler {
 
     protected AbstractAuthenticationHandlerHolder(final String fullPath,
             final ServiceReference<?> serviceReference) {
@@ -42,7 +43,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
     }
 
     /**
-     * Sets the {@link AuthenticationHandler#PATH_PROPERTY} request attribute to
+     * Sets the {@link JakartaAuthenticationHandler#PATH_PROPERTY} request attribute to
      * this {@link PathBasedHolder#fullPath} and calls the
      * {@link #extractCredentials(HttpServletRequest, HttpServletResponse)} to
      * have the credentials extracted from the request.
@@ -65,7 +66,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
     }
 
     /**
-     * Sets the {@link AuthenticationHandler#PATH_PROPERTY} request attribute to
+     * Sets the {@link JakartaAuthenticationHandler#PATH_PROPERTY} request attribute to
      * this {@link PathBasedHolder#fullPath} and calls the
      * {@link #doRequestCredentials(HttpServletRequest, HttpServletResponse)} to
      * have the credentials requested from the client.
@@ -87,7 +88,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
     }
 
     /**
-     * Sets the {@link AuthenticationHandler#PATH_PROPERTY} request attribute to
+     * Sets the {@link JakartaAuthenticationHandler#PATH_PROPERTY} request attribute to
      * this {@link PathBasedHolder#fullPath} and calls the
      * {@link #doDropCredentials(HttpServletRequest, HttpServletResponse)} to
      * have the credentials dropped by the held authentication handler.
@@ -112,7 +113,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
      * Returns a feedback handler provided by the authentication handler held by
      * this instance or <code>null</code> if none is provided.
      */
-    protected abstract AuthenticationFeedbackHandler getFeedbackHandler();
+    protected abstract JakartaAuthenticationFeedbackHandler getFeedbackHandler();
 
     /**
      * Calls the actual authentication handler to extract the credentials from
@@ -161,7 +162,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
      */
     private Object setPath(final HttpServletRequest request) {
         return setRequestAttribute(request,
-            AuthenticationHandler.PATH_PROPERTY, fullPath);
+            JakartaAuthenticationHandler.PATH_PROPERTY, fullPath);
     }
 
     /**
@@ -169,7 +170,7 @@ public abstract class AbstractAuthenticationHandlerHolder extends
      * {@link AuthenticationHandler#PATH_PROPERTY} request attribute.
      */
     private void resetPath(final HttpServletRequest request, Object oldValue) {
-        setRequestAttribute(request, AuthenticationHandler.PATH_PROPERTY,
+        setRequestAttribute(request, JakartaAuthenticationHandler.PATH_PROPERTY,
             oldValue);
     }
 
