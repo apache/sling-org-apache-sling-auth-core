@@ -37,19 +37,22 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.felix.http.jakartawrappers.HttpServletRequestWrapper;
-import org.apache.felix.http.jakartawrappers.HttpServletResponseWrapper;
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
+import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaRequestWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaResponseWrapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.JakartaLoginEventDecorator;
 import org.apache.sling.auth.core.LoginEventDecorator;
+import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
@@ -632,17 +635,20 @@ public class SlingAuthenticator implements Authenticator,
 
     @Override
     public void login(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
-        this.login(new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response));
+        this.login(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
     }
 
     @Override
     public void logout(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
-        this.logout(new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response));
+        this.logout(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
     }
 
     @Override
     public boolean handleSecurity(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
-        return this.handleSecurity(new HttpServletRequestWrapper(request), new HttpServletResponseWrapper(response));
+        return this.handleSecurity(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
     }
 
     // ---------- ServletRequestListener
@@ -743,8 +749,8 @@ public class SlingAuthenticator implements Authenticator,
         }
         final List<AuthenticationInfoPostProcessor> localListDep = this.authInfoPostProcessors;
         for (final AuthenticationInfoPostProcessor processor : localListDep) {
-            processor.postProcess(info, new org.apache.felix.http.javaxwrappers.HttpServletRequestWrapper(request),
-                new org.apache.felix.http.javaxwrappers.HttpServletResponseWrapper(response));
+            processor.postProcess(info, JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
         }
     }
 
@@ -1448,7 +1454,7 @@ public class SlingAuthenticator implements Authenticator,
         }
         final List<LoginEventDecorator> localListDep = this.loginEventDecorators;
         for (final LoginEventDecorator decorator : localListDep) {
-            decorator.decorateLoginEvent(new org.apache.felix.http.javaxwrappers.HttpServletRequestWrapper(request), authInfo, properties);
+            decorator.decorateLoginEvent(JakartaToJavaxRequestWrapper.toJavaxRequest(request), authInfo, properties);
         }
 
         EventAdmin localEA = this.eventAdmin;
@@ -1484,7 +1490,7 @@ public class SlingAuthenticator implements Authenticator,
             }
             final List<LoginEventDecorator> localListDep = this.loginEventDecorators;
             for (final LoginEventDecorator decorator : localListDep) {
-                decorator.decorateLoginFailedEvent(new org.apache.felix.http.javaxwrappers.HttpServletRequestWrapper(request), authInfo, properties);
+                decorator.decorateLoginFailedEvent(JakartaToJavaxRequestWrapper.toJavaxRequest(request), authInfo, properties);
             }
 
             EventAdmin localEA = this.eventAdmin;
