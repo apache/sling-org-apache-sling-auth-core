@@ -26,6 +26,10 @@ import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Default implementation of an authentication feedback handler.
+ * @since 1.3.0
+ */
 public class DefaultJakartaAuthenticationFeedbackHandler implements
         JakartaAuthenticationFeedbackHandler {
 
