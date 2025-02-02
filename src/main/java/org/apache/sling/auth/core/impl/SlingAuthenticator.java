@@ -427,6 +427,9 @@ public class SlingAuthenticator implements Authenticator,
     @Override
     public boolean handleSecurity(HttpServletRequest request,
             HttpServletResponse response) {
+        if(request.getHeader("x-request-id") != null) {
+            setThreadName(request.getHeader("x-request-id"));
+        }
         // 0. Nothing to do, if the session is also in the request
         // this might be the case if the request is handled as a result
         // of a servlet container include inside another Sling request
@@ -463,6 +466,10 @@ public class SlingAuthenticator implements Authenticator,
             }
         }
         return process;
+    }
+
+    private void setThreadName(String xRequestId) {
+        Thread.currentThread().setName(xRequestId);
     }
 
     private boolean doHandleSecurity(HttpServletRequest request, HttpServletResponse response) {
