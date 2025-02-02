@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.apache.sling.auth.core.impl.engine.EngineAuthenticationHandlerHolder;
-import org.apache.sling.auth.core.spi.AuthenticationHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Activate;
@@ -43,7 +43,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
 
     /** Handler map for authentication handlers */
     private final Map<String, List<AbstractAuthenticationHandlerHolder>> handlerMap = new ConcurrentHashMap<>();
-    
+
     private volatile Boolean httpSupport;
 
     @Activate
@@ -80,14 +80,48 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
     }
 
     /**
+     * Bind jakarta authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
+    private void bindJakartaAuthHandler(final JakartaAuthenticationHandler handler, final ServiceReference<Object> ref) {
+        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path,
+                handler,
+                ref));
+    }
+
+    /**
+     * Update Jakarta authentication handler
+     * @param ref Service reference
+     * @param handler The handler
+     */
+    @SuppressWarnings("unused")
+    private void Jakarta(final JakartaAuthenticationHandler handler, final ServiceReference<Object> ref) {
+        unbindJakartaAuthHandler(ref);
+        bindJakartaAuthHandler(handler, ref);
+    }
+
+    /**
+     * Unbind Jakarta authentication handler
+     * @param ref Service Reference
+     */
+    private void unbindJakartaAuthHandler(final ServiceReference<Object> ref) {
+        final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
+        internalUnbindAuthHandler(id);
+    }
+
+    /**
      * Bind authentication handler
      * @param ref Service reference
      * @param handler The handler
      */
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void bindAuthHandler(@SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
         internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path,
                 handler,
                 ref));
@@ -99,7 +133,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param handler The handler
      */
     @SuppressWarnings("unused")
-    private void updatedAuthHandler(final AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void updatedAuthHandler(@SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         unbindAuthHandler(ref);
         bindAuthHandler(handler, ref);
     }
@@ -123,7 +157,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
     private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(AuthenticationHandler.PATH_PROPERTY)).to(String[].class);
+        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
         internalBindAuthHandler(paths, id, path -> new EngineAuthenticationHandlerHolder(path,
                 handler,
                 ref));

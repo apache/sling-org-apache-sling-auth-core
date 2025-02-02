@@ -31,10 +31,10 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 /**
  * The <code>AuthenticationInfo</code> conveys any authentication credentials
  * and/or details extracted by the
- * {@link AuthenticationHandler#extractCredentials(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+ * {@link JakartaAuthenticationHandler#extractCredentials(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
  * method from the request.
  * <p>
- * {@link AuthenticationHandler} implementations must return instances of this
+ * {@link JakartaAuthenticationHandler} implementations must return instances of this
  * class which may be constructed through any of the provided public
  * constructors.
  * <p>
@@ -47,7 +47,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
 
     /**
      * A special instance of this class which may be returned from the
-     * {@link AuthenticationHandler#extractCredentials(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+     * {@link JakartaAuthenticationHandler#extractCredentials(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
      * method to inform the caller, that a response has been sent to the client
      * to request for credentials.
      * <p>
@@ -59,7 +59,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
 
     /**
      * A special instance of this class which may be returned from the
-     * {@link AuthenticationHandler#extractCredentials(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)}
+     * {@link JakartaAuthenticationHandler#extractCredentials(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse)}
      * method to inform the caller that credential extraction failed for some
      * reason.
      * <p>
@@ -73,7 +73,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
 
     /**
      * The name of the special property providing the authentication type
-     * provided by the {@link AuthenticationHandler}. This value must be
+     * provided by the {@link JakartaAuthenticationHandler}. This value must be
      * supplied to one of the constructors and is ultimately used as the value
      * of the <code>HttpServletRequest.getAuthType</code> method.
      * <p>
@@ -142,7 +142,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * If authentication is taking place through one of the standard ways, such
      * as Basic or Digest, the return value is one of the predefined constants
      * of the <code>HttpServletRequest</code> interface. Otherwise the value may
-     * be specific to the {@link AuthenticationHandler} implementation.
+     * be specific to the {@link JakartaAuthenticationHandler} implementation.
      * @return The authentication type as stored in the {@link #AUTH_TYPE} property.
      */
     public final String getAuthType() {

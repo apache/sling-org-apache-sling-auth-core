@@ -30,12 +30,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestEvent;
-import javax.servlet.ServletRequestListener;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletRequestEvent;
+import jakarta.servlet.ServletRequestListener;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.SlingConstants;
 import org.apache.sling.api.auth.Authenticator;
@@ -43,16 +43,23 @@ import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
+import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaRequestWrapper;
+import org.apache.sling.api.wrappers.JavaxToJakartaResponseWrapper;
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
+import org.apache.sling.auth.core.JakartaLoginEventDecorator;
 import org.apache.sling.auth.core.LoginEventDecorator;
-import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
-import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.DefaultJakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationInfoPostProcessor;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -84,7 +91,7 @@ import org.slf4j.LoggerFactory;
  * <ul>
  * <li>Support for login sessions where session ids are exchanged with cookies
  * <li>Support for multiple authentication handlers, which must implement the
- * {@link AuthenticationHandler} interface.
+ * {@link JakartaAuthenticationHandler} interface.
  * <li>
  * </ul>
  * <p>
@@ -295,8 +302,15 @@ public class SlingAuthenticator implements Authenticator,
     private final PathBasedHolderCache<AbstractAuthenticationHandlerHolder> authHandlersManager;
 
     /**
+     * JakartaAuthenticationInfoPostProcessor services
+     */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = JakartaAuthenticationInfoPostProcessor.class, fieldOption = FieldOption.REPLACE)
+    private volatile List<JakartaAuthenticationInfoPostProcessor> jakartaAuthInfoPostProcessors = Collections.emptyList(); // NOSONAR
+
+    /**
      * AuthenticationInfoPostProcessor services
      */
+    @SuppressWarnings("deprecation")
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = AuthenticationInfoPostProcessor.class, fieldOption = FieldOption.REPLACE)
     private volatile List<AuthenticationInfoPostProcessor> authInfoPostProcessors = Collections.emptyList(); // NOSONAR
 
@@ -314,6 +328,13 @@ public class SlingAuthenticator implements Authenticator,
     /**
      * LoginEventDecorator services
      */
+    @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = JakartaLoginEventDecorator.class, fieldOption = FieldOption.REPLACE)
+    private volatile List<JakartaLoginEventDecorator> jakartaLoginEventDecorators = new ArrayList<>(); // NOSONAR
+
+    /**
+     * LoginEventDecorator services
+     */
+    @SuppressWarnings("deprecation")
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, service = LoginEventDecorator.class, fieldOption = FieldOption.REPLACE)
     private volatile List<LoginEventDecorator> loginEventDecorators = new ArrayList<>(); // NOSONAR
 
@@ -426,8 +447,8 @@ public class SlingAuthenticator implements Authenticator,
             process = doHandleSecurity(request, response);
             if (process && expectAuthenticationHandler(request)) {
                 log.warn("handleSecurity: AuthenticationHandler did not block request; access denied");
-                request.removeAttribute(AuthenticationHandler.FAILURE_REASON);
-                request.removeAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+                request.removeAttribute(JakartaAuthenticationHandler.FAILURE_REASON);
+                request.removeAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE);
                 AuthUtil.sendInvalid(request, response);
                 process = false;
             }
@@ -612,6 +633,24 @@ public class SlingAuthenticator implements Authenticator,
         redirectAfterLogout(request, response);
     }
 
+    @Override
+    public void login(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
+        this.login(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
+    }
+
+    @Override
+    public void logout(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
+        this.logout(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
+    }
+
+    @Override
+    public boolean handleSecurity(final javax.servlet.http.HttpServletRequest request, final javax.servlet.http.HttpServletResponse response) {
+        return this.handleSecurity(JavaxToJakartaRequestWrapper.toJakartaRequest(request),
+            JavaxToJakartaResponseWrapper.toJakartaResponse(response));
+    }
+
     // ---------- ServletRequestListener
 
     @Override
@@ -701,14 +740,19 @@ public class SlingAuthenticator implements Authenticator,
     /**
      * Run through the available post processors.
      */
+    @SuppressWarnings("deprecation")
     private void postProcess(AuthenticationInfo info, HttpServletRequest request, HttpServletResponse response)
     		throws LoginException {
-        final List<AuthenticationInfoPostProcessor> localList = this.authInfoPostProcessors;
-        for (final AuthenticationInfoPostProcessor processor : localList) {
+        final List<JakartaAuthenticationInfoPostProcessor> localList = this.jakartaAuthInfoPostProcessors;
+        for (final JakartaAuthenticationInfoPostProcessor processor : localList) {
             processor.postProcess(info, request, response);
         }
+        final List<AuthenticationInfoPostProcessor> localListDep = this.authInfoPostProcessors;
+        for (final AuthenticationInfoPostProcessor processor : localListDep) {
+            processor.postProcess(info, JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+        }
     }
-
 
     /**
      * Try to acquire a ResourceResolver as indicated by authInfo
@@ -723,7 +767,7 @@ public class SlingAuthenticator implements Authenticator,
             final AuthenticationInfo authInfo) {
 
         // prepare the feedback handler
-        final AuthenticationFeedbackHandler feedbackHandler = (AuthenticationFeedbackHandler) authInfo.remove(AUTH_INFO_PROP_FEEDBACK_HANDLER);
+        final JakartaAuthenticationFeedbackHandler feedbackHandler = (JakartaAuthenticationFeedbackHandler) authInfo.remove(AUTH_INFO_PROP_FEEDBACK_HANDLER);
         final Object sendLoginEvent = authInfo.remove(AuthConstants.AUTH_INFO_LOGIN);
 
         // try to connect
@@ -752,7 +796,7 @@ public class SlingAuthenticator implements Authenticator,
                     AuthUtil.sendValid(response);
                     processRequest = false;
                 } else if (impersChanged || feedbackHandler == null) {
-                    processRequest = !DefaultAuthenticationFeedbackHandler.handleRedirect(request, response);
+                    processRequest = !DefaultJakartaAuthenticationFeedbackHandler.handleRedirect(request, response);
                 }
             }
 
@@ -814,8 +858,7 @@ public class SlingAuthenticator implements Authenticator,
 
                 // check whether the client asked for redirect after
                 // authentication and/or impersonation
-                if (DefaultAuthenticationFeedbackHandler.handleRedirect(
-                    request, response)) {
+                if (DefaultJakartaAuthenticationFeedbackHandler.handleRedirect(request, response)) {
 
                     // request will now be terminated, so close the resolver
                     // to release resources
@@ -940,8 +983,8 @@ public class SlingAuthenticator implements Authenticator,
                 }
 
                 // preset a reason for the login failure
-                request.setAttribute(AuthenticationHandler.FAILURE_REASON_CODE, code);
-                ensureAttribute(request, AuthenticationHandler.FAILURE_REASON, message);
+                request.setAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE, code);
+                ensureAttribute(request, JakartaAuthenticationHandler.FAILURE_REASON, message);
 
                 doLogin(request, response);
             }
@@ -1073,14 +1116,14 @@ public class SlingAuthenticator implements Authenticator,
         // credential validation
 
         // ensure a failure reason
-        ensureAttribute(request, AuthenticationHandler.FAILURE_REASON,
+        ensureAttribute(request, JakartaAuthenticationHandler.FAILURE_REASON,
             "Authentication Failed");
 
         AuthUtil.sendInvalid(request, response);
     }
 
     private boolean isExpiredToken(HttpServletRequest request) {
-        return FAILURE_REASON_CODES.EXPIRED_TOKEN == request.getAttribute(AuthenticationHandler.FAILURE_REASON_CODE);
+        return FAILURE_REASON_CODES.EXPIRED_TOKEN == request.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE);
     }
 
     /**
@@ -1398,15 +1441,20 @@ public class SlingAuthenticator implements Authenticator,
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void postLoginEvent(final HttpServletRequest request, final AuthenticationInfo authInfo) {
         final Map<String, Object> properties = new HashMap<>();
         properties.put(SlingConstants.PROPERTY_USERID, authInfo.getUser());
         properties.put(AuthenticationInfo.AUTH_TYPE, authInfo.getAuthType());
 
         // allow extensions to supply additional properties
-        final List<LoginEventDecorator> localList = this.loginEventDecorators;
-        for (final LoginEventDecorator decorator : localList) {
+        final List<JakartaLoginEventDecorator> localList = this.jakartaLoginEventDecorators;
+        for (final JakartaLoginEventDecorator decorator : localList) {
             decorator.decorateLoginEvent(request, authInfo, properties);
+        }
+        final List<LoginEventDecorator> localListDep = this.loginEventDecorators;
+        for (final LoginEventDecorator decorator : localListDep) {
+            decorator.decorateLoginEvent(JakartaToJavaxRequestWrapper.toJavaxRequest(request), authInfo, properties);
         }
 
         EventAdmin localEA = this.eventAdmin;
@@ -1419,6 +1467,7 @@ public class SlingAuthenticator implements Authenticator,
      * Post an event to let subscribers know that a login failure has occurred.  For examples, subscribers
      * to the {@link AuthConstants#TOPIC_LOGIN_FAILED} event topic may be used to implement a failed login throttling solution.
      */
+    @SuppressWarnings("deprecation")
     private void postLoginFailedEvent(final HttpServletRequest request,
             final AuthenticationInfo authInfo, Exception reason) {
         // The reason for the failure may be useful to downstream subscribers.
@@ -1435,9 +1484,13 @@ public class SlingAuthenticator implements Authenticator,
             properties.put("reason_code", reasonCode.name());
 
             // allow extensions to supply additional properties
-            final List<LoginEventDecorator> localList = this.loginEventDecorators;
-            for (final LoginEventDecorator decorator : localList) {
+            final List<JakartaLoginEventDecorator> localList = this.jakartaLoginEventDecorators;
+            for (final JakartaLoginEventDecorator decorator : localList) {
                 decorator.decorateLoginFailedEvent(request, authInfo, properties);
+            }
+            final List<LoginEventDecorator> localListDep = this.loginEventDecorators;
+            for (final LoginEventDecorator decorator : localListDep) {
+                decorator.decorateLoginFailedEvent(JakartaToJavaxRequestWrapper.toJavaxRequest(request), authInfo, properties);
             }
 
             EventAdmin localEA = this.eventAdmin;

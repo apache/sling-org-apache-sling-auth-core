@@ -20,28 +20,25 @@ package org.apache.sling.auth.core.spi;
 
 import java.io.IOException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.osgi.annotation.versioning.ConsumerType;
-
-import aQute.bnd.annotation.baseline.BaselineIgnore;
 
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used
  * by the authentication implementation to support plugin various ways of
  * extracting credentials from the request.
- * @deprecated Use {@link JakartaAuthenticationHandler} instead
+ * @since 1.3.0
  */
-@Deprecated
 @ConsumerType
-public interface AuthenticationHandler {
+public interface JakartaAuthenticationHandler {
 
     /**
      * The name under which an implementation of this interface must be
      * registered to be used as an authentication handler.
      */
-    static final String SERVICE_NAME = "org.apache.sling.auth.core.spi.AuthenticationHandler";
+    static final String SERVICE_NAME = "org.apache.sling.auth.core.spi.JakartaAuthenticationHandler";
 
     /**
      * The name of the service registration property listing one or more URL
@@ -95,7 +92,6 @@ public interface AuthenticationHandler {
      * any failures.
      *
      * @see #extractCredentials(HttpServletRequest, HttpServletResponse)
-     * @since 1.0.2 (Bundle version 1.0.4)
      */
     static final String FAILURE_REASON = "j_reason";
 
@@ -108,40 +104,8 @@ public interface AuthenticationHandler {
      * more detailed failure reasons, e.g. "password_expired".
      *
      * @see #extractCredentials(HttpServletRequest, HttpServletResponse)
-     * @since 1.1.0
      */
     static final String FAILURE_REASON_CODE = "j_reason_code";
-
-    /**
-     * This enum indicates the supported detailed login failure reason codes:
-     * <ul>
-     *     <li><code>invalid_login</code>: indicates username/password mismatch.</li>
-     *     <li><code>password_expired</code>: indicates password has expired or was never set and
-     *     change initial password is enabled</li>
-     *     <li><code>account_locked</code>: the account was disabled or locked</li>
-     *     <li><code>account_not_found</code>: the account was not found (not the same as username password mismatch)</li>
-     *     <li><code>expired_token</code>: the token credentials used have expired</li>
-     * </ul>
-     * @since 1.1.0
-     */
-    // When adding a new field to the enum bnd will require a minor version bump
-    // That's unfortunately too much for an SPI package and should really have no impact
-    // on implementors since the enum values are not exposed from any public API
-    @BaselineIgnore("1.2.3")
-    enum FAILURE_REASON_CODES {
-        INVALID_LOGIN,
-        PASSWORD_EXPIRED,
-        PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY,
-        UNKNOWN,
-        ACCOUNT_LOCKED,
-        ACCOUNT_NOT_FOUND,
-        EXPIRED_TOKEN;
-
-        @Override
-        public String toString() {
-            return super.toString().toLowerCase();
-        }
-    }
 
     /**
      * Extracts credential data from the request if at all contained.

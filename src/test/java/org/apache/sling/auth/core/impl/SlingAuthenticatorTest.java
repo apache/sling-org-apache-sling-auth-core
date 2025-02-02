@@ -26,20 +26,20 @@ import static org.mockito.Mockito.never;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestEvent;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletRequestEvent;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.SlingJakartaHttpServletRequest;
+import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.AuthenticationSupport;
-import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
-import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -102,7 +102,7 @@ public class SlingAuthenticatorTest {
 
         return slingAuthenticator;
     }
-    
+
     @Test
     public void test_quoteCookieValue() throws UnsupportedEncodingException {
 
@@ -312,8 +312,8 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
 
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
-        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
         Mockito.verify(res, never()).addCookie(Mockito.any());
@@ -323,9 +323,9 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
-        
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
-        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
@@ -337,11 +337,11 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "oldsudo");
-        
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
         Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
         Mockito.verify(res, never()).addCookie(Mockito.any());
@@ -351,11 +351,11 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
-        
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
         Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
@@ -366,11 +366,11 @@ public class SlingAuthenticatorTest {
     @Test public void testSetSudoCookieSudoBeforeNoSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
-        
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
         Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
@@ -382,10 +382,10 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
-        
-        final SlingHttpServletRequest req = Mockito.mock(SlingHttpServletRequest.class);
+
+        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
         Mockito.when(req.isSecure()).thenReturn(true);
-        SlingHttpServletResponse res = Mockito.mock(SlingHttpServletResponse.class);
+        SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument1 = ArgumentCaptor.forClass(Cookie.class);
@@ -393,7 +393,7 @@ public class SlingAuthenticatorTest {
         assertTrue(argument1.getValue().isHttpOnly());
         assertTrue(argument1.getValue().getSecure());
 
-        res = Mockito.mock(SlingHttpServletResponse.class);
+        res = Mockito.mock(SlingJakartaHttpServletResponse.class);
         Mockito.when(req.isSecure()).thenReturn(false);
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument2 = ArgumentCaptor.forClass(Cookie.class);
@@ -430,7 +430,7 @@ public class SlingAuthenticatorTest {
         return new AbstractAuthenticationHandlerHolder(authProtectedPath, null) {
 
             @Override
-            protected AuthenticationFeedbackHandler getFeedbackHandler() {
+            protected JakartaAuthenticationFeedbackHandler getFeedbackHandler() {
                 return null;
             }
 
@@ -461,7 +461,7 @@ public class SlingAuthenticatorTest {
         Assert.assertEquals(expected, actual);
     }
 
-    class SimpleAuthHandler implements AuthenticationHandler {
+    class SimpleAuthHandler implements JakartaAuthenticationHandler {
 
         @Override
         public AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response) {

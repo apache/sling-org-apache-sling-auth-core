@@ -20,15 +20,15 @@
 /**
  * Provides API to be implemented by provides of authentication
  * mechanisms. The most important interface (and service definition) is
- * the {@link org.apache.sling.auth.core.spi.AuthenticationHandler}
+ * the {@link org.apache.sling.auth.core.spi.JakartaAuthenticationHandler}
  * interface with the
- * {@link org.apache.sling.auth.core.spi.AbstractAuthenticationHandler}
+ * {@link org.apache.sling.auth.core.spi.DefaultJakartaAuthenticationFeedbackHandler}
  * being an abstract base implementation from which concrete
  * implementations may inherit.
  *
- * @version 1.2.3
+ * @version 1.3.0
  */
-@org.osgi.annotation.versioning.Version("1.2.3")
+@org.osgi.annotation.versioning.Version("1.3.0")
 package org.apache.sling.auth.core.spi;
 
 

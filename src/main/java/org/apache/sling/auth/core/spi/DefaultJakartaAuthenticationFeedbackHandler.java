@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.auth.core.AuthUtil;
@@ -27,11 +27,11 @@ import org.apache.sling.auth.core.AuthenticationSupport;
 import org.slf4j.LoggerFactory;
 
 /**
- * @deprecated Use {@link JakartaAuthenticationFeedbackHandler} instead
+ * Default implementation of an authentication feedback handler.
+ * @since 1.3.0
  */
-@Deprecated
-public class DefaultAuthenticationFeedbackHandler implements
-        AuthenticationFeedbackHandler {
+public class DefaultJakartaAuthenticationFeedbackHandler implements
+        JakartaAuthenticationFeedbackHandler {
 
     /**
      * Handles an optional request for a redirect after successful
@@ -50,12 +50,12 @@ public class DefaultAuthenticationFeedbackHandler implements
      *  by resolving it relative to the request URI
      *  (<code>HttpServletRequest.getRequestURI()</code>). The resulting
      *  target is validated with the
-     *  {@link AbstractAuthenticationHandler#isRedirectValid(HttpServletRequest, String)}
+     *  {@link AuthUtil#isRedirectValid(HttpServletRequest, String)}
      *  method. If valid a redirect to that target is sent back and <code>true</code>
      *  is returned. Otherwise a redirect to the servlet context root is
      *  sent back and <code>true</code> is returned.</li>
      * <li>If the parameter is an absolute path it is validated with the
-     *  {@link AbstractAuthenticationHandler#isRedirectValid(HttpServletRequest, String)}
+     *  {@link AuthUtil#isRedirectValid(HttpServletRequest, String)}
      *  method. If valid a redirect to that path is sent back and <code>true</code>
      *  is returned. Otherwise a redirect to the servlet context root is
      *  sent back and <code>true</code> is returned.</li>
@@ -72,7 +72,7 @@ public class DefaultAuthenticationFeedbackHandler implements
      *         succeeded or not.
      *
      * @since 1.0.4 (bundle version 1.0.8) the target is validated with the
-     *        {@link AbstractAuthenticationHandler#isRedirectValid(HttpServletRequest, String)}
+     *        {@link AuthUtil#isRedirectValid(HttpServletRequest, String)}
      *        method.
      */
     public static boolean handleRedirect(final HttpServletRequest request,
@@ -86,7 +86,7 @@ public class DefaultAuthenticationFeedbackHandler implements
             } catch (Exception e) {
                 // expected: IOException and IllegalStateException
                 LoggerFactory.getLogger(
-                    DefaultAuthenticationFeedbackHandler.class).error(
+                    DefaultJakartaAuthenticationFeedbackHandler.class).error(
                     "handleRedirect: Failed to send redirect to " + redirect
                         + ", aborting request without redirect", e);
             }
@@ -128,7 +128,7 @@ public class DefaultAuthenticationFeedbackHandler implements
 
         // absolute target (in the servlet context)
         if (!AuthUtil.isRedirectValid(request, redirect)) {
-            LoggerFactory.getLogger(DefaultAuthenticationFeedbackHandler.class).error(
+            LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class).error(
                 "handleRedirect: Redirect target '{}' is invalid, redirecting to '/'",
                 redirect);
             redirect = "/";

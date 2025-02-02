@@ -25,21 +25,20 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.AuthUtil;
 
 /**
- * The <code>AbstractAuthenticationFormServlet</code> provides a basic
+ * The <code>AbstractJakartaAuthenticationFormServlet</code> provides a basic
  * implementation of a simple servlet to render a login form for authentication
  * purposes.
- * @deprecated Use {@link AbstractJakartaAuthenticationFormServlet}
+ * @since 1.3.0
  */
-@Deprecated
 @SuppressWarnings("serial")
-public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
+public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServlet {
 
     /**
      * The path to the default login form.

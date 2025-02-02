@@ -18,8 +18,8 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.osgi.annotation.versioning.ConsumerType;
 
@@ -27,11 +27,10 @@ import org.osgi.annotation.versioning.ConsumerType;
  * The <code>AuthenticationFeedbackHandler</code> may be implemented by
  * {@link AuthenticationHandler} services to request being informed on the
  * success or failure of authentication.
- * @deprecated Use {@link JakartaAuthenticationFeedbackHandler} instead
+ * @since 1.3.0
  */
-@Deprecated
 @ConsumerType
-public interface AuthenticationFeedbackHandler {
+public interface JakartaAuthenticationFeedbackHandler {
 
     /**
      * Called if authentication failed with the credentials provided in the
@@ -39,17 +38,17 @@ public interface AuthenticationFeedbackHandler {
      * <p>
      * This method allows the handler to cleanup any state prepared while
      * handling the
-     * {@link AuthenticationHandler#extractCredentials(HttpServletRequest, HttpServletResponse)
+     * {@link JakartaAuthenticationHandler#extractCredentials(HttpServletRequest, HttpServletResponse)
      * extractCredentials} method. Handlers are expected to not send a in this
      * method because the Sling Authenticator will proceed to select an
      * authentication handler whose
-     * {@link AuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)
+     * {@link JakartaAuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)
      * requestCredentials} method will be called.
      * <p>
      * Implementations may also wish to set the
-     * {@link AuthenticationHandler#FAILURE_REASON} request attribute to inform
+     * {@link JakartaAuthenticationHandler#FAILURE_REASON} request attribute to inform
      * interested parties (including its any
-     * {@link AuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)}
+     * {@link JakartaAuthenticationHandler#requestCredentials(HttpServletRequest, HttpServletResponse)}
      * method about the reasons of failure to to authenticate.
      *
      * @param request The current request

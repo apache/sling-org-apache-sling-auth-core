@@ -21,14 +21,14 @@ package org.apache.sling.auth.core.impl;
 import java.io.IOException;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
-import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
-import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
@@ -39,11 +39,10 @@ import org.slf4j.LoggerFactory;
  * authentication handler service in the internal data structure of the
  * {@link SlingAuthenticator}.
  */
-final class AuthenticationHandlerHolder extends
-        AbstractAuthenticationHandlerHolder {
+final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHolder {
 
     // the actual authentication handler
-    private final AuthenticationHandler handler;
+    private final JakartaAuthenticationHandler handler;
 
     // the supported authentication type of the handler
     private final String authType;
@@ -54,7 +53,7 @@ final class AuthenticationHandlerHolder extends
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     AuthenticationHandlerHolder(final String fullPath,
-            final AuthenticationHandler handler,
+            final JakartaAuthenticationHandler handler,
             final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
 
@@ -62,15 +61,21 @@ final class AuthenticationHandlerHolder extends
 
         // assign the fields
         this.handler = handler;
-        this.authType = Converters.standardConverter().convert(serviceReference.getProperty(TYPE_PROPERTY)).to(String.class);
+        this.authType = Converters.standardConverter().convert(serviceReference.getProperty(JakartaAuthenticationHandler.TYPE_PROPERTY)).to(String.class);
         this.browserOnlyRequestCredentials = "true".equalsIgnoreCase(browserOnly)
             || "yes".equalsIgnoreCase(browserOnly);
     }
 
+    AuthenticationHandlerHolder(final String fullPath,
+            @SuppressWarnings("deprecation") final  org.apache.sling.auth.core.spi.AuthenticationHandler handler,
+            final ServiceReference<?> serviceReference) {
+        this(fullPath, AuthenticationHandlerWrapper.wrap(handler), serviceReference);
+    }
+
     @Override
-    protected AuthenticationFeedbackHandler getFeedbackHandler() {
-        if (handler instanceof AuthenticationFeedbackHandler) {
-            return (AuthenticationFeedbackHandler) handler;
+    protected JakartaAuthenticationFeedbackHandler getFeedbackHandler() {
+        if (handler instanceof JakartaAuthenticationFeedbackHandler) {
+            return (JakartaAuthenticationFeedbackHandler) handler;
         }
         return null;
     }

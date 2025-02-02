@@ -21,14 +21,14 @@ package org.apache.sling.auth.core.impl;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.sling.auth.core.AuthUtil;
-import org.apache.sling.auth.core.spi.AuthenticationHandler;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
-import org.apache.sling.auth.core.spi.DefaultAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.DefaultJakartaAuthenticationFeedbackHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  * preemptively authenticate with HTTP Basic authentication.
  */
 class HttpBasicAuthenticationHandler extends
-        DefaultAuthenticationFeedbackHandler implements AuthenticationHandler {
+        DefaultJakartaAuthenticationFeedbackHandler implements JakartaAuthenticationHandler {
 
     private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
 
