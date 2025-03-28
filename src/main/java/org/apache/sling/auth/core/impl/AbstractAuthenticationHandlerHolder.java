@@ -22,7 +22,6 @@ import java.io.IOException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
@@ -33,12 +32,10 @@ import org.osgi.framework.ServiceReference;
  * represent authentication handlers (both legacy and new ones) for use in the
  * {@link SlingAuthenticator}.
  */
-public abstract class AbstractAuthenticationHandlerHolder
-        extends PathBasedHolder
+public abstract class AbstractAuthenticationHandlerHolder extends PathBasedHolder
         implements JakartaAuthenticationHandler {
 
-    protected AbstractAuthenticationHandlerHolder(final String fullPath,
-            final ServiceReference<?> serviceReference) {
+    protected AbstractAuthenticationHandlerHolder(final String fullPath, final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
     }
 
@@ -53,8 +50,7 @@ public abstract class AbstractAuthenticationHandlerHolder
      * @return the result of calling
      *          {@link #doExtractCredentials(HttpServletRequest, HttpServletResponse)}
      */
-    public final AuthenticationInfo extractCredentials(
-            HttpServletRequest request, HttpServletResponse response) {
+    public final AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response) {
 
         final Object oldPathAttr = setPath(request);
         try {
@@ -62,7 +58,6 @@ public abstract class AbstractAuthenticationHandlerHolder
         } finally {
             resetPath(request, oldPathAttr);
         }
-
     }
 
     /**
@@ -77,8 +72,8 @@ public abstract class AbstractAuthenticationHandlerHolder
      *          {@link #doRequestCredentials(HttpServletRequest, HttpServletResponse)}
      * @throws IOException if an error occurs interacting with the client
      */
-    public final boolean requestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    public final boolean requestCredentials(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
         final Object oldPathAttr = setPath(request);
         try {
             return doRequestCredentials(request, response);
@@ -97,8 +92,7 @@ public abstract class AbstractAuthenticationHandlerHolder
      * @param response the current response
      * @throws IOException if an error occurs interacting with the client
      */
-    public final void dropCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    public final void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final Object oldPathAttr = setPath(request);
         try {
             doDropCredentials(request, response);
@@ -138,8 +132,8 @@ public abstract class AbstractAuthenticationHandlerHolder
      *             client.
      * @see #requestCredentials(HttpServletRequest, HttpServletResponse)
      */
-    protected abstract boolean doRequestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    protected abstract boolean doRequestCredentials(HttpServletRequest request, HttpServletResponse response)
+            throws IOException;
 
     /**
      * Calls the actual authentication handler to request the credentials from
@@ -151,8 +145,8 @@ public abstract class AbstractAuthenticationHandlerHolder
      *             client.
      * @see #dropCredentials(HttpServletRequest, HttpServletResponse)
      */
-    protected abstract void doDropCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    protected abstract void doDropCredentials(HttpServletRequest request, HttpServletResponse response)
+            throws IOException;
 
     // ---------- internal
 
@@ -161,8 +155,7 @@ public abstract class AbstractAuthenticationHandlerHolder
      * {@link AuthenticationHandler#PATH_PROPERTY} request attribute.
      */
     private Object setPath(final HttpServletRequest request) {
-        return setRequestAttribute(request,
-            JakartaAuthenticationHandler.PATH_PROPERTY, fullPath);
+        return setRequestAttribute(request, JakartaAuthenticationHandler.PATH_PROPERTY, fullPath);
     }
 
     /**
@@ -170,8 +163,7 @@ public abstract class AbstractAuthenticationHandlerHolder
      * {@link AuthenticationHandler#PATH_PROPERTY} request attribute.
      */
     private void resetPath(final HttpServletRequest request, Object oldValue) {
-        setRequestAttribute(request, JakartaAuthenticationHandler.PATH_PROPERTY,
-            oldValue);
+        setRequestAttribute(request, JakartaAuthenticationHandler.PATH_PROPERTY, oldValue);
     }
 
     /**
@@ -185,8 +177,7 @@ public abstract class AbstractAuthenticationHandlerHolder
      * @return The previous value of the named request attribute or
      *         <code>null</code> if it was not set.
      */
-    private static Object setRequestAttribute(HttpServletRequest request,
-            String name, Object value) {
+    private static Object setRequestAttribute(HttpServletRequest request, String name, Object value) {
         Object oldValue = request.getAttribute(name);
         if (value == null) {
             request.removeAttribute(name);

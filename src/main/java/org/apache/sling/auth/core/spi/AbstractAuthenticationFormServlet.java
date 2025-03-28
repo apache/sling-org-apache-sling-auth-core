@@ -18,16 +18,16 @@
  */
 package org.apache.sling.auth.core.spi;
 
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.sling.auth.core.AuthUtil;
 
@@ -77,8 +77,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      *             and thus response reset is not possible.
      */
     @Override
-    protected void doGet(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         handle(request, response);
     }
 
@@ -97,8 +96,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      *             and thus response reset is not possible.
      */
     @Override
-    protected void doPost(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         handle(request, response);
     }
 
@@ -138,8 +136,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
      * @return The login form to be returned to the client
      * @throws IOException If the login form cannot be loaded
      */
-    protected String getForm(final HttpServletRequest request)
-            throws IOException {
+    protected String getForm(final HttpServletRequest request) throws IOException {
         String form = getRawForm();
 
         final String resource = cleanse(request, getResource(request));
@@ -192,9 +189,9 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
         }
 
         final StringBuilder b = new StringBuilder(input.length());
-        for(int i = 0;i  < input.length(); i++) {
+        for (int i = 0; i < input.length(); i++) {
             final char c = input.charAt(i);
-            if(c == '&') {
+            if (c == '&') {
                 b.append("&amp;");
             } else if (c == '<') {
                 b.append("&lt;");
@@ -260,7 +257,7 @@ public abstract class AbstractAuthenticationFormServlet extends HttpServlet {
     }
 
     private static String removeEndingSlash(String str) {
-        if(str != null && str.endsWith("/")) {
+        if (str != null && str.endsWith("/")) {
             return str.substring(0, str.length() - 1);
         }
         return str;

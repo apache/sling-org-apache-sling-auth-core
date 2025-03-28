@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
@@ -45,8 +44,8 @@ import org.slf4j.LoggerFactory;
  * an easy way for tools (like cURL) or libraries (like Apache HttpCLient) to
  * preemptively authenticate with HTTP Basic authentication.
  */
-class HttpBasicAuthenticationHandler extends
-        DefaultJakartaAuthenticationFeedbackHandler implements JakartaAuthenticationHandler {
+class HttpBasicAuthenticationHandler extends DefaultJakartaAuthenticationFeedbackHandler
+        implements JakartaAuthenticationHandler {
 
     private static final String HEADER_WWW_AUTHENTICATE = "WWW-Authenticate";
 
@@ -69,8 +68,7 @@ class HttpBasicAuthenticationHandler extends
      */
     private final boolean fullSupport;
 
-    HttpBasicAuthenticationHandler(final String realm,
-            final boolean fullSupport) {
+    HttpBasicAuthenticationHandler(final String realm, final boolean fullSupport) {
         this.realm = realm;
         this.fullSupport = fullSupport;
     }
@@ -98,8 +96,7 @@ class HttpBasicAuthenticationHandler extends
      *         information. In case of DOING_AUTH, the method has sent back a
      *         401 requesting the client to provide credentials.
      */
-    public AuthenticationInfo extractCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response) {
 
         // extract credentials and return
         AuthenticationInfo info = this.extractCredentials(request);
@@ -131,8 +128,7 @@ class HttpBasicAuthenticationHandler extends
      *         could be sent. If full support is not enabled <code>false</code>
      *         is always returned.
      */
-    public boolean requestCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) {
         return fullSupport && sendUnauthorized(response);
     }
 
@@ -148,8 +144,7 @@ class HttpBasicAuthenticationHandler extends
      * nasty side-effect is that the browser's login form is displayed as a
      * reaction to the 401/UNAUTHORIZED response.
      */
-    public void dropCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public void dropCredentials(HttpServletRequest request, HttpServletResponse response) {
         if (fullSupport && request.getHeader(HEADER_AUTHORIZATION) != null) {
             sendUnauthorized(response);
         }
@@ -176,8 +171,8 @@ class HttpBasicAuthenticationHandler extends
      * response to be sent.
      */
     @Override
-    public void authenticationFailed(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationInfo authInfo) {
+    public void authenticationFailed(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
         if (!AuthUtil.isValidateRequest(request)) {
             sendUnauthorized(response);
         }
@@ -219,8 +214,7 @@ class HttpBasicAuthenticationHandler extends
      * @return <code>true</code> if the 401/UNAUTHORIZED method has successfully
      *         been sent.
      */
-    private boolean forceAuthentication(HttpServletRequest request,
-            HttpServletResponse response) {
+    private boolean forceAuthentication(HttpServletRequest request, HttpServletResponse response) {
 
         // presume 401/UNAUTHORIZED has not been sent
         boolean authenticationForced = false;
@@ -232,9 +226,8 @@ class HttpBasicAuthenticationHandler extends
         } else {
 
             log.debug(
-                "forceAuthentication: Not forcing authentication because request parameter {} is not set",
-                REQUEST_LOGIN_PARAMETER);
-
+                    "forceAuthentication: Not forcing authentication because request parameter {} is not set",
+                    REQUEST_LOGIN_PARAMETER);
         }
 
         // true if 401/UNAUTHORIZED has been sent, false otherwise
@@ -276,15 +269,13 @@ class HttpBasicAuthenticationHandler extends
             // error handler in which case sendError would result in an error
             // handler loop and thus be ignored.
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setHeader(HEADER_WWW_AUTHENTICATE,
-                AUTHENTICATION_SCHEME_BASIC + " realm=\"" + this.realm + "\"");
+            response.setHeader(HEADER_WWW_AUTHENTICATE, AUTHENTICATION_SCHEME_BASIC + " realm=\"" + this.realm + "\"");
 
             try {
                 response.flushBuffer();
                 return true;
             } catch (IOException ioe) {
-                log.error("sendUnauthorized: Failed requesting authentication",
-                    ioe);
+                log.error("sendUnauthorized: Failed requesting authentication", ioe);
             }
         }
 
@@ -293,8 +284,7 @@ class HttpBasicAuthenticationHandler extends
 
     @Override
     public String toString() {
-        return "HTTP Basic Authentication Handler ("
-            + (fullSupport ? "enabled" : "preemptive") + ")";
+        return "HTTP Basic Authentication Handler (" + (fullSupport ? "enabled" : "preemptive") + ")";
     }
 
     // ---------- internal -----------------------------------------------------
@@ -344,7 +334,6 @@ class HttpBasicAuthenticationHandler extends
             password = decoded.substring(colIdx + 1).toCharArray();
         }
 
-        return new AuthenticationInfo(HttpServletRequest.BASIC_AUTH, userId,
-            password);
+        return new AuthenticationInfo(HttpServletRequest.BASIC_AUTH, userId, password);
     }
 }

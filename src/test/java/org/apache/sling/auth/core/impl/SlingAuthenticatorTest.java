@@ -18,11 +18,6 @@
  */
 package org.apache.sling.auth.core.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.never;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -31,7 +26,7 @@ import jakarta.servlet.ServletRequestEvent;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import junitx.util.PrivateAccessor;
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.SlingJakartaHttpServletResponse;
 import org.apache.sling.api.resource.ResourceResolver;
@@ -47,11 +42,14 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import junitx.util.PrivateAccessor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
 
 public class SlingAuthenticatorTest {
 
-   /**
+    /**
      * Helper method to create a default configuration
      */
     public static SlingAuthenticator.Config createDefaultConfig() {
@@ -85,20 +83,20 @@ public class SlingAuthenticatorTest {
         return context;
     }
 
-    private SlingAuthenticator createSlingAuthenticator(final SlingAuthenticator.Config config,
-             final String... typeAndPathPairs) {
-        final AuthenticationRequirementsManager requirements = new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
+    private SlingAuthenticator createSlingAuthenticator(
+            final SlingAuthenticator.Config config, final String... typeAndPathPairs) {
+        final AuthenticationRequirementsManager requirements =
+                new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
         final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
-        if ( typeAndPathPairs != null ) {
-            int i=0;
-            while ( i < typeAndPathPairs.length ) {
-                handlers.addHolder(buildAuthHolderForAuthTypeAndPath(typeAndPathPairs[i], typeAndPathPairs[i+1]));
+        if (typeAndPathPairs != null) {
+            int i = 0;
+            while (i < typeAndPathPairs.length) {
+                handlers.addHolder(buildAuthHolderForAuthTypeAndPath(typeAndPathPairs[i], typeAndPathPairs[i + 1]));
                 i += 2;
             }
         }
-        final SlingAuthenticator slingAuthenticator = new SlingAuthenticator(requirements,
-            handlers,
-            null, Mockito.mock(BundleContext.class), config);
+        final SlingAuthenticator slingAuthenticator =
+                new SlingAuthenticator(requirements, handlers, null, Mockito.mock(BundleContext.class), config);
 
         return slingAuthenticator;
     }
@@ -120,7 +118,6 @@ public class SlingAuthenticatorTest {
 
         checkQuote("string\ttab", "\"string%09tab\"");
         checkQuote("test中文", "\"test%E4%B8%AD%E6%96%87\"");
-
 
         try {
             SlingAuthenticator.quoteCookieValue("string\rCR");
@@ -148,9 +145,9 @@ public class SlingAuthenticatorTest {
         checkUnQuote("\"string\ttab\"", "string\ttab");
     }
 
-    //SLING-4864
+    // SLING-4864
     @Test
-    public void  test_isAnonAllowed() throws Throwable {
+    public void test_isAnonAllowed() throws Throwable {
         // anon is allowed by default
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
@@ -163,7 +160,7 @@ public class SlingAuthenticatorTest {
     }
 
     @Test
-    public void  test_isAnonNotAllowed() throws Throwable {
+    public void test_isAnonNotAllowed() throws Throwable {
         // anon is allowed by default
         final SlingAuthenticator.Config config = createDefaultConfig();
         Mockito.when(config.auth_annonymous()).thenReturn(false);
@@ -185,8 +182,11 @@ public class SlingAuthenticatorTest {
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, requestChildNode);
 
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
+        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
+                slingAuthenticator,
+                "getAuthenticationInfo",
+                new Class[] {HttpServletRequest.class, HttpServletResponse.class},
+                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined above should be used for the path /test and his children: eg /test/childnode.
          */
@@ -242,19 +242,22 @@ public class SlingAuthenticatorTest {
         final String PROTECTED_PATH_LONGER = "/resource1.test2";
         final String REQUEST_CHILD_NODE = "/resource1.test2";
 
-        final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH, AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER);
+        final SlingAuthenticator slingAuthenticator =
+                this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH, AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER);
 
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
+        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
+                slingAuthenticator,
+                "getAuthenticationInfo",
+                new Class[] {HttpServletRequest.class, HttpServletResponse.class},
+                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
          */
         Assert.assertEquals(AUTH_TYPE_LONGER, authInfo.getAuthType());
     }
-
 
     /**
      * JIRA: SLING-6053
@@ -283,15 +286,19 @@ public class SlingAuthenticatorTest {
         final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_NOT_PROTECTED_PATH);
 
-        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(slingAuthenticator, "getAuthenticationInfo",
-                new Class[]{HttpServletRequest.class, HttpServletResponse.class}, new Object[]{request, Mockito.mock(HttpServletResponse.class)});
+        AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
+                slingAuthenticator,
+                "getAuthenticationInfo",
+                new Class[] {HttpServletRequest.class, HttpServletResponse.class},
+                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined aboved should not be used for the path /test2.
          */
         Assert.assertNotEquals(AUTH_TYPE, authInfo.getAuthType());
     }
 
-    @Test public void testServletRequestListener() {
+    @Test
+    public void testServletRequestListener() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final ServletRequestEvent event = Mockito.mock(ServletRequestEvent.class);
         final ServletRequest request = Mockito.mock(ServletRequest.class);
@@ -300,7 +307,8 @@ public class SlingAuthenticatorTest {
         slingAuthenticator.requestInitialized(event);
 
         final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+                .thenReturn(resolver);
 
         slingAuthenticator.requestDestroyed(event);
         // verify resolver close, attribute removed
@@ -308,7 +316,8 @@ public class SlingAuthenticatorTest {
         Mockito.verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
     }
 
-    @Test public void testSetSudoCookieNoSudoBeforeNoSudoAfter() {
+    @Test
+    public void testSetSudoCookieNoSudoBeforeNoSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
 
@@ -319,7 +328,8 @@ public class SlingAuthenticatorTest {
         Mockito.verify(res, never()).addCookie(Mockito.any());
     }
 
-    @Test public void testSetSudoCookieNoSudoBeforeSudoAfter() {
+    @Test
+    public void testSetSudoCookieNoSudoBeforeSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
@@ -333,7 +343,8 @@ public class SlingAuthenticatorTest {
         assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
-    @Test public void testSetSudoCookieSudoBeforeSameSudoAfter() {
+    @Test
+    public void testSetSudoCookieSudoBeforeSameSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "oldsudo");
@@ -347,7 +358,8 @@ public class SlingAuthenticatorTest {
         Mockito.verify(res, never()).addCookie(Mockito.any());
     }
 
-    @Test public void testSetSudoCookieSudoBeforeNewSudoAfter() {
+    @Test
+    public void testSetSudoCookieSudoBeforeNewSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
@@ -363,7 +375,8 @@ public class SlingAuthenticatorTest {
         assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
-    @Test public void testSetSudoCookieSudoBeforeNoSudoAfter() {
+    @Test
+    public void testSetSudoCookieSudoBeforeNoSudoAfter() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
 
@@ -378,7 +391,8 @@ public class SlingAuthenticatorTest {
         assertEquals("\"\"", argument.getValue().getValue());
     }
 
-    @Test public void testSudoCookieFlags() {
+    @Test
+    public void testSudoCookieFlags() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
@@ -402,7 +416,7 @@ public class SlingAuthenticatorTest {
         assertFalse(argument2.getValue().getSecure());
     }
 
-    //---------------------------- PRIVATE METHODS -----------------------------
+    // ---------------------------- PRIVATE METHODS -----------------------------
 
     /**
      * Mocks the request to accept method calls on path;
@@ -410,8 +424,7 @@ public class SlingAuthenticatorTest {
      * @param request http request
      * @param requestPath request path
      */
-    private void buildExpectationsForRequest(final HttpServletRequest request,
-            final String requestPath) {
+    private void buildExpectationsForRequest(final HttpServletRequest request, final String requestPath) {
         {
             Mockito.when(request.getServletPath()).thenReturn(requestPath);
             Mockito.when(request.getServerName()).thenReturn("localhost");
@@ -426,7 +439,8 @@ public class SlingAuthenticatorTest {
      * @param authProtectedPath    path protected by the auth handler
      * @return AbstractAuthenticationHandlerHolder with only an AuthenticationInfo
      */
-    private AbstractAuthenticationHandlerHolder buildAuthHolderForAuthTypeAndPath(final String authType, final String authProtectedPath) {
+    private AbstractAuthenticationHandlerHolder buildAuthHolderForAuthTypeAndPath(
+            final String authType, final String authProtectedPath) {
         return new AbstractAuthenticationHandlerHolder(authProtectedPath, null) {
 
             @Override
@@ -435,19 +449,20 @@ public class SlingAuthenticatorTest {
             }
 
             @Override
-            protected AuthenticationInfo doExtractCredentials(HttpServletRequest request, HttpServletResponse response) {
+            protected AuthenticationInfo doExtractCredentials(
+                    HttpServletRequest request, HttpServletResponse response) {
                 return new AuthenticationInfo(authType);
             }
 
             @Override
-            protected boolean doRequestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            protected boolean doRequestCredentials(HttpServletRequest request, HttpServletResponse response)
+                    throws IOException {
                 return false;
             }
 
             @Override
-            protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-            }
+            protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response)
+                    throws IOException {}
         };
     }
 
@@ -469,8 +484,7 @@ public class SlingAuthenticatorTest {
         }
 
         @Override
-        public boolean requestCredentials(HttpServletRequest request, HttpServletResponse response)
-                throws IOException {
+        public boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
             throw new UnsupportedOperationException("Unimplemented method 'requestCredentials'");
         }
 
@@ -478,6 +492,5 @@ public class SlingAuthenticatorTest {
         public void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
             throw new UnsupportedOperationException("Unimplemented method 'dropCredentials'");
         }
-
     }
 }

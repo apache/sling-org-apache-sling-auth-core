@@ -18,16 +18,17 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-
 public class PathBasedHolderTest {
 
-    @Test public void TestIsPathRequiresHandlerRoot() {
-        final PathBasedHolder holder = new PathBasedHolder("/", null){};
+    @Test
+    public void TestIsPathRequiresHandlerRoot() {
+        final PathBasedHolder holder = new PathBasedHolder("/", null) {};
 
         assertTrue(holder.isPathRequiresHandler("/"));
         assertTrue(holder.isPathRequiresHandler("/a"));
@@ -38,8 +39,9 @@ public class PathBasedHolderTest {
         assertTrue(holder.isPathRequiresHandler("/a/b/c.html"));
     }
 
-    @Test public void TestIsPathRequiresHandlerPrefix() {
-        final PathBasedHolder holder = new PathBasedHolder("/a/b", null){};
+    @Test
+    public void TestIsPathRequiresHandlerPrefix() {
+        final PathBasedHolder holder = new PathBasedHolder("/a/b", null) {};
 
         assertFalse(holder.isPathRequiresHandler("/"));
         assertFalse(holder.isPathRequiresHandler("/a"));
@@ -56,13 +58,13 @@ public class PathBasedHolderTest {
     public void test_childNodeAuthenticationHandlerPath() throws Throwable {
         final String requestPath = "/content/test/test2";
         final String handlerPath = "/content/test";
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
+        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null) {};
 
         assertTrue(holder.isPathRequiresHandler(requestPath));
     }
 
     private void assertPathRequiresHandler(boolean expected, String requestPath, String handlerPath) {
-        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null){};
+        final PathBasedHolder holder = new PathBasedHolder(handlerPath, null) {};
         assertEquals(expected, holder.isPathRequiresHandler(requestPath));
     }
 

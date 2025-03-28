@@ -18,10 +18,10 @@
  */
 package org.apache.sling.engine.auth;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used
@@ -89,8 +89,7 @@ public interface AuthenticationHandler {
      *         In case of {@link AuthenticationInfo#DOING_AUTH}, the method must
      *         have sent a response indicating that fact to the client.
      */
-    AuthenticationInfo authenticate(HttpServletRequest request,
-            HttpServletResponse response);
+    AuthenticationInfo authenticate(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * Requests authentication information from the client. Returns
@@ -114,6 +113,5 @@ public interface AuthenticationHandler {
      * @throws IOException If an error occurrs sending the authentication
      *             inquiry to the client.
      */
-    boolean requestAuthentication(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    boolean requestAuthentication(HttpServletRequest request, HttpServletResponse response) throws IOException;
 }

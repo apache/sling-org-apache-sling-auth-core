@@ -37,8 +37,9 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.util.converter.Converters;
 
-@Component(service = {AuthenticationHandlersManager.class},
-     configurationPid = SlingAuthenticator.PID)
+@Component(
+        service = {AuthenticationHandlersManager.class},
+        configurationPid = SlingAuthenticator.PID)
 public class AuthenticationHandlersManager extends PathBasedHolderCache<AbstractAuthenticationHandlerHolder> {
 
     /** Handler map for authentication handlers */
@@ -74,7 +75,7 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
         if (httpSupport != null) {
             final List<String> provider = ahMap.computeIfAbsent("/", key -> new ArrayList<>());
             provider.add("HTTP Basic Authentication Handler ("
-                + (Boolean.TRUE.equals(httpSupport) ? "enabled" : "preemptive") + ")");
+                    + (Boolean.TRUE.equals(httpSupport) ? "enabled" : "preemptive") + ")");
         }
         return ahMap;
     }
@@ -85,12 +86,13 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param handler The handler
      */
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindJakartaAuthHandler(final JakartaAuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void bindJakartaAuthHandler(
+            final JakartaAuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path,
-                handler,
-                ref));
+        final String[] paths = Converters.standardConverter()
+                .convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY))
+                .to(String[].class);
+        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path, handler, ref));
     }
 
     /**
@@ -119,12 +121,14 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param handler The handler
      */
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindAuthHandler(@SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void bindAuthHandler(
+            @SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler,
+            final ServiceReference<Object> ref) {
         final String id = "A".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path,
-                handler,
-                ref));
+        final String[] paths = Converters.standardConverter()
+                .convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY))
+                .to(String[].class);
+        internalBindAuthHandler(paths, id, path -> new AuthenticationHandlerHolder(path, handler, ref));
     }
 
     /**
@@ -133,7 +137,9 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param handler The handler
      */
     @SuppressWarnings("unused")
-    private void updatedAuthHandler(@SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void updatedAuthHandler(
+            @SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler,
+            final ServiceReference<Object> ref) {
         unbindAuthHandler(ref);
         bindAuthHandler(handler, ref);
     }
@@ -155,12 +161,13 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      */
     @Deprecated
     @Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
-    private void bindEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void bindEngineAuthHandler(
+            final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         final String id = "E".concat(ref.getProperty(Constants.SERVICE_ID).toString());
-        final String[] paths = Converters.standardConverter().convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY)).to(String[].class);
-        internalBindAuthHandler(paths, id, path -> new EngineAuthenticationHandlerHolder(path,
-                handler,
-                ref));
+        final String[] paths = Converters.standardConverter()
+                .convert(ref.getProperty(JakartaAuthenticationHandler.PATH_PROPERTY))
+                .to(String[].class);
+        internalBindAuthHandler(paths, id, path -> new EngineAuthenticationHandlerHolder(path, handler, ref));
     }
 
     /**
@@ -171,7 +178,8 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      */
     @SuppressWarnings("unused")
     @Deprecated
-    private void updatedEngineAuthHandler(final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
+    private void updatedEngineAuthHandler(
+            final org.apache.sling.engine.auth.AuthenticationHandler handler, final ServiceReference<Object> ref) {
         unbindEngineAuthHandler(ref);
         bindEngineAuthHandler(handler, ref);
     }
@@ -191,7 +199,10 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
      * @param id Unique id
      * @param createFunction Creation callback
      */
-    private void internalBindAuthHandler(final String[] paths, final String id, final Function<String, AbstractAuthenticationHandlerHolder> createFunction) {
+    private void internalBindAuthHandler(
+            final String[] paths,
+            final String id,
+            final Function<String, AbstractAuthenticationHandlerHolder> createFunction) {
         if (paths != null && paths.length > 0) {
 
             // generate the holders
@@ -202,8 +213,8 @@ public class AuthenticationHandlersManager extends PathBasedHolderCache<Abstract
                 }
             }
             // register the holders
-            if ( !holderList.isEmpty() ) {
-                for(final AbstractAuthenticationHandlerHolder holder : holderList) {
+            if (!holderList.isEmpty()) {
+                for (final AbstractAuthenticationHandlerHolder holder : holderList) {
                     this.addHolder(holder);
                 }
 

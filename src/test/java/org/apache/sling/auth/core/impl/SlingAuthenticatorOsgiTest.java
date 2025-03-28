@@ -1,32 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.sling.auth.core.impl;
-
-import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_FAILED_METER_NAME;
-import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_SUCCESS_METER_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -41,7 +31,6 @@ import java.util.function.Supplier;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -60,6 +49,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
+
+import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_FAILED_METER_NAME;
+import static org.apache.sling.auth.core.impl.SlingAuthenticationMetrics.AUTHENTICATE_SUCCESS_METER_NAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class SlingAuthenticatorOsgiTest {
 
@@ -81,7 +82,8 @@ public class SlingAuthenticatorOsgiTest {
     public void before() throws Exception {
         ResourceResolver rr = mock(ResourceResolver.class);
 
-        when(resourceResolverFactory.getResourceResolver(any(AuthenticationInfo.class))).thenReturn(rr);
+        when(resourceResolverFactory.getResourceResolver(any(AuthenticationInfo.class)))
+                .thenReturn(rr);
 
         when(timer.time()).thenReturn(ctx);
         when(metricsService.meter(AUTHENTICATE_SUCCESS_METER_NAME)).thenReturn(successMeter);
@@ -93,8 +95,11 @@ public class SlingAuthenticatorOsgiTest {
         context.registerInjectActivateService(SlingAuthenticationMetrics.class);
         context.registerInjectActivateService(AuthenticationRequirementsManager.class);
 
-        //register a test auth handler
-        context.registerService(JakartaAuthenticationHandler.class, testAuthHandler, Collections.singletonMap(JakartaAuthenticationHandler.PATH_PROPERTY, new String[] {"/"}));
+        // register a test auth handler
+        context.registerService(
+                JakartaAuthenticationHandler.class,
+                testAuthHandler,
+                Collections.singletonMap(JakartaAuthenticationHandler.PATH_PROPERTY, new String[] {"/"}));
         context.registerService(EventHandler.class, testEventHandler);
         context.registerService(JakartaLoginEventDecorator.class, new TestLoginEventDecorator());
 
@@ -136,8 +141,7 @@ public class SlingAuthenticatorOsgiTest {
                     when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
                 },
                 () -> testEventHandler.collectedEvents(AuthConstants.TOPIC_LOGIN),
-                event -> assertEquals("test1Value", event.getProperty("test1"))
-            );
+                event -> assertEquals("test1Value", event.getProperty("test1")));
     }
 
     /**
@@ -153,15 +157,15 @@ public class SlingAuthenticatorOsgiTest {
                     when(testAuthHandler.extractCredentials(req, resp)).thenReturn(authInfo);
                     // throw exception to trigger FailedLogin event
                     try {
-                        when(resourceResolverFactory.getResourceResolver(authInfo)).thenThrow(new LoginException("Test LoginFailed"));
+                        when(resourceResolverFactory.getResourceResolver(authInfo))
+                                .thenThrow(new LoginException("Test LoginFailed"));
                     } catch (LoginException e) {
                         // should never get here as the LoginException should be caught by the SlingAuthenticator
                         fail("Unexpected exception caught: " + e.getMessage());
                     }
                 },
                 () -> testEventHandler.collectedEvents(AuthConstants.TOPIC_LOGIN_FAILED),
-                event -> assertEquals("test2Value", event.getProperty("test2"))
-            );
+                event -> assertEquals("test2Value", event.getProperty("test2")));
     }
 
     /**
@@ -172,7 +176,8 @@ public class SlingAuthenticatorOsgiTest {
      * @param collectEvents to do the work of collecting the delivered events
      * @param verifyEvent to do the work to assert that the event has the expected state
      */
-    protected void assertLoginEvent(BiConsumer<HttpServletRequest, HttpServletResponse> prepareAuthInfo,
+    protected void assertLoginEvent(
+            BiConsumer<HttpServletRequest, HttpServletResponse> prepareAuthInfo,
             Supplier<List<Event>> collectEvents,
             Consumer<Event> verifyEvent) {
         HttpServletRequest req = mock(HttpServletRequest.class);
@@ -192,12 +197,12 @@ public class SlingAuthenticatorOsgiTest {
 
         // wait for the login event to arrive
         Awaitility.await("eventDelivery")
-            .atMost(Duration.ofSeconds(5))
-            .pollInterval(Duration.ofMillis(100))
-            .until(() -> {
-                List<Event> events = collectEvents.get();
-                return !events.isEmpty();
-            });
+                .atMost(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(100))
+                .until(() -> {
+                    List<Event> events = collectEvents.get();
+                    return !events.isEmpty();
+                });
         List<Event> events = collectEvents.get();
         assertEquals(1, events.size());
         // make sure the event has the state that we expect
@@ -223,13 +228,11 @@ public class SlingAuthenticatorOsgiTest {
         public void handleEvent(Event event) {
             String topic = event.getTopic();
             // collect the event if it is one of the topics we are interested in
-            if (AuthConstants.TOPIC_LOGIN_FAILED.equals(topic) ||
-                    AuthConstants.TOPIC_LOGIN.equals(topic)) {
+            if (AuthConstants.TOPIC_LOGIN_FAILED.equals(topic) || AuthConstants.TOPIC_LOGIN.equals(topic)) {
                 List<Event> list = collectedEvents.computeIfAbsent(topic, t -> new ArrayList<>());
                 list.add(event);
             }
         }
-
     }
 
     /**
@@ -238,17 +241,19 @@ public class SlingAuthenticatorOsgiTest {
     static class TestLoginEventDecorator implements JakartaLoginEventDecorator {
 
         @Override
-        public @NotNull void decorateLoginEvent(@NotNull HttpServletRequest request,
-                @NotNull AuthenticationInfo authInfo, @NotNull Map<String, Object> eventProperties) {
+        public @NotNull void decorateLoginEvent(
+                @NotNull HttpServletRequest request,
+                @NotNull AuthenticationInfo authInfo,
+                @NotNull Map<String, Object> eventProperties) {
             eventProperties.put("test1", "test1Value");
         }
 
         @Override
-        public @NotNull void decorateLoginFailedEvent(@NotNull HttpServletRequest request,
-                @NotNull AuthenticationInfo authInfo, @NotNull Map<String, Object> eventProperties) {
+        public @NotNull void decorateLoginFailedEvent(
+                @NotNull HttpServletRequest request,
+                @NotNull AuthenticationInfo authInfo,
+                @NotNull Map<String, Object> eventProperties) {
             eventProperties.put("test2", "test2Value");
         }
-
     }
-
 }

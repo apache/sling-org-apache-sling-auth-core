@@ -55,7 +55,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * no further actions should be taken on this request.
      */
     public static final AuthenticationInfo DOING_AUTH = new ReadOnlyAuthenticationInfo( // NOSONAR
-        "DOING_AUTH");
+            "DOING_AUTH");
 
     /**
      * A special instance of this class which may be returned from the
@@ -69,7 +69,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * expired).
      */
     public static final AuthenticationInfo FAIL_AUTH = new ReadOnlyAuthenticationInfo( // NOSONAR
-        "FAIL_AUTH");
+            "FAIL_AUTH");
 
     /**
      * The name of the special property providing the authentication type
@@ -119,8 +119,7 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * @throws NullPointerException if <code>authType</code> is
      *             <code>null</code>.
      */
-    public AuthenticationInfo(final String authType, final String userId,
-            final char[] password) {
+    public AuthenticationInfo(final String authType, final String userId, final char[] password) {
         super.put(AUTH_TYPE, authType);
         putIfNotNull(ResourceResolverFactory.USER, userId);
         putIfNotNull(ResourceResolverFactory.PASSWORD, password);
@@ -219,20 +218,15 @@ public class AuthenticationInfo extends HashMap<String, Object> {
     public Object put(final String key, final Object value) {
 
         if (AUTH_TYPE.equals(key) && !(value instanceof String)) {
-            throw new IllegalArgumentException(AUTH_TYPE
-                + " property must be a String");
+            throw new IllegalArgumentException(AUTH_TYPE + " property must be a String");
         }
 
-        if (ResourceResolverFactory.USER.equals(key)
-            && !(value instanceof String)) {
-            throw new IllegalArgumentException(ResourceResolverFactory.USER
-                + " property must be a String");
+        if (ResourceResolverFactory.USER.equals(key) && !(value instanceof String)) {
+            throw new IllegalArgumentException(ResourceResolverFactory.USER + " property must be a String");
         }
 
-        if (ResourceResolverFactory.PASSWORD.equals(key)
-            && !(value instanceof char[])) {
-            throw new IllegalArgumentException(ResourceResolverFactory.PASSWORD
-                + " property must be a char[]");
+        if (ResourceResolverFactory.PASSWORD.equals(key) && !(value instanceof char[])) {
+            throw new IllegalArgumentException(ResourceResolverFactory.PASSWORD + " property must be a char[]");
         }
 
         return super.put(key, value);
@@ -288,10 +282,9 @@ public class AuthenticationInfo extends HashMap<String, Object> {
      * methods that may change the state.
      * This acts like kind of a read-only immutable wrapper.
      */
-    private static final class ReadOnlyAuthenticationInfo extends
-            AuthenticationInfo {
+    private static final class ReadOnlyAuthenticationInfo extends AuthenticationInfo {
 
-        private final transient Map<String, Object> unmodifiableMap;  // NOSONAR
+        private final transient Map<String, Object> unmodifiableMap; // NOSONAR
 
         // used to guard against stack overflow
         private final transient ThreadLocal<Boolean> stackGuard = new ThreadLocal<>();
@@ -397,19 +390,21 @@ public class AuthenticationInfo extends HashMap<String, Object> {
         }
 
         @Override
-        public Object computeIfPresent(String key,
-                BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
+        public Object computeIfPresent(
+                String key, BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
             return unmodifiableMap.computeIfPresent(key, remappingFunction);
         }
 
         @Override
-        public Object compute(String key,
-                BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
+        public Object compute(
+                String key, BiFunction<? super String, ? super Object, ? extends Object> remappingFunction) {
             return unmodifiableMap.compute(key, remappingFunction);
         }
 
         @Override
-        public Object merge(String key, Object value,
+        public Object merge(
+                String key,
+                Object value,
                 BiFunction<? super Object, ? super Object, ? extends Object> remappingFunction) {
             return unmodifiableMap.merge(key, value, remappingFunction);
         }
@@ -429,12 +424,9 @@ public class AuthenticationInfo extends HashMap<String, Object> {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (!super.equals(obj))
-                return false;
+            if (this == obj) return true;
+            if (!super.equals(obj)) return false;
             return getClass() == obj.getClass();
         }
-
     }
 }

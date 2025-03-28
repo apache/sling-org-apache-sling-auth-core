@@ -20,7 +20,6 @@ package org.apache.sling.auth.core;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.osgi.annotation.versioning.ProviderType;
 
 /**
@@ -117,8 +116,7 @@ public interface AuthenticationSupport {
      *         is immediately terminated and no request attributes are set.
      * @since 1.6.0
      */
-    boolean handleSecurity(HttpServletRequest request,
-            HttpServletResponse response);
+    boolean handleSecurity(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * Handles security on behalf of a custom OSGi Http Service
@@ -139,6 +137,6 @@ public interface AuthenticationSupport {
      * @deprecated Use {@link #handleSecurity(HttpServletRequest, HttpServletResponse)}
      */
     @Deprecated
-    boolean handleSecurity(javax.servlet.http.HttpServletRequest request,
-        javax.servlet.http.HttpServletResponse response);
+    boolean handleSecurity(
+            javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response);
 }

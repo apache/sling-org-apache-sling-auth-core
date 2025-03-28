@@ -57,8 +57,7 @@ public interface AuthenticationFeedbackHandler {
      * @param authInfo The {@link AuthenticationInfo} object used to
      *            authenticate the request.
      */
-    void authenticationFailed(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo);
+    void authenticationFailed(HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo);
 
     /**
      * Called if authentication succeeded with the credentials provided in the
@@ -78,6 +77,6 @@ public interface AuthenticationFeedbackHandler {
      *         If <code>false</code> is returned, the request proceeds as
      *         authenticated.
      */
-    boolean authenticationSucceeded(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo);
+    boolean authenticationSucceeded(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo);
 }

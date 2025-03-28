@@ -18,13 +18,6 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map.Entry;
@@ -32,6 +25,13 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 /**
  * Verify that ReadOnlyAuthenticationInfo instances are immutable
@@ -42,7 +42,7 @@ public class ReadOnlyAuthenticationInfoTest {
     @Before
     public void before() {
         // create a clone so each test starts with a fresh object
-        authInfo = (AuthenticationInfo)AuthenticationInfo.FAIL_AUTH.clone();
+        authInfo = (AuthenticationInfo) AuthenticationInfo.FAIL_AUTH.clone();
     }
 
     @Test
@@ -183,5 +183,4 @@ public class ReadOnlyAuthenticationInfoTest {
         assertEquals(authInfo, clone);
         assertNotSame(authInfo, clone);
     }
-
 }

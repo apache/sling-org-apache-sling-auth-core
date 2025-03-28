@@ -18,18 +18,18 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
-
 import javax.jcr.Credentials;
 import javax.jcr.SimpleCredentials;
 
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 public class AuthenticationInfoTest {
 
@@ -40,8 +40,7 @@ public class AuthenticationInfoTest {
     @Test
     public void testClear() {
         final char[] pwd = new char[6];
-        final AuthenticationInfo info = new AuthenticationInfo("test", "name",
-            pwd);
+        final AuthenticationInfo info = new AuthenticationInfo("test", "name", pwd);
         Assert.assertEquals("test", info.getAuthType());
         Assert.assertEquals("name", info.getUser());
         assertSame(pwd, info.getPassword());
@@ -113,8 +112,7 @@ public class AuthenticationInfoTest {
     @Test
     public void testAuthenticationInfoStringStringCharArray() {
         final char[] pwd = new char[6];
-        final AuthenticationInfo info = new AuthenticationInfo("test", "name",
-            pwd);
+        final AuthenticationInfo info = new AuthenticationInfo("test", "name", pwd);
         Assert.assertEquals("test", info.getAuthType());
         Assert.assertEquals("name", info.getUser());
         assertSame(pwd, info.getPassword());
@@ -123,8 +121,7 @@ public class AuthenticationInfoTest {
     @Test
     public void testAuthenticationInfoStringStringCharArrayString() {
         final char[] pwd = new char[6];
-        final AuthenticationInfo info = new AuthenticationInfo("test", "name",
-            pwd);
+        final AuthenticationInfo info = new AuthenticationInfo("test", "name", pwd);
         Assert.assertEquals("test", info.getAuthType());
         Assert.assertEquals("name", info.getUser());
         assertSame(pwd, info.getPassword());
@@ -150,8 +147,7 @@ public class AuthenticationInfoTest {
         final AuthenticationInfo info = new AuthenticationInfo("test");
         Assert.assertEquals("test", info.getAuthType());
         Assert.assertEquals("test", info.get(AuthenticationInfo.AUTH_TYPE));
-        Assert.assertEquals(info.get(AuthenticationInfo.AUTH_TYPE),
-            info.getAuthType());
+        Assert.assertEquals(info.get(AuthenticationInfo.AUTH_TYPE), info.getAuthType());
     }
 
     @Test
@@ -196,13 +192,11 @@ public class AuthenticationInfoTest {
     @Test
     public void testGetPassword() {
         final char[] pwd = new char[6];
-        final AuthenticationInfo info = new AuthenticationInfo("test", "name",
-            pwd);
+        final AuthenticationInfo info = new AuthenticationInfo("test", "name", pwd);
 
         assertSame(pwd, info.getPassword());
         assertEquals(String.valueOf(pwd), String.valueOf((char[]) info.get(ResourceResolverFactory.PASSWORD)));
-        Assert.assertEquals(info.get(ResourceResolverFactory.PASSWORD),
-            info.getPassword());
+        Assert.assertEquals(info.get(ResourceResolverFactory.PASSWORD), info.getPassword());
     }
 
     @Test
@@ -228,8 +222,7 @@ public class AuthenticationInfoTest {
 
         final String user = "user";
         final char[] pwd = new char[5];
-        final AuthenticationInfo infoCred = new AuthenticationInfo("TEST",
-            user, pwd);
+        final AuthenticationInfo infoCred = new AuthenticationInfo("TEST", user, pwd);
 
         // credentials not stored in the object
         assertFalse(infoCred.containsKey(CREDENTIALS));
@@ -255,10 +248,8 @@ public class AuthenticationInfoTest {
 
     @Test
     public void testPutStringObject() {
-        final AuthenticationInfo info = new AuthenticationInfo("test", "user",
-            new char[2]);
-        info.put(CREDENTIALS,
-                new SimpleCredentials("user", new char[2]));
+        final AuthenticationInfo info = new AuthenticationInfo("test", "user", new char[2]);
+        info.put(CREDENTIALS, new SimpleCredentials("user", new char[2]));
 
         test_put_fail(info, AuthenticationInfo.AUTH_TYPE, null);
         test_put_fail(info, ResourceResolverFactory.USER, null);
@@ -270,20 +261,17 @@ public class AuthenticationInfoTest {
 
         test_put_success(info, AuthenticationInfo.AUTH_TYPE, "new_type");
         test_put_success(info, ResourceResolverFactory.USER, "new_user");
-        test_put_success(info, ResourceResolverFactory.PASSWORD,
-            "new_pwd".toCharArray());
+        test_put_success(info, ResourceResolverFactory.PASSWORD, "new_pwd".toCharArray());
     }
 
-    private void test_put_success(final AuthenticationInfo info,
-            final String key, final Object value) {
+    private void test_put_success(final AuthenticationInfo info, final String key, final Object value) {
         final Object oldValue = info.get(key);
         final Object replacedValue = info.put(key, value);
         assertSame(oldValue, replacedValue);
         assertSame(value, info.get(key));
     }
 
-    private void test_put_fail(final AuthenticationInfo info, final String key,
-            final Object value) {
+    private void test_put_fail(final AuthenticationInfo info, final String key, final Object value) {
         final Object oldValue = info.get(key);
         try {
             info.put(key, value);

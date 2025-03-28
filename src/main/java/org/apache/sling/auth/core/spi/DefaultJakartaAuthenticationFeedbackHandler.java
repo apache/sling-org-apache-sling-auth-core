@@ -20,7 +20,6 @@ package org.apache.sling.auth.core.spi;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.AuthenticationSupport;
@@ -30,8 +29,7 @@ import org.slf4j.LoggerFactory;
  * Default implementation of an authentication feedback handler.
  * @since 1.3.0
  */
-public class DefaultJakartaAuthenticationFeedbackHandler implements
-        JakartaAuthenticationFeedbackHandler {
+public class DefaultJakartaAuthenticationFeedbackHandler implements JakartaAuthenticationFeedbackHandler {
 
     /**
      * Handles an optional request for a redirect after successful
@@ -75,8 +73,7 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
      *        {@link AuthUtil#isRedirectValid(HttpServletRequest, String)}
      *        method.
      */
-    public static boolean handleRedirect(final HttpServletRequest request,
-            final HttpServletResponse response) {
+    public static boolean handleRedirect(final HttpServletRequest request, final HttpServletResponse response) {
 
         final String redirect = getValidatedRedirectTarget(request);
         if (redirect != null) {
@@ -85,10 +82,11 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
                 response.sendRedirect(redirect);
             } catch (Exception e) {
                 // expected: IOException and IllegalStateException
-                LoggerFactory.getLogger(
-                    DefaultJakartaAuthenticationFeedbackHandler.class).error(
-                    "handleRedirect: Failed to send redirect to " + redirect
-                        + ", aborting request without redirect", e);
+                LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class)
+                        .error(
+                                "handleRedirect: Failed to send redirect to " + redirect
+                                        + ", aborting request without redirect",
+                                e);
             }
 
             // consider the request done
@@ -99,8 +97,7 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
         return false;
     }
 
-    private static String getValidatedRedirectTarget(
-            final HttpServletRequest request) {
+    private static String getValidatedRedirectTarget(final HttpServletRequest request) {
         String redirect = request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER);
         if (redirect == null) {
             return null;
@@ -128,9 +125,8 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
 
         // absolute target (in the servlet context)
         if (!AuthUtil.isRedirectValid(request, redirect)) {
-            LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class).error(
-                "handleRedirect: Redirect target '{}' is invalid, redirecting to '/'",
-                redirect);
+            LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class)
+                    .error("handleRedirect: Redirect target '{}' is invalid, redirecting to '/'", redirect);
             redirect = "/";
         }
 
@@ -143,8 +139,8 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
      * Extensions of this class may overwrite to cleanup any internal state.
      */
     @Override
-    public void authenticationFailed(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo) {
+    public void authenticationFailed(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
         // no op
     }
 
@@ -161,9 +157,8 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements
      *            method.
      */
     @Override
-    public boolean authenticationSucceeded(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo) {
+    public boolean authenticationSucceeded(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
         return handleRedirect(request, response);
     }
-
 }

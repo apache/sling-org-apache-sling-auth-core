@@ -30,5 +30,3 @@
  */
 @org.osgi.annotation.versioning.Version("2.0.6")
 package org.apache.sling.engine.auth;
-
-

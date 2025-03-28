@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
@@ -94,8 +93,7 @@ public final class AuthUtil {
     private static final String BROWSER_CLASS_OPERA = "Opera";
 
     // no instantiation
-    private AuthUtil() {
-    }
+    private AuthUtil() {}
 
     /**
      * Returns the value of the named request attribute or parameter as a string
@@ -119,8 +117,7 @@ public final class AuthUtil {
      * @since 1.6.0
      */
     public static String getAttributeOrParameter(
-            final HttpServletRequest request, final String name,
-            final String defaultValue) {
+            final HttpServletRequest request, final String name, final String defaultValue) {
 
         final String resourceAttr = getAttributeString(request, name);
         if (resourceAttr != null) {
@@ -158,8 +155,7 @@ public final class AuthUtil {
      */
     @Deprecated
     public static String getAttributeOrParameter(
-            final javax.servlet.http.HttpServletRequest request, final String name,
-            final String defaultValue) {
+            final javax.servlet.http.HttpServletRequest request, final String name, final String defaultValue) {
 
         final String resourceAttr = getAttributeString(request, name);
         if (resourceAttr != null) {
@@ -188,10 +184,8 @@ public final class AuthUtil {
      *         <code>defaultLoginResource</code>.
      * @since 1.6.0
      */
-    public static String getLoginResource(final HttpServletRequest request,
-            String defaultLoginResource) {
-        return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE,
-            defaultLoginResource);
+    public static String getLoginResource(final HttpServletRequest request, String defaultLoginResource) {
+        return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE, defaultLoginResource);
     }
 
     /**
@@ -209,10 +203,9 @@ public final class AuthUtil {
      * @deprecated Use {@link #getLoginResource(HttpServletRequest, String)}
      */
     @Deprecated
-    public static String getLoginResource(final javax.servlet.http.HttpServletRequest request,
-            String defaultLoginResource) {
-        return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE,
-            defaultLoginResource);
+    public static String getLoginResource(
+            final javax.servlet.http.HttpServletRequest request, String defaultLoginResource) {
+        return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE, defaultLoginResource);
     }
 
     /**
@@ -234,10 +227,8 @@ public final class AuthUtil {
      * @return returns the value of resource request attribute
      * @since 1.6.0
      */
-    public static String setLoginResourceAttribute(
-            final HttpServletRequest request, final String defaultValue) {
-        String resourceAttr = getAttributeString(request,
-            Authenticator.LOGIN_RESOURCE);
+    public static String setLoginResourceAttribute(final HttpServletRequest request, final String defaultValue) {
+        String resourceAttr = getAttributeString(request, Authenticator.LOGIN_RESOURCE);
         if (resourceAttr == null) {
             final String resourcePar = request.getParameter(Authenticator.LOGIN_RESOURCE);
             if (resourcePar != null && resourcePar.length() > 0) {
@@ -274,8 +265,7 @@ public final class AuthUtil {
     @Deprecated
     public static String setLoginResourceAttribute(
             final javax.servlet.http.HttpServletRequest request, final String defaultValue) {
-        String resourceAttr = getAttributeString(request,
-            Authenticator.LOGIN_RESOURCE);
+        String resourceAttr = getAttributeString(request, Authenticator.LOGIN_RESOURCE);
         if (resourceAttr == null) {
             final String resourcePar = request.getParameter(Authenticator.LOGIN_RESOURCE);
             if (resourcePar != null && resourcePar.length() > 0) {
@@ -334,9 +324,12 @@ public final class AuthUtil {
      *             missing.
      * @since 1.6.0
      */
-    public static void sendRedirect(final HttpServletRequest request,
-            final HttpServletResponse response, final String target,
-            Map<String, String> params) throws IOException {
+    public static void sendRedirect(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String target,
+            Map<String, String> params)
+            throws IOException {
 
         checkAndReset(response);
 
@@ -368,11 +361,9 @@ public final class AuthUtil {
             Entry<String, String> entry = ei.next();
             if (entry.getKey() != null && entry.getValue() != null) {
                 try {
-                    b.append(entry.getKey()).append('=').append(
-                        URLEncoder.encode(entry.getValue(), "UTF-8"));
+                    b.append(entry.getKey()).append('=').append(URLEncoder.encode(entry.getValue(), "UTF-8"));
                 } catch (UnsupportedEncodingException uee) {
-                    throw new InternalError(
-                        "Unexpected UnsupportedEncodingException for UTF-8");
+                    throw new InternalError("Unexpected UnsupportedEncodingException for UTF-8");
                 }
 
                 if (ei.hasNext()) {
@@ -429,9 +420,12 @@ public final class AuthUtil {
      * @deprecated Use {@link #sendRedirect(HttpServletRequest, HttpServletResponse, String, Map)}
      */
     @Deprecated
-    public static void sendRedirect(final javax.servlet.http.HttpServletRequest request,
-            final javax.servlet.http.HttpServletResponse response, final String target,
-            Map<String, String> params) throws IOException {
+    public static void sendRedirect(
+            final javax.servlet.http.HttpServletRequest request,
+            final javax.servlet.http.HttpServletResponse response,
+            final String target,
+            Map<String, String> params)
+            throws IOException {
 
         checkAndReset(response);
 
@@ -463,11 +457,9 @@ public final class AuthUtil {
             Entry<String, String> entry = ei.next();
             if (entry.getKey() != null && entry.getValue() != null) {
                 try {
-                    b.append(entry.getKey()).append('=').append(
-                        URLEncoder.encode(entry.getValue(), "UTF-8"));
+                    b.append(entry.getKey()).append('=').append(URLEncoder.encode(entry.getValue(), "UTF-8"));
                 } catch (UnsupportedEncodingException uee) {
-                    throw new InternalError(
-                        "Unexpected UnsupportedEncodingException for UTF-8");
+                    throw new InternalError("Unexpected UnsupportedEncodingException for UTF-8");
                 }
 
                 if (ei.hasNext()) {
@@ -487,8 +479,7 @@ public final class AuthUtil {
      * @return The named request attribute or <code>null</code> if the attribute
      *         is not set or is not a non-empty string value.
      */
-    private static String getAttributeString(final HttpServletRequest request,
-            final String name) {
+    private static String getAttributeString(final HttpServletRequest request, final String name) {
         Object resObj = request.getAttribute(name);
         if ((resObj instanceof String) && ((String) resObj).length() > 0) {
             return (String) resObj;
@@ -506,8 +497,7 @@ public final class AuthUtil {
      * @return The named request attribute or <code>null</code> if the attribute
      *         is not set or is not a non-empty string value.
      */
-    private static String getAttributeString(final javax.servlet.http.HttpServletRequest request,
-            final String name) {
+    private static String getAttributeString(final javax.servlet.http.HttpServletRequest request, final String name) {
         Object resObj = request.getAttribute(name);
         if ((resObj instanceof String) && ((String) resObj).length() > 0) {
             return (String) resObj;
@@ -641,8 +631,7 @@ public final class AuthUtil {
      * @throws IllegalStateException if the response has already been committed
      * @since 1.6.0
      */
-    public static void sendInvalid(final HttpServletRequest request,
-            final HttpServletResponse response) {
+    public static void sendInvalid(final HttpServletRequest request, final HttpServletResponse response) {
         checkAndReset(response);
         try {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -651,7 +640,7 @@ public final class AuthUtil {
             Object reasonCode = request.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE);
             if (reason != null) {
                 response.setHeader(AuthConstants.X_REASON, reason.toString());
-                if ( reasonCode != null ) {
+                if (reasonCode != null) {
                     response.setHeader(AuthConstants.X_REASON_CODE, reasonCode.toString());
                 }
                 response.setContentType("text/plain");
@@ -682,7 +671,8 @@ public final class AuthUtil {
      * @deprecated Use {@link #sendInvalid(HttpServletRequest, HttpServletResponse)}
      */
     @Deprecated
-    public static void sendInvalid(final javax.servlet.http.HttpServletRequest request,
+    public static void sendInvalid(
+            final javax.servlet.http.HttpServletRequest request,
             final javax.servlet.http.HttpServletResponse response) {
         checkAndReset(response);
         try {
@@ -692,7 +682,7 @@ public final class AuthUtil {
             Object reasonCode = request.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE);
             if (reason != null) {
                 response.setHeader(AuthConstants.X_REASON, reason.toString());
-                if ( reasonCode != null ) {
+                if (reasonCode != null) {
                     response.setHeader(AuthConstants.X_REASON_CODE, reasonCode.toString());
                 }
                 response.setContentType("text/plain");
@@ -715,22 +705,22 @@ public final class AuthUtil {
      * @since 1.6.0
      */
     public static boolean checkReferer(HttpServletRequest request, String loginForm) {
-        //SLING-2165: if a Referrer header is supplied check if it matches the login path for this handler
-    	if ("POST".equals(request.getMethod())) {
+        // SLING-2165: if a Referrer header is supplied check if it matches the login path for this handler
+        if ("POST".equals(request.getMethod())) {
             String referer = request.getHeader("Referer");
             if (referer != null) {
                 String expectedPath = String.format("%s%s", request.getContextPath(), loginForm);
                 try {
                     URL uri = new URL(referer);
                     if (!expectedPath.equals(uri.getPath())) {
-                        //not for this selector, so let the next one handle it.
+                        // not for this selector, so let the next one handle it.
                         return false;
                     }
                 } catch (MalformedURLException e) {
                     getLog().debug("Failed to parse the referer value for the login form " + loginForm, e);
                 }
             }
-    	}
+        }
         return true;
     }
 
@@ -744,22 +734,22 @@ public final class AuthUtil {
      */
     @Deprecated
     public static boolean checkReferer(javax.servlet.http.HttpServletRequest request, String loginForm) {
-        //SLING-2165: if a Referrer header is supplied check if it matches the login path for this handler
-    	if ("POST".equals(request.getMethod())) {
+        // SLING-2165: if a Referrer header is supplied check if it matches the login path for this handler
+        if ("POST".equals(request.getMethod())) {
             String referer = request.getHeader("Referer");
             if (referer != null) {
                 String expectedPath = String.format("%s%s", request.getContextPath(), loginForm);
                 try {
                     URL uri = new URL(referer);
                     if (!expectedPath.equals(uri.getPath())) {
-                        //not for this selector, so let the next one handle it.
+                        // not for this selector, so let the next one handle it.
                         return false;
                     }
                 } catch (MalformedURLException e) {
                     getLog().debug("Failed to parse the referer value for the login form " + loginForm, e);
                 }
             }
-    	}
+        }
         return true;
     }
 
@@ -817,16 +807,21 @@ public final class AuthUtil {
             return false;
         }
 
-        if (target.contains("//") || target.contains("/../") || target.contains("/./") || target.endsWith("/.")
-            || target.endsWith("/..")) {
+        if (target.contains("//")
+                || target.contains("/../")
+                || target.contains("/./")
+                || target.endsWith("/.")
+                || target.endsWith("/..")) {
             getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", target);
             return false;
         }
 
         final String ctxPath = getContextPath(request);
         if (ctxPath.length() > 0 && !target.startsWith(ctxPath)) {
-            getLog().warn("isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
-                target, ctxPath);
+            getLog().warn(
+                            "isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
+                            target,
+                            ctxPath);
             return false;
         }
 
@@ -838,8 +833,9 @@ public final class AuthUtil {
         final String localTarget = target.substring(ctxPath.length());
         if (!localTarget.startsWith("/")) {
             getLog().warn(
-                "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
-                target, ctxPath);
+                            "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
+                            target,
+                            ctxPath);
             return false;
         }
 
@@ -917,16 +913,21 @@ public final class AuthUtil {
             return false;
         }
 
-        if (target.contains("//") || target.contains("/../") || target.contains("/./") || target.endsWith("/.")
-            || target.endsWith("/..")) {
+        if (target.contains("//")
+                || target.contains("/../")
+                || target.contains("/./")
+                || target.endsWith("/.")
+                || target.endsWith("/..")) {
             getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", target);
             return false;
         }
 
         final String ctxPath = getContextPath(request);
         if (ctxPath.length() > 0 && !target.startsWith(ctxPath)) {
-            getLog().warn("isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
-                target, ctxPath);
+            getLog().warn(
+                            "isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
+                            target,
+                            ctxPath);
             return false;
         }
 
@@ -938,8 +939,9 @@ public final class AuthUtil {
         final String localTarget = target.substring(ctxPath.length());
         if (!localTarget.startsWith("/")) {
             getLog().warn(
-                "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
-                target, ctxPath);
+                            "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
+                            target,
+                            ctxPath);
             return false;
         }
 
@@ -1027,7 +1029,8 @@ public final class AuthUtil {
      */
     public static boolean isBrowserRequest(final HttpServletRequest request) {
         final String userAgent = request.getHeader(USER_AGENT);
-        return userAgent != null && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA));
+        return userAgent != null
+                && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA));
     }
 
     /**
@@ -1048,7 +1051,8 @@ public final class AuthUtil {
     @Deprecated
     public static boolean isBrowserRequest(final javax.servlet.http.HttpServletRequest request) {
         final String userAgent = request.getHeader(USER_AGENT);
-        return userAgent != null && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA));
+        return userAgent != null
+                && (userAgent.contains(BROWSER_CLASS_MOZILLA) || userAgent.contains(BROWSER_CLASS_OPERA));
     }
 
     /**

@@ -80,8 +80,7 @@ public class AuthenticationInfo {
      * @see #getAuthType()
      * @see #getCredentials()
      */
-    public AuthenticationInfo(String authType, Credentials credentials,
-            String workspaceName) {
+    public AuthenticationInfo(String authType, Credentials credentials, String workspaceName) {
         this.authType = authType;
         this.credentials = credentials;
         this.workspaceName = workspaceName;

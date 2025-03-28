@@ -20,6 +20,8 @@ package org.apache.sling.auth.core.impl;
 
 import java.io.IOException;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
 import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.auth.core.spi.AuthenticationFeedbackHandler;
@@ -28,16 +30,12 @@ import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 @SuppressWarnings("deprecation")
 public class AuthenticationHandlerWrapper {
 
     public static JakartaAuthenticationHandler wrap(final AuthenticationHandler handler) {
         if (handler instanceof AuthenticationFeedbackHandler) {
             return new FeedbackHandlerWrapper(handler);
-
         }
         return new HandlerWrapper(handler);
     }
@@ -51,25 +49,27 @@ public class AuthenticationHandlerWrapper {
         }
 
         @Override
-        public void dropCredentials(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+        public void dropCredentials(final HttpServletRequest request, final HttpServletResponse response)
+                throws IOException {
             handler.dropCredentials(
-                JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                    JakartaToJavaxResponseWrapper.toJavaxResponse(response));
         }
 
         @Override
-        public AuthenticationInfo extractCredentials(final HttpServletRequest request, final HttpServletResponse response) {
+        public AuthenticationInfo extractCredentials(
+                final HttpServletRequest request, final HttpServletResponse response) {
             return handler.extractCredentials(
-            JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-            JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                    JakartaToJavaxResponseWrapper.toJavaxResponse(response));
         }
 
         @Override
         public boolean requestCredentials(final HttpServletRequest request, final HttpServletResponse response)
                 throws IOException {
             return handler.requestCredentials(
-                JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                    JakartaToJavaxResponseWrapper.toJavaxResponse(response));
         }
     }
 
@@ -79,23 +79,29 @@ public class AuthenticationHandlerWrapper {
 
         FeedbackHandlerWrapper(final AuthenticationHandler handler) {
             super(handler);
-            this.handler = (AuthenticationFeedbackHandler)handler;
+            this.handler = (AuthenticationFeedbackHandler) handler;
         }
 
-
         @Override
-        public void authenticationFailed(final HttpServletRequest request, final HttpServletResponse response,
+        public void authenticationFailed(
+                final HttpServletRequest request,
+                final HttpServletResponse response,
                 final AuthenticationInfo authInfo) {
-            handler.authenticationFailed(JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                JakartaToJavaxResponseWrapper.toJavaxResponse(response), authInfo);
+            handler.authenticationFailed(
+                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                    JakartaToJavaxResponseWrapper.toJavaxResponse(response),
+                    authInfo);
         }
 
-
         @Override
-        public boolean authenticationSucceeded(final HttpServletRequest request, final HttpServletResponse response,
+        public boolean authenticationSucceeded(
+                final HttpServletRequest request,
+                final HttpServletResponse response,
                 final AuthenticationInfo authInfo) {
-            return handler.authenticationSucceeded(JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                JakartaToJavaxResponseWrapper.toJavaxResponse(response), authInfo);
+            return handler.authenticationSucceeded(
+                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                    JakartaToJavaxResponseWrapper.toJavaxResponse(response),
+                    authInfo);
         }
     }
 }

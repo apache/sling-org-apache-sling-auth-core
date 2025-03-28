@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.auth.core.AuthUtil;
 
 /**
@@ -76,8 +75,7 @@ public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServl
      *             and thus response reset is not possible.
      */
     @Override
-    protected void doGet(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         handle(request, response);
     }
 
@@ -96,8 +94,7 @@ public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServl
      *             and thus response reset is not possible.
      */
     @Override
-    protected void doPost(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         handle(request, response);
     }
 
@@ -137,8 +134,7 @@ public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServl
      * @return The login form to be returned to the client
      * @throws IOException If the login form cannot be loaded
      */
-    protected String getForm(final HttpServletRequest request)
-            throws IOException {
+    protected String getForm(final HttpServletRequest request) throws IOException {
         String form = getRawForm();
 
         final String resource = cleanse(request, getResource(request));
@@ -191,9 +187,9 @@ public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServl
         }
 
         final StringBuilder b = new StringBuilder(input.length());
-        for(int i = 0;i  < input.length(); i++) {
+        for (int i = 0; i < input.length(); i++) {
             final char c = input.charAt(i);
-            if(c == '&') {
+            if (c == '&') {
                 b.append("&amp;");
             } else if (c == '<') {
                 b.append("&lt;");
@@ -259,7 +255,7 @@ public abstract class AbstractJakartaAuthenticationFormServlet extends HttpServl
     }
 
     private static String removeEndingSlash(String str) {
-        if(str != null && str.endsWith("/")) {
+        if (str != null && str.endsWith("/")) {
             return str.substring(0, str.length() - 1);
         }
         return str;
