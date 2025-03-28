@@ -24,11 +24,9 @@ class AuthenticationRequirementHolder extends PathBasedHolder {
 
     private final boolean requiresAuthentication;
 
-    static AuthenticationRequirementHolder fromConfig(final String config,
-            final ServiceReference<?> serviceReference) {
+    static AuthenticationRequirementHolder fromConfig(final String config, final ServiceReference<?> serviceReference) {
         if (config == null || config.length() == 0) {
-            throw new IllegalArgumentException(
-                "Configuration must not be null or empty");
+            throw new IllegalArgumentException("Configuration must not be null or empty");
         }
 
         final boolean required;
@@ -44,13 +42,11 @@ class AuthenticationRequirementHolder extends PathBasedHolder {
             path = config;
         }
 
-        return new AuthenticationRequirementHolder(path, required,
-            serviceReference);
+        return new AuthenticationRequirementHolder(path, required, serviceReference);
     }
 
-    AuthenticationRequirementHolder(final String fullPath,
-            final boolean requiresAuthentication,
-            final ServiceReference<?> serviceReference) {
+    AuthenticationRequirementHolder(
+            final String fullPath, final boolean requiresAuthentication, final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
         this.requiresAuthentication = requiresAuthentication;
     }
@@ -69,14 +65,10 @@ class AuthenticationRequirementHolder extends PathBasedHolder {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (!super.equals(obj)) return false;
+        if (getClass() != obj.getClass()) return false;
         AuthenticationRequirementHolder other = (AuthenticationRequirementHolder) obj;
         return requiresAuthentication == other.requiresAuthentication;
     }
-
 }

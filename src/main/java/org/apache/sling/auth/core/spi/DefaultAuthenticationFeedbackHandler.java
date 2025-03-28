@@ -30,8 +30,7 @@ import org.slf4j.LoggerFactory;
  * @deprecated Use {@link JakartaAuthenticationFeedbackHandler} instead
  */
 @Deprecated
-public class DefaultAuthenticationFeedbackHandler implements
-        AuthenticationFeedbackHandler {
+public class DefaultAuthenticationFeedbackHandler implements AuthenticationFeedbackHandler {
 
     /**
      * Handles an optional request for a redirect after successful
@@ -75,8 +74,7 @@ public class DefaultAuthenticationFeedbackHandler implements
      *        {@link AbstractAuthenticationHandler#isRedirectValid(HttpServletRequest, String)}
      *        method.
      */
-    public static boolean handleRedirect(final HttpServletRequest request,
-            final HttpServletResponse response) {
+    public static boolean handleRedirect(final HttpServletRequest request, final HttpServletResponse response) {
 
         final String redirect = getValidatedRedirectTarget(request);
         if (redirect != null) {
@@ -85,10 +83,11 @@ public class DefaultAuthenticationFeedbackHandler implements
                 response.sendRedirect(redirect);
             } catch (Exception e) {
                 // expected: IOException and IllegalStateException
-                LoggerFactory.getLogger(
-                    DefaultAuthenticationFeedbackHandler.class).error(
-                    "handleRedirect: Failed to send redirect to " + redirect
-                        + ", aborting request without redirect", e);
+                LoggerFactory.getLogger(DefaultAuthenticationFeedbackHandler.class)
+                        .error(
+                                "handleRedirect: Failed to send redirect to " + redirect
+                                        + ", aborting request without redirect",
+                                e);
             }
 
             // consider the request done
@@ -99,8 +98,7 @@ public class DefaultAuthenticationFeedbackHandler implements
         return false;
     }
 
-    private static String getValidatedRedirectTarget(
-            final HttpServletRequest request) {
+    private static String getValidatedRedirectTarget(final HttpServletRequest request) {
         String redirect = request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER);
         if (redirect == null) {
             return null;
@@ -128,9 +126,8 @@ public class DefaultAuthenticationFeedbackHandler implements
 
         // absolute target (in the servlet context)
         if (!AuthUtil.isRedirectValid(request, redirect)) {
-            LoggerFactory.getLogger(DefaultAuthenticationFeedbackHandler.class).error(
-                "handleRedirect: Redirect target '{}' is invalid, redirecting to '/'",
-                redirect);
+            LoggerFactory.getLogger(DefaultAuthenticationFeedbackHandler.class)
+                    .error("handleRedirect: Redirect target '{}' is invalid, redirecting to '/'", redirect);
             redirect = "/";
         }
 
@@ -143,8 +140,8 @@ public class DefaultAuthenticationFeedbackHandler implements
      * Extensions of this class may overwrite to cleanup any internal state.
      */
     @Override
-    public void authenticationFailed(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo) {
+    public void authenticationFailed(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
         // no op
     }
 
@@ -161,9 +158,8 @@ public class DefaultAuthenticationFeedbackHandler implements
      *            method.
      */
     @Override
-    public boolean authenticationSucceeded(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo) {
+    public boolean authenticationSucceeded(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
         return handleRedirect(request, response);
     }
-
 }

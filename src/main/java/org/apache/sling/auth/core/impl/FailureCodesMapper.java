@@ -46,7 +46,8 @@ public final class FailureCodesMapper {
                 // force failure attribute to be set so handlers can
                 // react to this special circumstance
                 Object creds = authInfo.get("user.jcr.credentials");
-                if (creds instanceof SimpleCredentials && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
+                if (creds instanceof SimpleCredentials
+                        && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
                     code = FAILURE_REASON_CODES.PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY;
                 } else {
                     code = FAILURE_REASON_CODES.PASSWORD_EXPIRED;

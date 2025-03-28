@@ -19,7 +19,6 @@
 package org.apache.sling.auth.core;
 
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.SyntheticResource;
@@ -29,25 +28,25 @@ import org.mockito.Mockito;
 
 public class AuthUtilTest {
 
-   final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+    final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
 
     final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
 
     @Test
     public void test_isRedirectValid_null_empty() {
-        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest)null, null));
-        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest)null, ""));
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, null));
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, ""));
     }
 
     @Test
     public void test_isRedirectValid_url() {
-        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest)null, "http://www.google.com"));
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, "http://www.google.com"));
     }
 
     @Test
     public void test_isRedirectValid_no_request() {
-        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest)null, "relative/path"));
-        Assert.assertTrue(AuthUtil.isRedirectValid((HttpServletRequest)null, "/absolute/path"));
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, "relative/path"));
+        Assert.assertTrue(AuthUtil.isRedirectValid((HttpServletRequest) null, "/absolute/path"));
     }
 
     @Test
@@ -98,14 +97,15 @@ public class AuthUtilTest {
     @Test
     public void test_isRedirectValid_resource_resolver_root_context() {
         Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+                .thenReturn(resolver);
 
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.eq("/absolute/path")))
-            .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.eq("relative/path")))
-            .thenReturn(new NonExistingResource(resolver, "relative/path"));
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.any()))
-            .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("/absolute/path")))
+                .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("relative/path")))
+                .thenReturn(new NonExistingResource(resolver, "relative/path"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.any()))
+                .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
         Assert.assertTrue(AuthUtil.isRedirectValid(request, "/absolute/path"));
@@ -121,14 +121,15 @@ public class AuthUtilTest {
     @Test
     public void test_isRedirectValid_resource_resolver_non_root_context() {
         Mockito.when(request.getContextPath()).thenReturn("/ctx");
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+                .thenReturn(resolver);
 
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.eq("/absolute/path")))
-            .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.eq("relative/path")))
-            .thenReturn(new NonExistingResource(resolver, "relative/path"));
-        Mockito.when(resolver.resolve((HttpServletRequest)Mockito.any(), Mockito.any()))
-            .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("/absolute/path")))
+                .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("relative/path")))
+                .thenReturn(new NonExistingResource(resolver, "relative/path"));
+        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.any()))
+                .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "/absolute/path"));

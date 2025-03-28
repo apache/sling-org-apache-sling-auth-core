@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.api.wrappers.JakartaToJavaxRequestWrapper;
 import org.apache.sling.api.wrappers.JakartaToJavaxResponseWrapper;
 import org.apache.sling.auth.core.impl.AbstractAuthenticationHandlerHolder;
@@ -40,15 +39,13 @@ import org.osgi.framework.ServiceReference;
  * {@link org.apache.sling.auth.core.impl.SlingAuthenticator}.
  */
 @SuppressWarnings("deprecation")
-public final class EngineAuthenticationHandlerHolder extends
-        AbstractAuthenticationHandlerHolder {
+public final class EngineAuthenticationHandlerHolder extends AbstractAuthenticationHandlerHolder {
 
     // the actual authentication handler
     private final AuthenticationHandler handler;
 
-    public EngineAuthenticationHandlerHolder(final String fullPath,
-            final AuthenticationHandler handler,
-            final ServiceReference<?> serviceReference) {
+    public EngineAuthenticationHandlerHolder(
+            final String fullPath, final AuthenticationHandler handler, final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
         this.handler = handler;
     }
@@ -59,31 +56,34 @@ public final class EngineAuthenticationHandlerHolder extends
             return new JakartaAuthenticationFeedbackHandler() {
 
                 @Override
-                public void authenticationFailed(HttpServletRequest request,
-                        HttpServletResponse response, AuthenticationInfo authInfo) {
-                    ((AuthenticationFeedbackHandler) handler).authenticationFailed(
-                        JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                        JakartaToJavaxResponseWrapper.toJavaxResponse(response), authInfo);
+                public void authenticationFailed(
+                        HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
+                    ((AuthenticationFeedbackHandler) handler)
+                            .authenticationFailed(
+                                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                                    JakartaToJavaxResponseWrapper.toJavaxResponse(response),
+                                    authInfo);
                 }
 
                 @Override
-                public boolean authenticationSucceeded(HttpServletRequest request,
-                        HttpServletResponse response, AuthenticationInfo authInfo) {
-                    return ((AuthenticationFeedbackHandler) handler).authenticationSucceeded(
-                        JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-                        JakartaToJavaxResponseWrapper.toJavaxResponse(response), authInfo);
+                public boolean authenticationSucceeded(
+                        HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
+                    return ((AuthenticationFeedbackHandler) handler)
+                            .authenticationSucceeded(
+                                    JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                                    JakartaToJavaxResponseWrapper.toJavaxResponse(response),
+                                    authInfo);
                 }
             };
         }
         return null;
     }
 
-    public AuthenticationInfo doExtractCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public AuthenticationInfo doExtractCredentials(HttpServletRequest request, HttpServletResponse response) {
 
         org.apache.sling.engine.auth.AuthenticationInfo engineAuthInfo = handler.authenticate(
-            JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-            JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+                JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
         if (engineAuthInfo == null) {
             return null;
         } else if (engineAuthInfo == org.apache.sling.engine.auth.AuthenticationInfo.DOING_AUTH) {
@@ -92,22 +92,20 @@ public final class EngineAuthenticationHandlerHolder extends
 
         // backwards compatibility support for JCR credentials and workspace
         // name now encapsulated in the JCR Resource bundle
-        AuthenticationInfo info = new AuthenticationInfo(
-            engineAuthInfo.getAuthType());
+        AuthenticationInfo info = new AuthenticationInfo(engineAuthInfo.getAuthType());
         info.put("user.jcr.credentials", engineAuthInfo.getCredentials());
         info.put("user.jcr.workspace", engineAuthInfo.getWorkspaceName());
 
         return info;
     }
 
-    public boolean doRequestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
-        return handler.requestAuthentication(JakartaToJavaxRequestWrapper.toJavaxRequest(request),
-            JakartaToJavaxResponseWrapper.toJavaxResponse(response));
+    public boolean doRequestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        return handler.requestAuthentication(
+                JakartaToJavaxRequestWrapper.toJavaxRequest(request),
+                JakartaToJavaxResponseWrapper.toJavaxResponse(response));
     }
 
-    public void doDropCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public void doDropCredentials(HttpServletRequest request, HttpServletResponse response) {
         // Engine AuthenticationHandler does not have this method
     }
 
@@ -121,12 +119,9 @@ public final class EngineAuthenticationHandlerHolder extends
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (!super.equals(obj)) return false;
+        if (getClass() != obj.getClass()) return false;
         EngineAuthenticationHandlerHolder other = (EngineAuthenticationHandlerHolder) obj;
         return Objects.equals(handler, other.handler);
     }
@@ -135,5 +130,4 @@ public final class EngineAuthenticationHandlerHolder extends
     public String toString() {
         return handler.toString() + " (Legacy API Handler)";
     }
-
 }

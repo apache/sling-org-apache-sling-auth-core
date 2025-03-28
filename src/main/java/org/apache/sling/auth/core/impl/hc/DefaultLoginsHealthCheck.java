@@ -1,29 +1,30 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
+ * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
- * regarding copyright ownership. The SF licenses this file
+ * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.sling.auth.core.impl.hc;
-
-import java.util.Arrays;
-import java.util.List;
 
 import javax.jcr.Credentials;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
@@ -40,7 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** {@link HealthCheck} that runs an arbitrary script. */
-@Component(service = HealthCheck.class, name = "org.apache.sling.auth.core.DefaultLoginsHealthCheck", configurationPolicy = ConfigurationPolicy.REQUIRE)
+@Component(
+        service = HealthCheck.class,
+        name = "org.apache.sling.auth.core.DefaultLoginsHealthCheck",
+        configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = DefaultLoginsHealthCheck.Config.class, factory = true)
 public class DefaultLoginsHealthCheck implements HealthCheck {
 
@@ -48,18 +52,26 @@ public class DefaultLoginsHealthCheck implements HealthCheck {
 
     public static final String HC_LABEL = "Health Check: Default Logins";
 
-    @ObjectClassDefinition(name = HC_LABEL, description = "Expects default logins to fail, used to verify that they are disabled on production systems")
+    @ObjectClassDefinition(
+            name = HC_LABEL,
+            description = "Expects default logins to fail, used to verify that they are disabled on production systems")
     @interface Config {
 
         @AttributeDefinition(name = "Name", description = "Name of this health check.")
         String hc_name() default "Default Logins Check"; // NOSONAR
 
-        @AttributeDefinition(name = "Tags", description = "List of tags for this health check, used to select subsets of health checks for execution e.g. by a composite health check.")
+        @AttributeDefinition(
+                name = "Tags",
+                description =
+                        "List of tags for this health check, used to select subsets of health checks for execution e.g. by a composite health check.")
         String[] hc_tags() default {}; // NOSONAR
 
-        @AttributeDefinition(name = "Default Logins", description = "Which credentials to check. Each one is in the format"
-                + " \"user:password\" like \"admin:admin\" for example. Do *not* put any confidential passwords here, the goal "
-                + "is just to check that the default/demo logins, which passwords are known anyway, are disabled.")
+        @AttributeDefinition(
+                name = "Default Logins",
+                description =
+                        "Which credentials to check. Each one is in the format"
+                                + " \"user:password\" like \"admin:admin\" for example. Do *not* put any confidential passwords here, the goal "
+                                + "is just to check that the default/demo logins, which passwords are known anyway, are disabled.")
         String[] logins() default "logins";
 
         @AttributeDefinition
@@ -121,5 +133,4 @@ public class DefaultLoginsHealthCheck implements HealthCheck {
 
         return new Result(resultLog);
     }
-
 }

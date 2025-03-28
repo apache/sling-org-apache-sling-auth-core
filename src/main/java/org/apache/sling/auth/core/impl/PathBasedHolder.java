@@ -83,8 +83,7 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
      * @param serviceReference The reference to the service providing the
      *            configuration for this instance.
      */
-    protected PathBasedHolder(final String url,
-            final ServiceReference<?> serviceReference) {
+    protected PathBasedHolder(final String url, final ServiceReference<?> serviceReference) {
 
         String newPath = url;
         String newHost = "";
@@ -135,12 +134,17 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
             return "Apache Sling Request Authenticator";
         }
 
-        final String descr = Converters.standardConverter().convert(serviceReference.getProperty(Constants.SERVICE_DESCRIPTION)).to(String.class);
+        final String descr = Converters.standardConverter()
+                .convert(serviceReference.getProperty(Constants.SERVICE_DESCRIPTION))
+                .to(String.class);
         if (descr != null) {
             return descr;
         }
 
-        final String id = Converters.standardConverter().convert(serviceReference.getProperty(Constants.SERVICE_ID)).defaultValue("unknown").to(String.class);
+        final String id = Converters.standardConverter()
+                .convert(serviceReference.getProperty(Constants.SERVICE_ID))
+                .defaultValue("unknown")
+                .to(String.class);
         return "Service ".concat(id);
     }
 
@@ -163,9 +167,10 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
             return true;
         }
 
-        return path.startsWith(this.path) && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.');
+        return path.startsWith(this.path)
+                && (path.charAt(holderPathLength) == '/' || path.charAt(holderPathLength) == '.');
     }
-    
+
     /**
      * Compares this instance to the <code>other</code> PathBasedHolder
      * instance. Comparison takes into account the {@link #path} first. If they
@@ -196,7 +201,7 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
         // now compare the service references giving priority to
         // to the higher priority service
         if (serviceReference == null) {
-            if ( other.serviceReference == null ) {
+            if (other.serviceReference == null) {
                 return this.getClass().getName().compareTo(other.getClass().getName());
             }
             return -1;
@@ -205,7 +210,7 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
         }
 
         final int serviceResult = other.serviceReference.compareTo(serviceReference);
-        if ( serviceResult != 0 ) {
+        if (serviceResult != 0) {
             return serviceResult;
         }
         return this.getClass().getName().compareTo(other.getClass().getName());
@@ -235,7 +240,8 @@ public abstract class PathBasedHolder implements Comparable<PathBasedHolder> {
         if (obj.getClass() == getClass()) {
             PathBasedHolder other = (PathBasedHolder) obj;
             return fullPath.equals(other.fullPath)
-                && ((serviceReference == null && other.serviceReference == null) || (serviceReference != null && serviceReference.equals(other.serviceReference)));
+                    && ((serviceReference == null && other.serviceReference == null)
+                            || (serviceReference != null && serviceReference.equals(other.serviceReference)));
         }
 
         return false;

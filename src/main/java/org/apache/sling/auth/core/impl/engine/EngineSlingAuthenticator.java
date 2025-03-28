@@ -57,5 +57,4 @@ public class EngineSlingAuthenticator implements Authenticator {
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         slingAuthenticator.logout(request, response);
     }
-
 }

@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.auth.core.AuthConstants;
 import org.apache.sling.auth.core.AuthUtil;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
@@ -52,22 +51,28 @@ final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHol
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    AuthenticationHandlerHolder(final String fullPath,
+    AuthenticationHandlerHolder(
+            final String fullPath,
             final JakartaAuthenticationHandler handler,
             final ServiceReference<?> serviceReference) {
         super(fullPath, serviceReference);
 
-        final String browserOnly = Converters.standardConverter().convert(serviceReference.getProperty(AuthConstants.AUTH_HANDLER_BROWSER_ONLY)).to(String.class);
+        final String browserOnly = Converters.standardConverter()
+                .convert(serviceReference.getProperty(AuthConstants.AUTH_HANDLER_BROWSER_ONLY))
+                .to(String.class);
 
         // assign the fields
         this.handler = handler;
-        this.authType = Converters.standardConverter().convert(serviceReference.getProperty(JakartaAuthenticationHandler.TYPE_PROPERTY)).to(String.class);
-        this.browserOnlyRequestCredentials = "true".equalsIgnoreCase(browserOnly)
-            || "yes".equalsIgnoreCase(browserOnly);
+        this.authType = Converters.standardConverter()
+                .convert(serviceReference.getProperty(JakartaAuthenticationHandler.TYPE_PROPERTY))
+                .to(String.class);
+        this.browserOnlyRequestCredentials =
+                "true".equalsIgnoreCase(browserOnly) || "yes".equalsIgnoreCase(browserOnly);
     }
 
-    AuthenticationHandlerHolder(final String fullPath,
-            @SuppressWarnings("deprecation") final  org.apache.sling.auth.core.spi.AuthenticationHandler handler,
+    AuthenticationHandlerHolder(
+            final String fullPath,
+            @SuppressWarnings("deprecation") final org.apache.sling.auth.core.spi.AuthenticationHandler handler,
             final ServiceReference<?> serviceReference) {
         this(fullPath, AuthenticationHandlerWrapper.wrap(handler), serviceReference);
     }
@@ -81,15 +86,13 @@ final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHol
     }
 
     @Override
-    public AuthenticationInfo doExtractCredentials(HttpServletRequest request,
-            HttpServletResponse response) {
+    public AuthenticationInfo doExtractCredentials(HttpServletRequest request, HttpServletResponse response) {
         this.logDebugMessage("doExtractCredentials", request);
         return handler.extractCredentials(request, response);
     }
 
     @Override
-    public boolean doRequestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    public boolean doRequestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         // call handler if ok by its authentication type
         if (doesRequestCredentials(request)) {
@@ -102,8 +105,7 @@ final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHol
     }
 
     @Override
-    public void doDropCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException {
+    public void doDropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException {
         this.logDebugMessage("doDropCredentials", request);
         handler.dropCredentials(request, response);
     }
@@ -118,12 +120,9 @@ final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHol
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) return true;
+        if (!super.equals(obj)) return false;
+        if (getClass() != obj.getClass()) return false;
         AuthenticationHandlerHolder other = (AuthenticationHandlerHolder) obj;
         return Objects.equals(authType, other.authType)
                 && browserOnlyRequestCredentials == other.browserOnlyRequestCredentials
@@ -173,8 +172,9 @@ final class AuthenticationHandlerHolder extends AbstractAuthenticationHandlerHol
 
     private void logDebugMessage(String functionName, HttpServletRequest request) {
         if (logger.isDebugEnabled()) {
-            String message = functionName + ": Using AuthenticationHandler class {} to request credentials for request {} {}";
-            logger.debug(message, handler, request.getMethod() ,request.getRequestURL());
+            String message =
+                    functionName + ": Using AuthenticationHandler class {} to request credentials for request {} {}";
+            logger.debug(message, handler, request.getMethod(), request.getRequestURL());
         }
     }
 }

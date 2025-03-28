@@ -42,16 +42,16 @@ import org.slf4j.LoggerFactory;
  * The <code>LogoutServlet</code> lets the Authenticator
  * do the logout.
  */
-@Component(service = Servlet.class,
-    property = {
-            "sling.servlet.paths=" + LogoutServlet.SERVLET_PATH
-    })
+@Component(
+        service = Servlet.class,
+        property = {"sling.servlet.paths=" + LogoutServlet.SERVLET_PATH})
 @ServiceDescription("Authenticator Logout Servlet")
 @ServiceVendor("The Apache Software Foundation")
 @Designate(ocd = LogoutServlet.Config.class)
 public class LogoutServlet extends SlingAllMethodsServlet {
 
-    @ObjectClassDefinition(name = "Apache Sling Authentication Logout Servlet",
+    @ObjectClassDefinition(
+            name = "Apache Sling Authentication Logout Servlet",
             description = "Servlet for logging out users through the authenticator service.")
     public @interface Config {
 
@@ -74,8 +74,7 @@ public class LogoutServlet extends SlingAllMethodsServlet {
     public static final String SERVLET_PATH = "/system/sling/logout"; // NOSONAR
 
     @Override
-    protected void service(SlingHttpServletRequest request,
-            SlingHttpServletResponse response) {
+    protected void service(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 
         final Authenticator authenticatorRef = this.authenticator;
         if (authenticatorRef != null) {

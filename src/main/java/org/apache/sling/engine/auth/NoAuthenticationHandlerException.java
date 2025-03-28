@@ -41,5 +41,4 @@ public class NoAuthenticationHandlerException extends SlingException {
     public NoAuthenticationHandlerException() {
         super();
     }
-
 }

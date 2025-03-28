@@ -20,7 +20,6 @@ package org.apache.sling.auth.core.spi;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.osgi.annotation.versioning.ConsumerType;
 
 /**
@@ -56,8 +55,7 @@ public interface JakartaAuthenticationFeedbackHandler {
      * @param authInfo The {@link AuthenticationInfo} object used to
      *            authenticate the request.
      */
-    void authenticationFailed(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo);
+    void authenticationFailed(HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo);
 
     /**
      * Called if authentication succeeded with the credentials provided in the
@@ -77,6 +75,6 @@ public interface JakartaAuthenticationFeedbackHandler {
      *         If <code>false</code> is returned, the request proceeds as
      *         authenticated.
      */
-    boolean authenticationSucceeded(HttpServletRequest request,
-            HttpServletResponse response, AuthenticationInfo authInfo);
+    boolean authenticationSucceeded(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo);
 }

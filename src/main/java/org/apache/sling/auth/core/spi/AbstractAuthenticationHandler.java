@@ -18,11 +18,11 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import java.io.IOException;
-import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.Map;
 
 import org.apache.sling.auth.core.AuthUtil;
 
@@ -38,8 +38,8 @@ import org.apache.sling.auth.core.AuthUtil;
  *             class.
  */
 @Deprecated
-public abstract class AbstractAuthenticationHandler extends DefaultAuthenticationFeedbackHandler implements
-        AuthenticationHandler {
+public abstract class AbstractAuthenticationHandler extends DefaultAuthenticationFeedbackHandler
+        implements AuthenticationHandler {
 
     /**
      * Returns the value of the named request attribute or parameter as a string
@@ -65,8 +65,8 @@ public abstract class AbstractAuthenticationHandler extends DefaultAuthenticatio
      *             {@link AuthUtil#getAttributeOrParameter(HttpServletRequest, String, String)}
      */
     @Deprecated
-    public static String getAttributeOrParameter(final HttpServletRequest request, final String name,
-            final String defaultValue) {
+    public static String getAttributeOrParameter(
+            final HttpServletRequest request, final String name, final String defaultValue) {
         return AuthUtil.getAttributeOrParameter(request, name, defaultValue);
     }
 
@@ -166,8 +166,12 @@ public abstract class AbstractAuthenticationHandler extends DefaultAuthenticatio
      *             {@link AuthUtil#sendRedirect(HttpServletRequest, HttpServletResponse, String, Map)}
      */
     @Deprecated
-    public static void sendRedirect(final HttpServletRequest request, final HttpServletResponse response,
-            final String target, Map<String, String> params) throws IOException {
+    public static void sendRedirect(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String target,
+            Map<String, String> params)
+            throws IOException {
         AuthUtil.sendRedirect(request, response, request.getContextPath() + target, params);
     }
 

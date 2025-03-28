@@ -22,7 +22,6 @@ import java.io.IOException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.osgi.annotation.versioning.ConsumerType;
 
 /**
@@ -165,8 +164,7 @@ public interface JakartaAuthenticationHandler {
      *         In case of {@link AuthenticationInfo#DOING_AUTH}, the method must
      *         have sent a response indicating that fact to the client.
      */
-    AuthenticationInfo extractCredentials(HttpServletRequest request,
-            HttpServletResponse response);
+    AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * Requests authentication information from the client. Returns
@@ -204,8 +202,7 @@ public interface JakartaAuthenticationHandler {
      * @throws IOException If an error occurs sending the authentication
      *             inquiry to the client.
      */
-    boolean requestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     /**
      * Drops any credential and authentication details from the request and asks
@@ -216,6 +213,5 @@ public interface JakartaAuthenticationHandler {
      * @throws IOException If an error occurs asking the client to drop any
      *             authentication traces.
      */
-    void dropCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 }

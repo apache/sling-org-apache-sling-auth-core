@@ -42,7 +42,8 @@ public class PathBasedHolderCache<T extends PathBasedHolder> {
     }
 
     public synchronized void addHolder(final T holder) {
-        final Map<String, SortedSet<T>> byHostMap = cache.computeIfAbsent(holder.protocol, protocol -> new ConcurrentHashMap<>());
+        final Map<String, SortedSet<T>> byHostMap =
+                cache.computeIfAbsent(holder.protocol, protocol -> new ConcurrentHashMap<>());
 
         // preset with current list
         final SortedSet<T> currentPathSet = byHostMap.get(holder.host);
@@ -81,7 +82,7 @@ public class PathBasedHolderCache<T extends PathBasedHolder> {
 
     public Collection<T>[] findApplicableHolders(final HttpServletRequest request) {
         final String hostname;
-        if ( request.getServerPort() != 80 && request.getServerPort() != 443 ) {
+        if (request.getServerPort() != 80 && request.getServerPort() != 443) {
             hostname = request.getServerName().concat(":").concat(String.valueOf(request.getServerPort()));
         } else {
             hostname = request.getServerName();
@@ -91,12 +92,12 @@ public class PathBasedHolderCache<T extends PathBasedHolder> {
         final SortedSet<T>[] result = new SortedSet[4];
 
         final Map<String, SortedSet<T>> byHostMap = cache.get(request.getScheme());
-        if ( byHostMap != null ) {
+        if (byHostMap != null) {
             result[0] = byHostMap.get(hostname);
             result[1] = byHostMap.get("");
         }
         final Map<String, SortedSet<T>> defaultByHostMap = cache.get("");
-        if ( defaultByHostMap != null ) {
+        if (defaultByHostMap != null) {
             result[2] = defaultByHostMap.get(hostname);
             result[3] = defaultByHostMap.get("");
         }

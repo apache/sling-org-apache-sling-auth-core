@@ -28,7 +28,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.sling.api.request.ResponseUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -38,13 +37,14 @@ import org.osgi.service.component.propertytypes.ServiceDescription;
 import org.osgi.service.component.propertytypes.ServiceVendor;
 
 @SuppressWarnings("serial")
-@Component(service = Servlet.class,
-    configurationPid = SlingAuthenticator.PID,
-    property = {
+@Component(
+        service = Servlet.class,
+        configurationPid = SlingAuthenticator.PID,
+        property = {
             "felix.webconsole.label=" + AuthenticatorWebConsolePlugin.LABEL,
             "felix.webconsole.title=" + AuthenticatorWebConsolePlugin.TITLE,
             "felix.webconsole.category=Sling"
-    })
+        })
 @ServiceDescription("Apache Sling Request Authenticator WebConsole Plugin")
 @ServiceVendor("The Apache Software Foundation")
 public class AuthenticatorWebConsolePlugin extends HttpServlet {
@@ -73,8 +73,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         // only handle GET requests, ensure no error message for other requests
         if ("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) {
             super.service(req, resp);
@@ -82,8 +81,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             PrintWriter pw = resp.getWriter();
 
@@ -149,12 +147,14 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
             td(pw, (req.requiresAuthentication() ? "Yes" : "No"));
             td(pw, req.getProvider());
             endTr(pw);
-
         }
     }
 
     private void printAuthenticationConfiguration(final PrintWriter pw) {
-        final String anonUser = (this.config.sling_auth_anonymous_user() != null && this.config.sling_auth_anonymous_user().isEmpty()) ? this.config.sling_auth_anonymous_user() : "(default)";
+        final String anonUser = (this.config.sling_auth_anonymous_user() != null
+                        && this.config.sling_auth_anonymous_user().isEmpty())
+                ? this.config.sling_auth_anonymous_user()
+                : "(default)";
         final String sudoCookie = this.config.auth_sudo_cookie();
         final String sudoParam = this.config.auth_sudo_parameter();
 
@@ -179,6 +179,7 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     private void td(final PrintWriter pw, String content) {
         td(pw, content, -1);
     }
+
     private void td(final PrintWriter pw, String content, int colspan) {
         if (colspan > 1) {
             pw.printf("<td class='content' colspan='%d'>%s</td>%n", colspan, ResponseUtil.escapeXml(content));
@@ -194,5 +195,4 @@ public class AuthenticatorWebConsolePlugin extends HttpServlet {
     private void endTr(final PrintWriter pw) {
         pw.println("</tr>");
     }
-
 }

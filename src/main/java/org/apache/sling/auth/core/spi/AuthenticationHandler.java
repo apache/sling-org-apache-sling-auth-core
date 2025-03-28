@@ -18,14 +18,13 @@
  */
 package org.apache.sling.auth.core.spi;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.osgi.annotation.versioning.ConsumerType;
+import java.io.IOException;
 
 import aQute.bnd.annotation.baseline.BaselineIgnore;
+import org.osgi.annotation.versioning.ConsumerType;
 
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used
@@ -201,8 +200,7 @@ public interface AuthenticationHandler {
      *         In case of {@link AuthenticationInfo#DOING_AUTH}, the method must
      *         have sent a response indicating that fact to the client.
      */
-    AuthenticationInfo extractCredentials(HttpServletRequest request,
-            HttpServletResponse response);
+    AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * Requests authentication information from the client. Returns
@@ -240,8 +238,7 @@ public interface AuthenticationHandler {
      * @throws IOException If an error occurs sending the authentication
      *             inquiry to the client.
      */
-    boolean requestCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     /**
      * Drops any credential and authentication details from the request and asks
@@ -252,6 +249,5 @@ public interface AuthenticationHandler {
      * @throws IOException If an error occurs asking the client to drop any
      *             authentication traces.
      */
-    void dropCredentials(HttpServletRequest request,
-            HttpServletResponse response) throws IOException;
+    void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 }

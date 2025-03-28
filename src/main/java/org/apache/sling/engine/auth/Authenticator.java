@@ -60,5 +60,4 @@ public interface Authenticator {
      * @throws IllegalStateException If the response has already been committed.
      */
     public void login(HttpServletRequest request, HttpServletResponse response);
-
 }

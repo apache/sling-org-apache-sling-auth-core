@@ -18,10 +18,10 @@
  */
 package org.apache.sling.auth.core.impl;
 
-import java.io.IOException;
-
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
@@ -41,12 +41,13 @@ import org.slf4j.LoggerFactory;
 /**
  * The <code>LoginServlet</code> lets the Authenticator do the login.
  */
-@Component(service = Servlet.class,
-  property = {
-          "sling.servlet.methods=GET",
-          "sling.servlet.methods=POST",
-          "sling.servlet.paths=" + LoginServlet.SERVLET_PATH
-  })
+@Component(
+        service = Servlet.class,
+        property = {
+            "sling.servlet.methods=GET",
+            "sling.servlet.methods=POST",
+            "sling.servlet.paths=" + LoginServlet.SERVLET_PATH
+        })
 @ServiceDescription("Authenticator Login Servlet")
 @ServiceVendor("The Apache Software Foundation")
 public class LoginServlet extends SlingAllMethodsServlet {
@@ -67,9 +68,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
     public static final String SERVLET_PATH = "/system/sling/login"; // NOSONAR
 
     @Override
-    protected void service(SlingHttpServletRequest request,
-            SlingHttpServletResponse response) throws IOException {
-
+    protected void service(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
 
         // if the request is logged in and the resource is not set (such
         // as when requesting /system/sling/login from the browser with the
@@ -81,9 +80,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
             final String resourcePath = AuthUtil.getLoginResource(request, null);
             if (isSelf(resourcePath)) {
                 String redirectTarget = request.getContextPath() + "/";
-                log.warn(
-                    "doGet: Redirecting to {} to prevent login loop for resource",
-                    redirectTarget);
+                log.warn("doGet: Redirecting to {} to prevent login loop for resource", redirectTarget);
                 response.sendRedirect(redirectTarget);
                 return;
             }
@@ -106,13 +103,11 @@ public class LoginServlet extends SlingAllMethodsServlet {
             } catch (NoAuthenticationHandlerException nahe) {
 
                 log.error("doGet: No AuthenticationHandler to login registered");
-
             }
 
         } else {
 
             log.error("doGet: Authenticator service missing, cannot login");
-
         }
 
         // fall back to forbid access
