@@ -23,23 +23,27 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.osgi.annotation.versioning.ProviderType;
 
 /**
- * The <code>AuthenticationSupport</code> provides the service API used to
- * implement the <code>HttpContext.handleSecurity</code> method as defined in
- * the OSGi Http Service specification.
+ * The {@code AuthenticationSupport} provides the service API used to
+ * implement the {@code ServletContextHelper.handleSecurity} method as defined in
+ * the OSGi Whiteboard Specification for Jakarta Servlet.
  * <p>
  * Bundles registering servlets and/or resources with custom
- * <code>HttpContext</code> implementations may implement the
- * <code>handleSecurity</code> method using this service. The
+ * {@code ServletContextHelper} implementations may implement the
+ * {@code handleSecurity} method using this service. The
  * {@link #handleSecurity(HttpServletRequest, HttpServletResponse)} method
  * implemented by this service exactly implements the specification of the
- * <code>HttpContext.handleSecurity</code> method.
+ * {@code ServletContextHelper.handleSecurity} method.
+ * Similarly, the
+ * {@link #finishSecurity(HttpServletRequest, HttpServletResponse)} method
+ * implemented by this service exactly implements the specification of the
+ * {@code ServletContextHelper.finishSecurity} method.
  * <p>
- * A simple implementation of the <code>HttpContext</code> interface based on
+ * A simple implementation of the {@code ServletContextHelper} interface based on
  * this could be (using SCR JavaDoc tags of the Maven SCR Plugin) :
  *
  * <pre>
  * &#47;** &#64;scr.component *&#47;
- * public class MyHttpContext implements HttpContext {
+ * public class MyHttpContext extends ServletContextHelper {
  *     &#47;** &#64;scr.reference *&#47;
  *     private AuthenticationSupport authSupport;
  *
@@ -51,12 +55,9 @@ import org.osgi.annotation.versioning.ProviderType;
  *         return authSupport.handleSecurity(request, response);
  *     }
  *
- *     public URL getResource(String name) {
- *         return null;
- *     }
- *
- *     public String getMimeType(String name) {
- *         return mimeTypes.getMimeType(name);
+ *     public void finishSecurity(HttpServletRequest request,
+ *             HttpServletResponse response) {
+ *         return authSupport.finishSecurity(request, response);
  *     }
  * }
  * </pre>
@@ -75,11 +76,11 @@ public interface AuthenticationSupport {
     /**
      * The name of the request attribute set by the
      * {@link #handleSecurity(HttpServletRequest, HttpServletResponse)} method
-     * if authentication succeeds and <code>true</code> is returned.
+     * if authentication succeeds and {@code true} is returned.
      * <p>
-     * The request attribute is set to a Sling <code>ResourceResolver</code>
-     * attached to the JCR repository using the credentials provided by the
-     * request.
+     * The request attribute is set to a Sling {@code ResourceResolver}
+     * attached to resource providers, e.g. a JCR repository, using the credentials
+     * provided by the request.
      */
     static final String REQUEST_ATTRIBUTE_RESOLVER = "org.apache.sling.auth.core.ResourceResolver";
 
@@ -99,24 +100,36 @@ public interface AuthenticationSupport {
     static final String REDIRECT_PARAMETER = "sling.auth.redirect";
 
     /**
-     * Handles security on behalf of a custom OSGi Http Service
-     * <code>HttpContext</code> instance extracting credentials from the request
+     * Handles security on behalf of a custom OSGi
+     * {@code ServletContextHelper} instance extracting credentials from the request
      * using any registered
      * {@link org.apache.sling.auth.core.spi.AuthenticationHandler} services.
-     * If the credentials can be extracted and used to log into the JCR
-     * repository this method sets the request attributes required by the OSGi
-     * Http Service specification plus the {@link #REQUEST_ATTRIBUTE_RESOLVER}
+     * If the credentials can be extracted and used to log into the resource
+     * resolver this method sets the request attributes required by the OSGi
+     * Whiteboard Specification for Jakarta Service plus the {@link #REQUEST_ATTRIBUTE_RESOLVER}
      * attribute.
      *
      * @param request The HTTP request to be authenticated
      * @param response The HTTP response to send any response to in case of
      *            problems.
-     * @return <code>true</code> if authentication succeeded and the request
-     *         attributes are set. If <code>false</code> is returned the request
-     *         is immediately terminated and no request attributes are set.
+     * @return {@code true} if authentication succeeded and the request
+     *         attributes are set. {@code false} is returned no request attributes are set.
      * @since 1.6.0
      */
     boolean handleSecurity(HttpServletRequest request, HttpServletResponse response);
+
+    /**
+     * Handles security on behalf of a custom OSGi {@code ServletContextHelper}
+     * instance, finishing the authentication context established
+     * by {@link #handleSecurity(HttpServletRequest, HttpServletResponse)}.
+     * If the request contains an attribute {@link #REQUEST_ATTRIBUTE_RESOLVER}
+     * and the value is a {@code ResourceResolver}, this method will close it.
+     *
+     * @param request The HTTP request
+     * @param response The HTTP response
+     * @since 1.6.0
+     */
+    void finishSecurity(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * Handles security on behalf of a custom OSGi Http Service

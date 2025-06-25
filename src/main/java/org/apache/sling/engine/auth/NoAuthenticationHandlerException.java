@@ -38,6 +38,10 @@ import org.apache.sling.api.SlingException;
 @SuppressWarnings("serial")
 public class NoAuthenticationHandlerException extends SlingException {
 
+    /**
+     * Default constructor for the
+     * {@code NoAuthenticationHandlerException}.
+     */
     public NoAuthenticationHandlerException() {
         super();
     }

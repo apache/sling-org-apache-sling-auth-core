@@ -128,12 +128,19 @@ public interface AuthenticationHandler {
     // on implementors since the enum values are not exposed from any public API
     @BaselineIgnore("1.2.3")
     enum FAILURE_REASON_CODES {
+        /** Login is invald */
         INVALID_LOGIN,
+        /** Password has expired */
         PASSWORD_EXPIRED,
+        /** Password has expired and a new password is in history */
         PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY,
+        /** Unknown reason */
         UNKNOWN,
+        /** Account is locked or disabled */
         ACCOUNT_LOCKED,
+        /** Account was not found */
         ACCOUNT_NOT_FOUND,
+        /** The token credentials used have expired */
         EXPIRED_TOKEN;
 
         @Override

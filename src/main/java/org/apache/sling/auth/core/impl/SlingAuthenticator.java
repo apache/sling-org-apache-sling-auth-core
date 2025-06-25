@@ -72,15 +72,15 @@ import org.osgi.service.component.propertytypes.ServiceDescription;
 import org.osgi.service.component.propertytypes.ServiceVendor;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.osgi.service.http.context.ServletContextHelper;
-import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
-import org.osgi.service.http.whiteboard.propertytypes.HttpWhiteboardContextSelect;
-import org.osgi.service.http.whiteboard.propertytypes.HttpWhiteboardListener;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.AttributeType;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import org.osgi.service.metatype.annotations.Option;
+import org.osgi.service.servlet.context.ServletContextHelper;
+import org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants;
+import org.osgi.service.servlet.whiteboard.propertytypes.HttpWhiteboardContextSelect;
+import org.osgi.service.servlet.whiteboard.propertytypes.HttpWhiteboardListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -544,6 +544,15 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
 
             log.debug("doHandleSecurity: Trying to get a session for {}", authInfo.getUser());
             return getResolver(request, response, authInfo);
+        }
+    }
+
+    @Override
+    public void finishSecurity(HttpServletRequest request, HttpServletResponse response) {
+        Object resolverAttr = request.getAttribute(REQUEST_ATTRIBUTE_RESOLVER);
+        if (resolverAttr instanceof ResourceResolver) {
+            ((ResourceResolver) resolverAttr).close();
+            request.removeAttribute(REQUEST_ATTRIBUTE_RESOLVER);
         }
     }
 
