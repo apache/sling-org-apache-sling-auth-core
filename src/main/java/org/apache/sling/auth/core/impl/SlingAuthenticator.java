@@ -52,12 +52,12 @@ import org.apache.sling.auth.core.AuthenticationSupport;
 import org.apache.sling.auth.core.JakartaLoginEventDecorator;
 import org.apache.sling.auth.core.LoginEventDecorator;
 import org.apache.sling.auth.core.spi.AuthenticationHandler;
-import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.AuthenticationInfoPostProcessor;
 import org.apache.sling.auth.core.spi.DefaultJakartaAuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationFeedbackHandler;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationInfoPostProcessor;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -218,6 +218,14 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
                         + " just \"/j_security_check\" which is the suffix defined by the Servlet API"
                         + " specification used for FORM based authentication.")
         String[] auth_uri_suffix() default DEFAULT_AUTH_URI_SUFFIX; // NOSONAR
+
+        @AttributeDefinition(
+                name = "Prefer the deprecated AuthenticationHandler.FAILURE_REASON_CODES",
+                description = "For backward compatibility, use the deprecated"
+                        + " AuthenticationHandler.FAILURE_REASON_CODES for the FAILURE_REASON_CODE"
+                        + " request attribute. Otherwise the non-deprecated"
+                        + " JakartaAuthenticationHandler.FAILURE_REASON_CODE will be used instead.")
+        boolean prefer_deprecated_failurereasoncode() default true; // NOSONAR
     }
 
     /** default logger */
@@ -367,6 +375,12 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
             fieldOption = FieldOption.REPLACE)
     private volatile List<LoginEventDecorator> loginEventDecorators = new ArrayList<>(); // NOSONAR
 
+    /**
+     * IF true, use the deprecated {@link AuthenticationHandler#FAILURE_REASON_CODE}.
+     * If false, use the {@link JakartaAuthenticationHandler#FAILURE_REASON_CODE}
+     */
+    private boolean preferDeprecatedFailureReasonCode = true;
+
     // ---------- SCR integration
 
     @Activate
@@ -426,6 +440,8 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
             this.httpBasicHandler =
                     new HttpBasicAuthenticationHandler(config.auth_http_realm(), HTTP_AUTH_ENABLED.equals(http));
         }
+
+        this.preferDeprecatedFailureReasonCode = config.prefer_deprecated_failurereasoncode();
     }
 
     /**
@@ -1019,15 +1035,22 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
                     case EXPIRED_TOKEN:
                         message = "Expired authentication token";
                         break;
-                    case UNKNOWN:
-                    case INVALID_LOGIN:
+                    case UNKNOWN, INVALID_LOGIN:
                     default:
                         message = "User name and password do not match";
                         break;
                 }
 
                 // preset a reason for the login failure
-                request.setAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE, code);
+                if (preferDeprecatedFailureReasonCode) {
+                    // convert it to the older deprecated enum value
+                    @SuppressWarnings("deprecation")
+                    org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES deprecatedCode =
+                            AuthenticationHandler.FAILURE_REASON_CODES.valueOf(code.name());
+                    request.setAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE, deprecatedCode);
+                } else {
+                    request.setAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE, code);
+                }
                 ensureAttribute(request, JakartaAuthenticationHandler.FAILURE_REASON, message);
 
                 doLogin(request, response);

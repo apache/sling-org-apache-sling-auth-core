@@ -20,6 +20,7 @@ package org.apache.sling.auth.core.spi;
 
 import java.io.IOException;
 
+import aQute.bnd.annotation.baseline.BaselineIgnore;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.osgi.annotation.versioning.ConsumerType;
@@ -105,6 +106,46 @@ public interface JakartaAuthenticationHandler {
      * @see #extractCredentials(HttpServletRequest, HttpServletResponse)
      */
     static final String FAILURE_REASON_CODE = "j_reason_code";
+
+    /**
+     * This enum indicates the supported detailed login failure reason codes:
+     * <ul>
+     *     <li><code>invalid_login</code>: indicates username/password mismatch.</li>
+     *     <li><code>password_expired</code>: indicates password has expired or was never set and
+     *     change initial password is enabled</li>
+     *     <li><code>account_locked</code>: the account was disabled or locked</li>
+     *     <li><code>account_not_found</code>: the account was not found (not the same as username password mismatch)</li>
+     *     <li><code>expired_token</code>: the token credentials used have expired</li>
+     * </ul>
+     * @since 1.1.0
+     */
+    // When adding a new field to the enum bnd will require a minor version bump
+    // That's unfortunately too much for an SPI package and should really have no impact
+    // on implementors since the enum values are not exposed from any public API
+    // NOTE: a mirror of this enum is in the deprecated AuthenticationHandler so keep these
+    //   two copies in sync
+    @BaselineIgnore("1.2.3")
+    enum FAILURE_REASON_CODES {
+        /** Login is invald */
+        INVALID_LOGIN,
+        /** Password has expired */
+        PASSWORD_EXPIRED,
+        /** Password has expired and a new password is in history */
+        PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY,
+        /** Unknown reason */
+        UNKNOWN,
+        /** Account is locked or disabled */
+        ACCOUNT_LOCKED,
+        /** Account was not found */
+        ACCOUNT_NOT_FOUND,
+        /** The token credentials used have expired */
+        EXPIRED_TOKEN;
+
+        @Override
+        public String toString() {
+            return super.toString().toLowerCase();
+        }
+    }
 
     /**
      * Extracts credential data from the request if at all contained.

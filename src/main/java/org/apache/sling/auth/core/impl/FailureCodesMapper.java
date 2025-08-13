@@ -24,8 +24,8 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.auth.login.CredentialExpiredException;
 
 import org.apache.sling.api.resource.LoginException;
-import org.apache.sling.auth.core.spi.AuthenticationHandler.FAILURE_REASON_CODES;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler.FAILURE_REASON_CODES;
 import org.jetbrains.annotations.NotNull;
 
 public final class FailureCodesMapper {
@@ -46,8 +46,8 @@ public final class FailureCodesMapper {
                 // force failure attribute to be set so handlers can
                 // react to this special circumstance
                 Object creds = authInfo.get("user.jcr.credentials");
-                if (creds instanceof SimpleCredentials
-                        && ((SimpleCredentials) creds).getAttribute("PasswordHistoryException") != null) {
+                if (creds instanceof SimpleCredentials simpleCreds
+                        && simpleCreds.getAttribute("PasswordHistoryException") != null) {
                     code = FAILURE_REASON_CODES.PASSWORD_EXPIRED_AND_NEW_PASSWORD_IN_HISTORY;
                 } else {
                     code = FAILURE_REASON_CODES.PASSWORD_EXPIRED;

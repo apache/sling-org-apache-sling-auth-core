@@ -122,10 +122,13 @@ public interface AuthenticationHandler {
      *     <li><code>expired_token</code>: the token credentials used have expired</li>
      * </ul>
      * @since 1.1.0
+     * @deprecated use {@link JakartaAuthenticationHandler.FAILURE_REASON_CODES} instead
      */
     // When adding a new field to the enum bnd will require a minor version bump
     // That's unfortunately too much for an SPI package and should really have no impact
     // on implementors since the enum values are not exposed from any public API
+    // NOTE: a mirror of this enum is in JakartaAuthenticationHandler so keep these
+    //   two copies in sync
     @BaselineIgnore("1.2.3")
     enum FAILURE_REASON_CODES {
         /** Login is invald */
