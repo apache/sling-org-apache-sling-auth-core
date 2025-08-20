@@ -26,7 +26,7 @@
  * being an abstract base implementation from which concrete
  * implementations may inherit.
  *
- * @version 1.3.0
+ * @version 1.3.1
  */
-@org.osgi.annotation.versioning.Version("1.3.0")
+@org.osgi.annotation.versioning.Version("1.3.1")
 package org.apache.sling.auth.core.spi;

@@ -23,23 +23,28 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
-import aQute.bnd.annotation.baseline.BaselineIgnore;
 import org.osgi.annotation.versioning.ConsumerType;
 
 /**
  * The <code>AuthenticationHandler</code> interface defines the service API used
  * by the authentication implementation to support plugin various ways of
  * extracting credentials from the request.
- * @deprecated Use {@link JakartaAuthenticationHandler} instead
+ * <blockquote>
+ * <strong>Important:</strong> This interface is deprecated. Use {@link JakartaAuthenticationHandler} instead.
+ * This interface is not directly marked as deprecated as the inner enum
+ * {@link AuthenticationHandler.FAILURE_REASON_CODES} is not deprecated!
+ * This interface is deprecated since package version 1.3.0.
+ * </blockquote>
  */
-@Deprecated
 @ConsumerType
 public interface AuthenticationHandler {
 
     /**
      * The name under which an implementation of this interface must be
      * registered to be used as an authentication handler.
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String SERVICE_NAME = "org.apache.sling.auth.core.spi.AuthenticationHandler";
 
     /**
@@ -54,7 +59,9 @@ public interface AuthenticationHandler {
      * <p>
      * Authentication handlers without a <code>path</code> service registration
      * property are ignored.
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String PATH_PROPERTY = "path";
 
     /**
@@ -71,7 +78,9 @@ public interface AuthenticationHandler {
      * method.
      *
      * @see #REQUEST_LOGIN_PARAMETER
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String TYPE_PROPERTY = "authtype";
 
     /**
@@ -82,7 +91,9 @@ public interface AuthenticationHandler {
      *
      * @see #requestCredentials(HttpServletRequest, HttpServletResponse)
      * @see #TYPE_PROPERTY
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String REQUEST_LOGIN_PARAMETER = "sling:authRequestLogin";
 
     /**
@@ -95,7 +106,9 @@ public interface AuthenticationHandler {
      *
      * @see #extractCredentials(HttpServletRequest, HttpServletResponse)
      * @since 1.0.2 (Bundle version 1.0.4)
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String FAILURE_REASON = "j_reason";
 
     /**
@@ -108,7 +121,9 @@ public interface AuthenticationHandler {
      *
      * @see #extractCredentials(HttpServletRequest, HttpServletResponse)
      * @since 1.1.0
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     static final String FAILURE_REASON_CODE = "j_reason_code";
 
     /**
@@ -123,10 +138,6 @@ public interface AuthenticationHandler {
      * </ul>
      * @since 1.1.0
      */
-    // When adding a new field to the enum bnd will require a minor version bump
-    // That's unfortunately too much for an SPI package and should really have no impact
-    // on implementors since the enum values are not exposed from any public API
-    @BaselineIgnore("1.2.3")
     enum FAILURE_REASON_CODES {
         /** Login is invald */
         INVALID_LOGIN,
@@ -206,7 +217,9 @@ public interface AuthenticationHandler {
      *         null if the request does not contain authentication information.
      *         In case of {@link AuthenticationInfo#DOING_AUTH}, the method must
      *         have sent a response indicating that fact to the client.
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response);
 
     /**
@@ -244,7 +257,9 @@ public interface AuthenticationHandler {
      *         inquiry for the given request. <code>false</code> otherwise.
      * @throws IOException If an error occurs sending the authentication
      *             inquiry to the client.
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     /**
@@ -255,6 +270,8 @@ public interface AuthenticationHandler {
      * @param response The response object to which to send the request.
      * @throws IOException If an error occurs asking the client to drop any
      *             authentication traces.
+     * @deprecated Use {@link JakartaAuthenticationHandler}
      */
+    @Deprecated(since = "1.3.0")
     void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 }
