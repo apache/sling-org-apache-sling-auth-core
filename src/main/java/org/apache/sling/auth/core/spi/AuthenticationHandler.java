@@ -33,6 +33,7 @@ import org.osgi.annotation.versioning.ConsumerType;
  * <strong>Important:</strong> This interface is deprecated. Use {@link JakartaAuthenticationHandler} instead.
  * This interface is not directly marked as deprecated as the inner enum
  * {@link AuthenticationHandler.FAILURE_REASON_CODES} is not deprecated!
+ * This interface is deprecated since package version 1.3.0.
  * </blockquote>
  */
 @ConsumerType
@@ -43,7 +44,7 @@ public interface AuthenticationHandler {
      * registered to be used as an authentication handler.
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String SERVICE_NAME = "org.apache.sling.auth.core.spi.AuthenticationHandler";
 
     /**
@@ -60,7 +61,7 @@ public interface AuthenticationHandler {
      * property are ignored.
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String PATH_PROPERTY = "path";
 
     /**
@@ -79,7 +80,7 @@ public interface AuthenticationHandler {
      * @see #REQUEST_LOGIN_PARAMETER
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String TYPE_PROPERTY = "authtype";
 
     /**
@@ -92,7 +93,7 @@ public interface AuthenticationHandler {
      * @see #TYPE_PROPERTY
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String REQUEST_LOGIN_PARAMETER = "sling:authRequestLogin";
 
     /**
@@ -107,7 +108,7 @@ public interface AuthenticationHandler {
      * @since 1.0.2 (Bundle version 1.0.4)
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String FAILURE_REASON = "j_reason";
 
     /**
@@ -122,7 +123,7 @@ public interface AuthenticationHandler {
      * @since 1.1.0
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     static final String FAILURE_REASON_CODE = "j_reason_code";
 
     /**
@@ -218,7 +219,7 @@ public interface AuthenticationHandler {
      *         have sent a response indicating that fact to the client.
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     AuthenticationInfo extractCredentials(HttpServletRequest request, HttpServletResponse response);
 
     /**
@@ -258,7 +259,7 @@ public interface AuthenticationHandler {
      *             inquiry to the client.
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     boolean requestCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     /**
@@ -271,6 +272,6 @@ public interface AuthenticationHandler {
      *             authentication traces.
      * @deprecated Use {@link JakartaAuthenticationHandler}
      */
-    @Deprecated
+    @Deprecated(since = "1.3.0")
     void dropCredentials(HttpServletRequest request, HttpServletResponse response) throws IOException;
 }
