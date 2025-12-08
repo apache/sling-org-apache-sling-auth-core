@@ -1462,6 +1462,7 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
 
         // find the redirect target from the resource attribute or parameter
         // falling back to the request context path (or /) if not set or invalid
+        // TODO: apply mapping, but no resource resolver at hand, use service resource resolver?
         String target = AuthUtil.getLoginResource(request, request.getContextPath());
         if (!AuthUtil.isRedirectValid(request, target)) {
             log.warn("redirectAfterLogout: Desired redirect target is invalid; redirecting to '/'");
