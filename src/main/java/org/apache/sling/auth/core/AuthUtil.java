@@ -37,6 +37,7 @@ import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceUtil;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,6 +184,7 @@ public final class AuthUtil {
      * @return The non-empty redirection target or
      *         <code>defaultLoginResource</code>.
      * @since 1.6.0
+     * @see AuthUtil#getMappedLoginResourcePath(HttpServletRequest, String)
      */
     public static String getLoginResource(final HttpServletRequest request, String defaultLoginResource) {
         return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE, defaultLoginResource);
@@ -201,11 +203,47 @@ public final class AuthUtil {
      * @return The non-empty redirection target or
      *         <code>defaultLoginResource</code>.
      * @deprecated Use {@link #getLoginResource(HttpServletRequest, String)}
+     * @see #getMappedLoginResourcePath(javax.servlet.http.HttpServletRequest, String)
      */
     @Deprecated
     public static String getLoginResource(
             final javax.servlet.http.HttpServletRequest request, String defaultLoginResource) {
         return getAttributeOrParameter(request, Authenticator.LOGIN_RESOURCE, defaultLoginResource);
+    }
+
+    /**
+     * Returns the mapped resource path (to redirect to after a successful authentication).
+     * It still needs to be validated by the caller.
+     * Use this method to issue a redirect instead of {@link #getLoginResource(HttpServletRequest, String)} to correctly consider resource resolver mapping.
+     * @return the mapped path of the resource target or {@code null} if non is given in the request
+     * @since 1.7.0 (Bundle Version 2.1.0)
+     */
+    public static @Nullable String getMappedLoginResourcePath(
+            final HttpServletRequest request, String defaultLoginResource) {
+        String resourcePath = getLoginResource(request, defaultLoginResource);
+        if (resourcePath == null) {
+            return null;
+        }
+        return getResourceResolver(request).map(request, resourcePath);
+    }
+
+    /**
+     * Returns the mapped resource path (to redirect to after a successful authentication).
+     * It still needs to be validated by the caller.
+     * Use this method to issue a redirect instead of {@link #getLoginResource(javax.servlet.http.HttpServletRequest, String)} to correctly consider resource resolver mapping.
+     * @return the mapped path of the resource target or {@code null} if non is given in the request
+     *
+     * @deprecated Use {@link #getMappedLoginResourcePath(HttpServletRequest, String)}
+     * @since 1.7.0 (Bundle Version 2.1.0)
+     */
+    @Deprecated
+    public static @Nullable String getMappedLoginResourcePath(
+            final javax.servlet.http.HttpServletRequest request, String defaultLoginResource) {
+        String resourcePath = getLoginResource(request, defaultLoginResource);
+        if (resourcePath == null) {
+            return null;
+        }
+        return getResourceResolver(request).map(request, resourcePath);
     }
 
     /**
