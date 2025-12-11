@@ -78,12 +78,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>biz.aQute.bnd</groupId>
-            <artifactId>biz.aQute.bnd.annotation</artifactId>
-            <version>5.3.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.api</artifactId>
             <version>3.0.0</version>
@@ -201,6 +195,11 @@
             <groupId>junit-addons</groupId>
             <artifactId>junit-addons</artifactId>
             <version>1.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.resource</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
