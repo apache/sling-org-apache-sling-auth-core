@@ -77,7 +77,7 @@ public class LoginServlet extends SlingAllMethodsServlet {
         // through the login servlet), redirect to root now assuming we are
         // authenticated.
         if (request.getAuthType() != null) {
-            final String resourcePath = AuthUtil.getLoginResource(request, null);
+            final String resourcePath = AuthUtil.getMappedLoginResourcePath(request, null);
             if (isSelf(resourcePath)) {
                 String redirectTarget = request.getContextPath() + "/";
                 log.warn("doGet: Redirecting to {} to prevent login loop for resource", redirectTarget);

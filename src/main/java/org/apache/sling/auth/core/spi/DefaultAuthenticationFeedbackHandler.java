@@ -37,8 +37,9 @@ public class DefaultAuthenticationFeedbackHandler implements AuthenticationFeedb
      * authentication and <code>true</code> if the request has been redirected.
      * <p>
      * This method checks {@link AuthenticationSupport#REDIRECT_PARAMETER}
-     * request parameter for the redirect target. This parameter is handled
-     * as follows:
+     * request parameter for the redirect target. If that is not set, it falls back
+     * to check for {@link AuthUtil#getMappedLoginResourcePath(HttpServletRequest, String)}.
+     * The parameter is handled as follows:
      * <ul>
      * <li>If the parameter does not exist, the method does not redirect and
      * <code>false</code> is returned.</li>
@@ -101,7 +102,10 @@ public class DefaultAuthenticationFeedbackHandler implements AuthenticationFeedb
     private static String getValidatedRedirectTarget(final HttpServletRequest request) {
         String redirect = request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER);
         if (redirect == null) {
-            return null;
+            redirect = AuthUtil.getMappedLoginResourcePath(request, null);
+            if (redirect == null) {
+                return null;
+            }
         }
 
         // redirect to the same path
