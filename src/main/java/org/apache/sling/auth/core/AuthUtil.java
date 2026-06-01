@@ -832,6 +832,7 @@ public final class AuthUtil {
             getLog().warn("isRedirectValid: Redirect target must not be empty or null");
             return false;
         }
+        final String sanitizedTarget = sanitizeForLog(target);
 
         try {
             new URI(target);
@@ -841,7 +842,7 @@ public final class AuthUtil {
         }
 
         if (target.contains("://")) {
-            getLog().warn("isRedirectValid: Redirect target '{}' must not be an URL", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' must not be an URL", sanitizedTarget);
             return false;
         }
 
@@ -850,16 +851,17 @@ public final class AuthUtil {
                 || target.contains("/./")
                 || target.endsWith("/.")
                 || target.endsWith("/..")) {
-            getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", sanitizedTarget);
             return false;
         }
 
         final String ctxPath = getContextPath(request);
         if (ctxPath.length() > 0 && !target.startsWith(ctxPath)) {
+            final String sanitizedCtxPath = sanitizeForLog(ctxPath);
             getLog().warn(
                             "isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
-                            target,
-                            ctxPath);
+                            sanitizedTarget,
+                            sanitizedCtxPath);
             return false;
         }
 
@@ -870,10 +872,11 @@ public final class AuthUtil {
 
         final String localTarget = target.substring(ctxPath.length());
         if (!localTarget.startsWith("/")) {
+            final String sanitizedCtxPath = sanitizeForLog(ctxPath);
             getLog().warn(
                             "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
-                            target,
-                            ctxPath);
+                            sanitizedTarget,
+                            sanitizedCtxPath);
             return false;
         }
 
@@ -889,7 +892,7 @@ public final class AuthUtil {
         // not resolving to a resource, check for illegal characters
         final Pattern illegal = Pattern.compile("[<>'\"]");
         if (illegal.matcher(path).find()) {
-            getLog().warn("isRedirectValid: Redirect target '{}' must not contain any of <>'\"", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' must not contain any of <>'\"", sanitizedTarget);
             return false;
         }
 
@@ -938,6 +941,7 @@ public final class AuthUtil {
             getLog().warn("isRedirectValid: Redirect target must not be empty or null");
             return false;
         }
+        final String sanitizedTarget = sanitizeForLog(target);
 
         try {
             new URI(target);
@@ -947,7 +951,7 @@ public final class AuthUtil {
         }
 
         if (target.contains("://")) {
-            getLog().warn("isRedirectValid: Redirect target '{}' must not be an URL", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' must not be an URL", sanitizedTarget);
             return false;
         }
 
@@ -956,16 +960,17 @@ public final class AuthUtil {
                 || target.contains("/./")
                 || target.endsWith("/.")
                 || target.endsWith("/..")) {
-            getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' is not normalized", sanitizedTarget);
             return false;
         }
 
         final String ctxPath = getContextPath(request);
         if (ctxPath.length() > 0 && !target.startsWith(ctxPath)) {
+            final String sanitizedCtxPath = sanitizeForLog(ctxPath);
             getLog().warn(
                             "isRedirectValid: Redirect target '{}' does not start with servlet context path '{}'",
-                            target,
-                            ctxPath);
+                            sanitizedTarget,
+                            sanitizedCtxPath);
             return false;
         }
 
@@ -976,10 +981,11 @@ public final class AuthUtil {
 
         final String localTarget = target.substring(ctxPath.length());
         if (!localTarget.startsWith("/")) {
+            final String sanitizedCtxPath = sanitizeForLog(ctxPath);
             getLog().warn(
                             "isRedirectValid: Redirect target '{}' without servlet context path '{}' must be an absolute path",
-                            target,
-                            ctxPath);
+                            sanitizedTarget,
+                            sanitizedCtxPath);
             return false;
         }
 
@@ -995,7 +1001,7 @@ public final class AuthUtil {
         // not resolving to a resource, check for illegal characters
         final Pattern illegal = Pattern.compile("[<>'\"]");
         if (illegal.matcher(path).find()) {
-            getLog().warn("isRedirectValid: Redirect target '{}' must not contain any of <>'\"", target);
+            getLog().warn("isRedirectValid: Redirect target '{}' must not contain any of <>'\"", sanitizedTarget);
             return false;
         }
 
@@ -1022,6 +1028,13 @@ public final class AuthUtil {
             return request.getContextPath();
         }
         return "";
+    }
+
+    private static String sanitizeForLog(final String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\r", "\\r").replace("\n", "\\n");
     }
 
     /**
