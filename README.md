@@ -6,13 +6,53 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-The Sling Authentication Service bundle provides the basic mechanisms to authenticate HTTP requests with a JCR repository. The algorithms for extracting authentication details from the requests is extensible by implementing an AuthenticationHandler interface.
+The Sling Authentication Service bundle provides the basic mechanisms to authenticate HTTP requests with a JCR repository. Authentication detail extraction is extensible through the Authentication Handler SPI (`AuthenticationHandler` and `JakartaAuthenticationHandler`).
+
+This module targets Java 17+ and OSGi Declarative Services (R7 annotations).
 
 ## Installation
 
 This bundle should be installed into an OSGi framework together with the Apache Sling Framework.
-Beyond Apache Sling it has the following requirements (bundles to be installed in at least this version as well):
-- Apache Commons Codec 1.13.2
-- Apache Sling Commons Metrics 1.2.8 (starting with version 1.5.2)
-- io.dropwizard.metrics:metrics-core:3.2.6 (starting with version 1.5.2)
+Beyond Apache Sling it requires:
+- Apache Commons Codec 1.13+
 
+Optional integrations (if available in the runtime):
+- Apache Sling Commons Metrics 1.2.8+
+- Apache Felix Health Check API 2.0.0+
+- Apache Sling JCR API 2.0.4+
+
+## Build
+
+```bash
+mvn package
+```
+
+Useful commands:
+
+```bash
+mvn test
+mvn verify
+mvn package -DskipTests
+mvn clean package
+mvn install
+```
+
+## API and Runtime Notes
+
+- Supports both legacy `javax.servlet` (4.0.1) and Jakarta Servlet (`jakarta.servlet` 6.1.0) based authentication handlers.
+- Internal implementation classes live in `org.apache.sling.auth.core.impl`; public SPI is in `org.apache.sling.auth.core.spi`.
+- Metrics, health check, and some JCR-related packages are imported as optional OSGi dependencies.
+
+## Project Structure
+
+```text
+pom.xml
+bnd.bnd
+src/
+  main/java/org/apache/sling/auth/core/
+    spi/
+    impl/
+      engine/
+      hc/
+  test/java/org/apache/sling/auth/core/
+```
