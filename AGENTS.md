@@ -94,3 +94,10 @@ target/                          # Build output (ignored by git)
 - **`sling-bundle-parent` POM** (version 66) governs dependency versions and plugin config — do not re-declare managed versions unless overriding intentionally.
 - `target/spotless-index` may appear even without explicit Spotless config — it comes from the parent POM; run `mvn spotless:apply` if formatting checks fail in CI.
 - The `org.apache.sling.engine.auth` package is a deprecated compatibility shim — do not add new code there.
+
+# Security
+
+<!-- sling-security-default:start -->
+The threat model for this project is https://github.com/apache/sling/blob/master/docs/threat-model.md .
+<!-- sling-security-default:end -->
+
