@@ -18,13 +18,21 @@
  */
 package org.apache.sling.auth.core.impl;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class PathBasedHolderTest {
+
+    private static PathBasedHolder holder(String url, ServiceReference<?> ref) {
+        return new PathBasedHolder(url, ref) {};
+    }
 
     @Test
     public void TestIsPathRequiresHandlerRoot() {
@@ -115,5 +123,98 @@ public class PathBasedHolderTest {
         final String requestPath = "/content/test";
         final String handlerPath = "";
         assertPathRequiresHandler(true, requestPath, handlerPath);
+    }
+
+    @Test
+    public void test_getProvider_noReference() {
+        assertEquals("Apache Sling Request Authenticator", holder("/x", null).getProvider());
+    }
+
+    @Test
+    public void test_getProvider_description() {
+        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        Mockito.when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn("My Service");
+        assertEquals("My Service", holder("/x", ref).getProvider());
+    }
+
+    @Test
+    public void test_getProvider_serviceId() {
+        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        Mockito.when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn(null);
+        Mockito.when(ref.getProperty(Constants.SERVICE_ID)).thenReturn(42L);
+        assertEquals("Service 42", holder("/x", ref).getProvider());
+    }
+
+    @Test
+    public void test_protocol_and_host_parsing() {
+        PathBasedHolder h = holder("http://example.com/some/path", null);
+        assertTrue(h.isPathRequiresHandler("/some/path"));
+
+        // host only with trailing content
+        PathBasedHolder h2 = holder("//example.com/foo", null);
+        assertTrue(h2.isPathRequiresHandler("/foo"));
+
+        // host only, no path
+        PathBasedHolder h3 = holder("//example.com", null);
+        assertTrue(h3.isPathRequiresHandler("/anything"));
+
+        // just double slash
+        PathBasedHolder h4 = holder("//", null);
+        assertTrue(h4.isPathRequiresHandler("/anything"));
+    }
+
+    @Test
+    public void test_hashCode_and_equals() {
+        PathBasedHolder a = holder("/x", null);
+        PathBasedHolder b = holder("/x", null);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(a, b);
+        Assert.assertNotEquals(a, holder("/y", null));
+        Assert.assertNotEquals(a, null);
+        Assert.assertNotEquals(a, "not a holder");
+        assertEquals(a, a);
+    }
+
+    @Test
+    public void test_equals_differentServiceReference() {
+        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        Assert.assertNotEquals(holder("/x", ref), holder("/x", null));
+        assertEquals(holder("/x", ref), holder("/x", ref));
+    }
+
+    @Test
+    public void test_compareTo_byPath() {
+        PathBasedHolder a = holder("/a", null);
+        PathBasedHolder b = holder("/b", null);
+        assertTrue(a.compareTo(b) > 0);
+        assertTrue(b.compareTo(a) < 0);
+    }
+
+    @Test
+    public void test_compareTo_nullServiceReferences() {
+        PathBasedHolder a = holder("/same", null);
+        PathBasedHolder b = holder("/same", null);
+        // both null service references -> compared by class name (same class) -> 0
+        assertEquals(0, a.compareTo(b));
+    }
+
+    @Test
+    public void test_compareTo_oneNullServiceReference() {
+        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        PathBasedHolder withRef = holder("/same", ref);
+        PathBasedHolder withoutRef = holder("/same", null);
+        assertEquals(-1, withoutRef.compareTo(withRef));
+        assertEquals(1, withRef.compareTo(withoutRef));
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void test_compareTo_byServiceReference() {
+        ServiceReference refA = Mockito.mock(ServiceReference.class);
+        ServiceReference refB = Mockito.mock(ServiceReference.class);
+        Mockito.when(refB.compareTo(refA)).thenReturn(5);
+        PathBasedHolder a = holder("/same", refA);
+        PathBasedHolder b = holder("/same", refB);
+        assertEquals(5, a.compareTo(b));
     }
 }
