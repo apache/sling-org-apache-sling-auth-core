@@ -24,76 +24,76 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.sling.auth.core.AuthenticationSupport;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("deprecation")
 public class DefaultAuthenticationFeedbackHandlerTest {
 
     @Test
     public void test_no_redirect() {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         Assert.assertFalse(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
     }
 
     @Test
     public void test_redirect_true_uses_requestUri() throws Exception {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER))
-                .thenReturn("true");
-        Mockito.when(request.getRequestURI()).thenReturn("/same/uri");
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("true");
+        when(request.getRequestURI()).thenReturn("/same/uri");
         Assert.assertTrue(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
-        Mockito.verify(response).sendRedirect("/same/uri");
+        verify(response).sendRedirect("/same/uri");
     }
 
     @Test
     public void test_redirect_absolute_valid() throws Exception {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER))
-                .thenReturn("/valid/path");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("/valid/path");
+        when(request.getContextPath()).thenReturn("");
         Assert.assertTrue(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
-        Mockito.verify(response).sendRedirect("/valid/path");
+        verify(response).sendRedirect("/valid/path");
     }
 
     @Test
     public void test_redirect_relative_made_absolute() throws Exception {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER))
-                .thenReturn("rel");
-        Mockito.when(request.getRequestURI()).thenReturn("/base/page");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("rel");
+        when(request.getRequestURI()).thenReturn("/base/page");
+        when(request.getContextPath()).thenReturn("");
         Assert.assertTrue(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
-        Mockito.verify(response).sendRedirect("/base/rel");
+        verify(response).sendRedirect("/base/rel");
     }
 
     @Test
     public void test_redirect_invalid_falls_back_to_root() throws Exception {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER))
-                .thenReturn("/invalid//path");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("/invalid//path");
+        when(request.getContextPath()).thenReturn("");
         Assert.assertTrue(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
-        Mockito.verify(response).sendRedirect("/");
+        verify(response).sendRedirect("/");
     }
 
     @Test
     public void test_authenticationFailed_noop() {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         DefaultAuthenticationFeedbackHandler handler = new DefaultAuthenticationFeedbackHandler();
         handler.authenticationFailed(request, response, new AuthenticationInfo("test"));
-        Mockito.verifyNoInteractions(response);
+        verifyNoInteractions(response);
     }
 
     @Test
     public void test_authenticationSucceeded_delegates() {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         DefaultAuthenticationFeedbackHandler handler = new DefaultAuthenticationFeedbackHandler();
         Assert.assertFalse(handler.authenticationSucceeded(request, response, new AuthenticationInfo("test")));
     }

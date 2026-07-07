@@ -28,12 +28,18 @@ import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class HttpBasicAuthenticationHandlerTest {
 
-    private HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private HttpServletResponse response = mock(HttpServletResponse.class);
 
     private static String basic(String user, String pass) {
         String raw = user + ":" + pass;
@@ -43,7 +49,7 @@ public class HttpBasicAuthenticationHandlerTest {
     @Test
     public void test_extractCredentials_valid() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn(basic("admin", "secret"));
+        when(request.getHeader("Authorization")).thenReturn(basic("admin", "secret"));
         AuthenticationInfo info = handler.extractCredentials(request, response);
         Assert.assertNotNull(info);
         Assert.assertEquals("admin", info.getUser());
@@ -54,7 +60,7 @@ public class HttpBasicAuthenticationHandlerTest {
     public void test_extractCredentials_no_colon() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
         String header = "Basic " + Base64.getEncoder().encodeToString("justuser".getBytes(StandardCharsets.ISO_8859_1));
-        Mockito.when(request.getHeader("Authorization")).thenReturn(header);
+        when(request.getHeader("Authorization")).thenReturn(header);
         AuthenticationInfo info = handler.extractCredentials(request);
         Assert.assertNotNull(info);
         Assert.assertEquals("justuser", info.getUser());
@@ -65,39 +71,39 @@ public class HttpBasicAuthenticationHandlerTest {
     public void test_extractCredentials_no_header() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
         Assert.assertNull(handler.extractCredentials(request));
-        Mockito.when(request.getHeader("Authorization")).thenReturn("");
+        when(request.getHeader("Authorization")).thenReturn("");
         Assert.assertNull(handler.extractCredentials(request));
     }
 
     @Test
     public void test_extractCredentials_no_blank() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn("Basic");
+        when(request.getHeader("Authorization")).thenReturn("Basic");
         Assert.assertNull(handler.extractCredentials(request));
     }
 
     @Test
     public void test_extractCredentials_wrong_scheme() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn("Digest abc");
+        when(request.getHeader("Authorization")).thenReturn("Digest abc");
         Assert.assertNull(handler.extractCredentials(request));
     }
 
     @Test
     public void test_extractCredentials_login_requested() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn(null);
-        Mockito.when(request.getParameter(JakartaAuthenticationHandler.REQUEST_LOGIN_PARAMETER))
+        when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getParameter(JakartaAuthenticationHandler.REQUEST_LOGIN_PARAMETER))
                 .thenReturn("BASIC");
         AuthenticationInfo info = handler.extractCredentials(request, response);
         Assert.assertSame(AuthenticationInfo.DOING_AUTH, info);
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
     public void test_extractCredentials_no_login_requested() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getHeader("Authorization")).thenReturn(null);
         Assert.assertNull(handler.extractCredentials(request, response));
     }
 
@@ -105,51 +111,51 @@ public class HttpBasicAuthenticationHandlerTest {
     public void test_requestCredentials_fullSupport() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
         Assert.assertTrue(handler.requestCredentials(request, response));
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
     public void test_requestCredentials_preemptive() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", false);
         Assert.assertFalse(handler.requestCredentials(request, response));
-        Mockito.verify(response, Mockito.never()).setStatus(Mockito.anyInt());
+        verify(response, never()).setStatus(anyInt());
     }
 
     @Test
     public void test_dropCredentials_fullSupport_withHeader() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn("Basic xyz");
+        when(request.getHeader("Authorization")).thenReturn("Basic xyz");
         handler.dropCredentials(request, response);
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
     public void test_dropCredentials_noHeader() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getHeader("Authorization")).thenReturn(null);
         handler.dropCredentials(request, response);
-        Mockito.verify(response, Mockito.never()).setStatus(Mockito.anyInt());
+        verify(response, never()).setStatus(anyInt());
     }
 
     @Test
     public void test_authenticationFailed_notValidate() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
         handler.authenticationFailed(request, response, new AuthenticationInfo("BASIC"));
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
     public void test_authenticationFailed_validate() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(request.getParameter("j_validate")).thenReturn("true");
+        when(request.getParameter("j_validate")).thenReturn("true");
         handler.authenticationFailed(request, response, new AuthenticationInfo("BASIC"));
-        Mockito.verify(response, Mockito.never()).setStatus(Mockito.anyInt());
+        verify(response, never()).setStatus(anyInt());
     }
 
     @Test
     public void test_sendUnauthorized_committed() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.when(response.isCommitted()).thenReturn(true);
+        when(response.isCommitted()).thenReturn(true);
         Assert.assertFalse(handler.sendUnauthorized(response));
     }
 
@@ -157,13 +163,13 @@ public class HttpBasicAuthenticationHandlerTest {
     public void test_sendUnauthorized_ok() {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
         Assert.assertTrue(handler.sendUnauthorized(response));
-        Mockito.verify(response).setHeader("WWW-Authenticate", "Basic realm=\"realm\"");
+        verify(response).setHeader("WWW-Authenticate", "Basic realm=\"realm\"");
     }
 
     @Test
     public void test_sendUnauthorized_ioexception() throws IOException {
         HttpBasicAuthenticationHandler handler = new HttpBasicAuthenticationHandler("realm", true);
-        Mockito.doThrow(new IOException("boom")).when(response).flushBuffer();
+        doThrow(new IOException("boom")).when(response).flushBuffer();
         Assert.assertFalse(handler.sendUnauthorized(response));
     }
 

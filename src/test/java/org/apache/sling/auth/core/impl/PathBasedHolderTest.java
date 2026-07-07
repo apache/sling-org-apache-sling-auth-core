@@ -20,13 +20,14 @@ package org.apache.sling.auth.core.impl;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PathBasedHolderTest {
 
@@ -132,16 +133,16 @@ public class PathBasedHolderTest {
 
     @Test
     public void test_getProvider_description() {
-        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
-        Mockito.when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn("My Service");
+        ServiceReference<?> ref = mock(ServiceReference.class);
+        when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn("My Service");
         assertEquals("My Service", holder("/x", ref).getProvider());
     }
 
     @Test
     public void test_getProvider_serviceId() {
-        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
-        Mockito.when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn(null);
-        Mockito.when(ref.getProperty(Constants.SERVICE_ID)).thenReturn(42L);
+        ServiceReference<?> ref = mock(ServiceReference.class);
+        when(ref.getProperty(Constants.SERVICE_DESCRIPTION)).thenReturn(null);
+        when(ref.getProperty(Constants.SERVICE_ID)).thenReturn(42L);
         assertEquals("Service 42", holder("/x", ref).getProvider());
     }
 
@@ -177,7 +178,7 @@ public class PathBasedHolderTest {
 
     @Test
     public void test_equals_differentServiceReference() {
-        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref = mock(ServiceReference.class);
         Assert.assertNotEquals(holder("/x", ref), holder("/x", null));
         assertEquals(holder("/x", ref), holder("/x", ref));
     }
@@ -200,7 +201,7 @@ public class PathBasedHolderTest {
 
     @Test
     public void test_compareTo_oneNullServiceReference() {
-        ServiceReference<?> ref = Mockito.mock(ServiceReference.class);
+        ServiceReference<?> ref = mock(ServiceReference.class);
         PathBasedHolder withRef = holder("/same", ref);
         PathBasedHolder withoutRef = holder("/same", null);
         assertEquals(-1, withoutRef.compareTo(withRef));
@@ -210,9 +211,9 @@ public class PathBasedHolderTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void test_compareTo_byServiceReference() {
-        ServiceReference refA = Mockito.mock(ServiceReference.class);
-        ServiceReference refB = Mockito.mock(ServiceReference.class);
-        Mockito.when(refB.compareTo(refA)).thenReturn(5);
+        ServiceReference refA = mock(ServiceReference.class);
+        ServiceReference refB = mock(ServiceReference.class);
+        when(refB.compareTo(refA)).thenReturn(5);
         PathBasedHolder a = holder("/same", refA);
         PathBasedHolder b = holder("/same", refB);
         assertEquals(5, a.compareTo(b));

@@ -25,21 +25,27 @@ import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.auth.core.impl.hc.SetField;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class LogoutServletTest {
 
-    private SlingHttpServletRequest request = Mockito.mock(SlingHttpServletRequest.class);
-    private SlingHttpServletResponse response = Mockito.mock(SlingHttpServletResponse.class);
+    private SlingHttpServletRequest request = mock(SlingHttpServletRequest.class);
+    private SlingHttpServletResponse response = mock(SlingHttpServletResponse.class);
 
     @Test
     public void test_logout_success() throws Exception {
         LogoutServlet servlet = new LogoutServlet();
-        Authenticator authenticator = Mockito.mock(Authenticator.class);
+        Authenticator authenticator = mock(Authenticator.class);
         SetField.set(servlet, "authenticator", authenticator);
 
         servlet.service(request, response);
-        Mockito.verify(authenticator)
+        verify(authenticator)
                 .logout((javax.servlet.http.HttpServletRequest) request, (javax.servlet.http.HttpServletResponse)
                         response);
     }
@@ -48,21 +54,21 @@ public class LogoutServletTest {
     public void test_logout_no_authenticator() throws Exception {
         LogoutServlet servlet = new LogoutServlet();
         servlet.service(request, response);
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_NO_CONTENT);
+        verify(response).setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
     @Test
     public void test_logout_response_committed() throws Exception {
         LogoutServlet servlet = new LogoutServlet();
-        Authenticator authenticator = Mockito.mock(Authenticator.class);
+        Authenticator authenticator = mock(Authenticator.class);
         SetField.set(servlet, "authenticator", authenticator);
-        Mockito.doThrow(new IllegalStateException("committed"))
+        doThrow(new IllegalStateException("committed"))
                 .when(authenticator)
                 .logout(
-                        Mockito.any(javax.servlet.http.HttpServletRequest.class),
-                        Mockito.any(javax.servlet.http.HttpServletResponse.class));
+                        any(javax.servlet.http.HttpServletRequest.class),
+                        any(javax.servlet.http.HttpServletResponse.class));
 
         servlet.service(request, response);
-        Mockito.verify(response, Mockito.never()).setStatus(Mockito.anyInt());
+        verify(response, never()).setStatus(anyInt());
     }
 }

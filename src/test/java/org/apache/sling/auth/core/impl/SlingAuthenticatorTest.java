@@ -39,14 +39,20 @@ import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SlingAuthenticatorTest {
 
@@ -54,14 +60,14 @@ public class SlingAuthenticatorTest {
      * Helper method to create a default configuration
      */
     public static SlingAuthenticator.Config createDefaultConfig() {
-        final SlingAuthenticator.Config config = Mockito.mock(SlingAuthenticator.Config.class);
+        final SlingAuthenticator.Config config = mock(SlingAuthenticator.Config.class);
 
-        Mockito.when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
-        Mockito.when(config.auth_sudo_parameter()).thenReturn("sudo");
-        Mockito.when(config.auth_annonymous()).thenReturn(true);
-        Mockito.when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
-        Mockito.when(config.auth_http_realm()).thenReturn("Sling (Development)");
-        Mockito.when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
+        when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
+        when(config.auth_sudo_parameter()).thenReturn("sudo");
+        when(config.auth_annonymous()).thenReturn(true);
+        when(config.auth_http()).thenReturn(SlingAuthenticator.HTTP_AUTH_PREEMPTIVE);
+        when(config.auth_http_realm()).thenReturn("Sling (Development)");
+        when(config.auth_uri_suffix()).thenReturn(new String[] {SlingAuthenticator.DEFAULT_AUTH_URI_SUFFIX});
 
         return config;
     }
@@ -77,10 +83,10 @@ public class SlingAuthenticatorTest {
     private static final long BUNDLE_ID = 732;
 
     private BundleContext createBundleContext() {
-        final BundleContext context = Mockito.mock(BundleContext.class);
-        final Bundle bundle = Mockito.mock(Bundle.class);
-        Mockito.when(bundle.getBundleId()).thenReturn(BUNDLE_ID);
-        Mockito.when(context.getBundle()).thenReturn(bundle);
+        final BundleContext context = mock(BundleContext.class);
+        final Bundle bundle = mock(Bundle.class);
+        when(bundle.getBundleId()).thenReturn(BUNDLE_ID);
+        when(context.getBundle()).thenReturn(bundle);
         return context;
     }
 
@@ -97,7 +103,7 @@ public class SlingAuthenticatorTest {
             }
         }
         final SlingAuthenticator slingAuthenticator =
-                new SlingAuthenticator(requirements, handlers, null, Mockito.mock(BundleContext.class), config);
+                new SlingAuthenticator(requirements, handlers, null, mock(BundleContext.class), config);
 
         return slingAuthenticator;
     }
@@ -152,10 +158,10 @@ public class SlingAuthenticatorTest {
         // anon is allowed by default
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
 
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
 
         Assert.assertTrue(slingAuthenticator.isAnonAllowed(request));
     }
@@ -164,14 +170,14 @@ public class SlingAuthenticatorTest {
     public void test_isAnonNotAllowed() throws Throwable {
         // anon is allowed by default
         final SlingAuthenticator.Config config = createDefaultConfig();
-        Mockito.when(config.auth_annonymous()).thenReturn(false);
+        when(config.auth_annonymous()).thenReturn(false);
 
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(config);
 
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
 
         Assert.assertFalse(slingAuthenticator.isAnonAllowed(request));
     }
@@ -180,14 +186,14 @@ public class SlingAuthenticatorTest {
         final String authType = "AUTH_TYPE_TEST";
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(authType, protectedPath);
 
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, requestChildNode);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
                 slingAuthenticator,
                 "getAuthenticationInfo",
                 new Class[] {HttpServletRequest.class, HttpServletResponse.class},
-                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
+                new Object[] {request, mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined above should be used for the path /test and his children: eg /test/childnode.
          */
@@ -246,14 +252,14 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator =
                 this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH, AUTH_TYPE_LONGER, PROTECTED_PATH_LONGER);
 
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_CHILD_NODE);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
                 slingAuthenticator,
                 "getAuthenticationInfo",
                 new Class[] {HttpServletRequest.class, HttpServletResponse.class},
-                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
+                new Object[] {request, mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined aboved should  be used for the path /test and his children: eg /test/childnode.
          */
@@ -284,14 +290,14 @@ public class SlingAuthenticatorTest {
 
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator(AUTH_TYPE, PROTECTED_PATH);
 
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         buildExpectationsForRequest(request, REQUEST_NOT_PROTECTED_PATH);
 
         AuthenticationInfo authInfo = (AuthenticationInfo) PrivateAccessor.invoke(
                 slingAuthenticator,
                 "getAuthenticationInfo",
                 new Class[] {HttpServletRequest.class, HttpServletResponse.class},
-                new Object[] {request, Mockito.mock(HttpServletResponse.class)});
+                new Object[] {request, mock(HttpServletResponse.class)});
         /**
          * The AUTH TYPE defined aboved should not be used for the path /test2.
          */
@@ -301,20 +307,20 @@ public class SlingAuthenticatorTest {
     @Test
     public void testServletRequestListener() {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
-        final ServletRequestEvent event = Mockito.mock(ServletRequestEvent.class);
-        final ServletRequest request = Mockito.mock(ServletRequest.class);
-        Mockito.when(event.getServletRequest()).thenReturn(request);
+        final ServletRequestEvent event = mock(ServletRequestEvent.class);
+        final ServletRequest request = mock(ServletRequest.class);
+        when(event.getServletRequest()).thenReturn(request);
 
         slingAuthenticator.requestInitialized(event);
 
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn(resolver);
 
         slingAuthenticator.requestDestroyed(event);
         // verify resolver close, attribute removed
-        Mockito.verify(resolver).close();
-        Mockito.verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
+        verify(resolver).close();
+        verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
     }
 
     @Test
@@ -322,11 +328,11 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
-        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
-        Mockito.verify(res, never()).addCookie(Mockito.any());
+        verify(res, never()).addCookie(any());
     }
 
     @Test
@@ -335,12 +341,12 @@ public class SlingAuthenticatorTest {
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
-        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(res).addCookie(argument.capture());
+        verify(res).addCookie(argument.capture());
         assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
@@ -350,13 +356,13 @@ public class SlingAuthenticatorTest {
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "oldsudo");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
-        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertFalse(slingAuthenticator.setSudoCookie(req, res, info));
-        Mockito.verify(res, never()).addCookie(Mockito.any());
+        verify(res, never()).addCookie(any());
     }
 
     @Test
@@ -365,14 +371,14 @@ public class SlingAuthenticatorTest {
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
-        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(res).addCookie(argument.capture());
+        verify(res).addCookie(argument.capture());
         assertEquals("\"newsudo\"", argument.getValue().getValue());
     }
 
@@ -381,14 +387,14 @@ public class SlingAuthenticatorTest {
         final SlingAuthenticator slingAuthenticator = this.createSlingAuthenticator();
         final AuthenticationInfo info = new AuthenticationInfo("basic");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
         final Cookie cookie = new Cookie("sling.sudo", "\"oldsudo\"");
-        Mockito.when(req.getCookies()).thenReturn(new Cookie[] {cookie});
-        final SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        when(req.getCookies()).thenReturn(new Cookie[] {cookie});
+        final SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(res).addCookie(argument.capture());
+        verify(res).addCookie(argument.capture());
         assertEquals("\"\"", argument.getValue().getValue());
     }
 
@@ -398,21 +404,21 @@ public class SlingAuthenticatorTest {
         final AuthenticationInfo info = new AuthenticationInfo("basic");
         info.put(ResourceResolverFactory.USER_IMPERSONATION, "newsudo");
 
-        final SlingJakartaHttpServletRequest req = Mockito.mock(SlingJakartaHttpServletRequest.class);
-        Mockito.when(req.isSecure()).thenReturn(true);
-        SlingJakartaHttpServletResponse res = Mockito.mock(SlingJakartaHttpServletResponse.class);
+        final SlingJakartaHttpServletRequest req = mock(SlingJakartaHttpServletRequest.class);
+        when(req.isSecure()).thenReturn(true);
+        SlingJakartaHttpServletResponse res = mock(SlingJakartaHttpServletResponse.class);
 
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument1 = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(res).addCookie(argument1.capture());
+        verify(res).addCookie(argument1.capture());
         assertTrue(argument1.getValue().isHttpOnly());
         assertTrue(argument1.getValue().getSecure());
 
-        res = Mockito.mock(SlingJakartaHttpServletResponse.class);
-        Mockito.when(req.isSecure()).thenReturn(false);
+        res = mock(SlingJakartaHttpServletResponse.class);
+        when(req.isSecure()).thenReturn(false);
         assertTrue(slingAuthenticator.setSudoCookie(req, res, info));
         ArgumentCaptor<Cookie> argument2 = ArgumentCaptor.forClass(Cookie.class);
-        Mockito.verify(res).addCookie(argument2.capture());
+        verify(res).addCookie(argument2.capture());
         assertTrue(argument2.getValue().isHttpOnly());
         assertFalse(argument2.getValue().getSecure());
     }
@@ -427,10 +433,10 @@ public class SlingAuthenticatorTest {
      */
     private void buildExpectationsForRequest(final HttpServletRequest request, final String requestPath) {
         {
-            Mockito.when(request.getServletPath()).thenReturn(requestPath);
-            Mockito.when(request.getServerName()).thenReturn("localhost");
-            Mockito.when(request.getServerPort()).thenReturn(80);
-            Mockito.when(request.getScheme()).thenReturn("http");
+            when(request.getServletPath()).thenReturn(requestPath);
+            when(request.getServerName()).thenReturn("localhost");
+            when(request.getServerPort()).thenReturn(80);
+            when(request.getScheme()).thenReturn("http");
         }
     }
 
@@ -463,7 +469,9 @@ public class SlingAuthenticatorTest {
 
             @Override
             protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response)
-                    throws IOException {}
+                    throws IOException {
+                // Intentionally empty: this test stub never needs to drop credentials.
+            }
         };
     }
 
@@ -503,7 +511,7 @@ public class SlingAuthenticatorTest {
         for (AbstractAuthenticationHandlerHolder h : holders) {
             handlers.addHolder(h);
         }
-        return new SlingAuthenticator(requirements, handlers, null, Mockito.mock(BundleContext.class), config);
+        return new SlingAuthenticator(requirements, handlers, null, mock(BundleContext.class), config);
     }
 
     private SlingAuthenticator createAuthenticator(
@@ -515,7 +523,7 @@ public class SlingAuthenticatorTest {
         for (AbstractAuthenticationHandlerHolder h : holders) {
             handlers.addHolder(h);
         }
-        return new SlingAuthenticator(requirements, handlers, rrf, Mockito.mock(BundleContext.class), config);
+        return new SlingAuthenticator(requirements, handlers, rrf, mock(BundleContext.class), config);
     }
 
     private AbstractAuthenticationHandlerHolder infoHolder(final String path, final AuthenticationInfo info) {
@@ -539,7 +547,9 @@ public class SlingAuthenticatorTest {
 
             @Override
             protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response)
-                    throws IOException {}
+                    throws IOException {
+                // Intentionally empty: this test stub never needs to drop credentials.
+            }
         };
     }
 
@@ -568,18 +578,20 @@ public class SlingAuthenticatorTest {
 
             @Override
             protected void doDropCredentials(HttpServletRequest request, HttpServletResponse response)
-                    throws IOException {}
+                    throws IOException {
+                // Intentionally empty: this test stub never needs to drop credentials.
+            }
         };
     }
 
     private HttpServletRequest requestFor(String path) {
-        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getServletPath()).thenReturn(path);
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getRequestURI()).thenReturn(path);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getServletPath()).thenReturn(path);
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getRequestURI()).thenReturn(path);
         return request;
     }
 
@@ -587,23 +599,27 @@ public class SlingAuthenticatorTest {
     public void test_login_success() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.login(request, response);
+        // login checks the commit state before delegating to a handler
+        verify(response).isCommitted();
     }
 
     @Test
     public void test_login_handler_throws_is_treated_as_done() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", false, true));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.login(request, response);
+        // an IOException from the handler is treated as "done", so no exception escapes
+        verify(response).isCommitted();
     }
 
     @Test(expected = NoAuthenticationHandlerException.class)
     public void test_login_no_handler() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", false, false));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.login(request, response);
     }
 
@@ -611,8 +627,8 @@ public class SlingAuthenticatorTest {
     public void test_login_response_committed() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(response.isCommitted()).thenReturn(true);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.isCommitted()).thenReturn(true);
         auth.login(request, response);
     }
 
@@ -620,102 +636,104 @@ public class SlingAuthenticatorTest {
     public void test_logout_success() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.logout(request, response);
+        // logout checks the commit state before dropping credentials
+        verify(response, atLeastOnce()).isCommitted();
     }
 
     @Test(expected = IllegalStateException.class)
     public void test_logout_response_committed() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(response.isCommitted()).thenReturn(true);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.isCommitted()).thenReturn(true);
         auth.logout(request, response);
     }
 
     @Test
     public void test_javax_login_wrapper() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
-        final javax.servlet.http.HttpServletRequest request = Mockito.mock(javax.servlet.http.HttpServletRequest.class);
-        Mockito.when(request.getServletPath()).thenReturn("/content");
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
-        Mockito.when(request.getContextPath()).thenReturn("");
-        final javax.servlet.http.HttpServletResponse response =
-                Mockito.mock(javax.servlet.http.HttpServletResponse.class);
+        final javax.servlet.http.HttpServletRequest request = mock(javax.servlet.http.HttpServletRequest.class);
+        when(request.getServletPath()).thenReturn("/content");
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getContextPath()).thenReturn("");
+        final javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
         auth.login(request, response);
+        // the javax wrapper delegates to the jakarta login, which checks the commit state
+        verify(response).isCommitted();
     }
 
     @Test
     public void test_javax_logout_wrapper() {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
-        final javax.servlet.http.HttpServletRequest request = Mockito.mock(javax.servlet.http.HttpServletRequest.class);
-        Mockito.when(request.getServletPath()).thenReturn("/content");
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
-        Mockito.when(request.getContextPath()).thenReturn("");
-        final javax.servlet.http.HttpServletResponse response =
-                Mockito.mock(javax.servlet.http.HttpServletResponse.class);
+        final javax.servlet.http.HttpServletRequest request = mock(javax.servlet.http.HttpServletRequest.class);
+        when(request.getServletPath()).thenReturn("/content");
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getContextPath()).thenReturn("");
+        final javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
         auth.logout(request, response);
+        // the javax wrapper delegates to the jakarta logout, which checks the commit state
+        verify(response, atLeastOnce()).isCommitted();
     }
 
     @Test
     public void test_handleSecurity_already_authenticated() {
         final SlingAuthenticator auth = createAuthenticator();
         final HttpServletRequest request = requestFor("/content");
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn(resolver);
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         Assert.assertTrue(auth.handleSecurity(request, response));
     }
 
     @Test
     public void test_handleSecurity_valid_credentials() throws Exception {
-        final ResourceResolverFactory rrf = Mockito.mock(ResourceResolverFactory.class);
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(rrf.getResourceResolver(Mockito.any(java.util.Map.class))).thenReturn(resolver);
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
 
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user", "pwd".toCharArray());
         final SlingAuthenticator auth = createAuthenticator(rrf, infoHolder("/", info));
 
         final HttpServletRequest request = requestFor("/content");
         // a non-resolver attribute should be overwritten
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn("not-a-resolver");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
 
         auth.handleSecurity(request, response);
-        Mockito.verify(request, Mockito.atLeastOnce())
-                .setAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER, resolver);
+        verify(request, atLeastOnce()).setAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER, resolver);
     }
 
     @Test
     public void test_handleSecurity_valid_credentials_with_redirect() throws Exception {
-        final ResourceResolverFactory rrf = Mockito.mock(ResourceResolverFactory.class);
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(rrf.getResourceResolver(Mockito.any(java.util.Map.class))).thenReturn(resolver);
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
 
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user", "pwd".toCharArray());
         final SlingAuthenticator auth = createAuthenticator(rrf, infoHolder("/", info));
 
         final HttpServletRequest request = requestFor("/content");
-        Mockito.when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER))
-                .thenReturn("/content/redirect");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("/content/redirect");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
 
         // redirect requested -> request considered done, resolver closed
         Assert.assertFalse(auth.handleSecurity(request, response));
-        Mockito.verify(resolver).close();
+        verify(resolver).close();
     }
 
     @Test
     public void test_handleSecurity_doing_auth() {
         final SlingAuthenticator auth = createAuthenticator(infoHolder("/", AuthenticationInfo.DOING_AUTH));
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         Assert.assertFalse(auth.handleSecurity(request, response));
     }
 
@@ -723,8 +741,8 @@ public class SlingAuthenticatorTest {
     public void test_handleSecurity_fail_auth_triggers_login() {
         final SlingAuthenticator auth = createAuthenticator(infoHolder("/", AuthenticationInfo.FAIL_AUTH));
         final HttpServletRequest request = requestFor("/content");
-        Mockito.when(request.getRequestURI()).thenReturn("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/content");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         Assert.assertFalse(auth.handleSecurity(request, response));
     }
 
@@ -732,46 +750,48 @@ public class SlingAuthenticatorTest {
     public void test_finishSecurity_closes_resolver() {
         final SlingAuthenticator auth = createAuthenticator();
         final HttpServletRequest request = requestFor("/content");
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn(resolver);
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.finishSecurity(request, response);
-        Mockito.verify(resolver).close();
-        Mockito.verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
+        verify(resolver).close();
+        verify(request).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
     }
 
     @Test
     public void test_finishSecurity_no_resolver() {
         final SlingAuthenticator auth = createAuthenticator();
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.finishSecurity(request, response);
+        // with no resolver attribute present, nothing is closed or removed
+        verify(request).getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
+        verify(request, never()).removeAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER);
     }
 
     @Test
     public void test_javax_handleSecurity_wrapper() {
-        final ResourceResolverFactory rrf = Mockito.mock(ResourceResolverFactory.class);
-        final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
         try {
-            Mockito.when(rrf.getResourceResolver(Mockito.any(java.util.Map.class)))
-                    .thenReturn(resolver);
+            when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user", "pwd".toCharArray());
         final SlingAuthenticator auth = createAuthenticator(rrf, infoHolder("/", info));
 
-        final javax.servlet.http.HttpServletRequest request = Mockito.mock(javax.servlet.http.HttpServletRequest.class);
-        Mockito.when(request.getServletPath()).thenReturn("/content");
-        Mockito.when(request.getServerName()).thenReturn("localhost");
-        Mockito.when(request.getServerPort()).thenReturn(80);
-        Mockito.when(request.getScheme()).thenReturn("http");
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getRequestURI()).thenReturn("/content");
-        final javax.servlet.http.HttpServletResponse response =
-                Mockito.mock(javax.servlet.http.HttpServletResponse.class);
-        auth.handleSecurity(request, response);
+        final javax.servlet.http.HttpServletRequest request = mock(javax.servlet.http.HttpServletRequest.class);
+        when(request.getServletPath()).thenReturn("/content");
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(80);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getRequestURI()).thenReturn("/content");
+        final javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        // valid credentials are supplied, so the javax wrapper authenticates successfully
+        Assert.assertTrue(auth.handleSecurity(request, response));
     }
 
     @Test
@@ -802,8 +822,10 @@ public class SlingAuthenticatorTest {
         };
         final SlingAuthenticator auth = createAuthenticator(dropThrows);
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         auth.logout(request, response);
+        // an IOException while dropping credentials is caught, so logout still completes
+        verify(response, atLeastOnce()).isCommitted();
     }
 
     private Object invokeHandleLoginFailure(
@@ -826,9 +848,9 @@ public class SlingAuthenticatorTest {
     public void test_handleLoginFailure_loginException_doLogin() throws Throwable {
         final SlingAuthenticator auth = createAuthenticator(holder("/", true, false));
         final HttpServletRequest request = requestFor("/content");
-        Mockito.when(request.getParameter(org.apache.sling.auth.core.AuthConstants.PAR_J_VALIDATE))
+        when(request.getParameter(org.apache.sling.auth.core.AuthConstants.PAR_J_VALIDATE))
                 .thenReturn("true");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user");
         final Object result = invokeHandleLoginFailure(
                 auth, request, response, info, new org.apache.sling.api.resource.LoginException("bad"));
@@ -839,20 +861,20 @@ public class SlingAuthenticatorTest {
     public void test_handleLoginFailure_tooManySessions() throws Throwable {
         final SlingAuthenticator auth = createAuthenticator();
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user");
         invokeHandleLoginFailure(auth, request, response, info, new TooManySessionsException("too many"));
-        Mockito.verify(response).sendError(Mockito.eq(503), Mockito.anyString());
+        verify(response).sendError(eq(503), anyString());
     }
 
     @Test
     public void test_handleLoginFailure_genericError() throws Throwable {
         final SlingAuthenticator auth = createAuthenticator();
         final HttpServletRequest request = requestFor("/content");
-        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final AuthenticationInfo info = new AuthenticationInfo("basic", "user");
         invokeHandleLoginFailure(auth, request, response, info, new RuntimeException("kaboom"));
-        Mockito.verify(response).sendError(Mockito.eq(500), Mockito.anyString());
+        verify(response).sendError(eq(500), anyString());
     }
 
     static class TooManySessionsException extends RuntimeException {

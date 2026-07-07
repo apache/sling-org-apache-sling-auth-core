@@ -27,7 +27,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.sling.api.auth.Authenticator;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AbstractJakartaAuthenticationFormServletTest {
 
@@ -54,30 +57,30 @@ public class AbstractJakartaAuthenticationFormServletTest {
         }
     }
 
-    private HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private HttpServletResponse response = mock(HttpServletResponse.class);
 
     @Test
     public void test_doGet_rendersForm() throws Exception {
         TestFormServlet servlet = new TestFormServlet("Reason!");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        when(request.getContextPath()).thenReturn("");
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         servlet.doGet(request, response);
 
         String out = sw.toString();
         Assert.assertTrue(out.contains("reason=[Reason!]"));
-        Mockito.verify(response).setContentType("text/html");
-        Mockito.verify(response).flushBuffer();
+        verify(response).setContentType("text/html");
+        verify(response).flushBuffer();
     }
 
     @Test
     public void test_doPost_rendersForm() throws Exception {
         TestFormServlet servlet = new TestFormServlet("");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        when(request.getContextPath()).thenReturn("");
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         servlet.doPost(request, response);
         Assert.assertTrue(sw.toString().contains("<html>"));
@@ -86,8 +89,8 @@ public class AbstractJakartaAuthenticationFormServletTest {
     @Test
     public void test_getForm_substitutes_and_escapes() throws Exception {
         TestFormServlet servlet = new TestFormServlet("<b>&\"'");
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/valid/path");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/valid/path");
 
         String form = servlet.getForm(request);
         Assert.assertTrue(form.contains("resource=[/valid/path]"));
@@ -98,9 +101,9 @@ public class AbstractJakartaAuthenticationFormServletTest {
     @Test
     public void test_getForm_invalid_resource_cleansed() throws Exception {
         TestFormServlet servlet = new TestFormServlet("");
-        Mockito.when(request.getContextPath()).thenReturn("");
+        when(request.getContextPath()).thenReturn("");
         // an invalid (non-normalized) redirect target must be cleansed to empty
-        Mockito.when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/invalid//path");
+        when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/invalid//path");
 
         String form = servlet.getForm(request);
         Assert.assertTrue(form.contains("resource=[]"));
@@ -115,28 +118,28 @@ public class AbstractJakartaAuthenticationFormServletTest {
     @Test
     public void test_getContextPath_from_resource() {
         TestFormServlet servlet = new TestFormServlet("");
-        Mockito.when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/foo/bar/?x=1");
+        when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/foo/bar/?x=1");
         Assert.assertEquals("/foo/bar", servlet.getContextPath(request));
     }
 
     @Test
     public void test_getContextPath_fallback_to_servlet_context() {
         TestFormServlet servlet = new TestFormServlet("");
-        Mockito.when(request.getContextPath()).thenReturn("/ctx");
+        when(request.getContextPath()).thenReturn("/ctx");
         Assert.assertEquals("/ctx", servlet.getContextPath(request));
     }
 
     @Test
     public void test_handle_ioexception_sends_error() throws Exception {
         TestFormServlet servlet = new TestFormServlet("");
-        jakarta.servlet.ServletConfig config = Mockito.mock(jakarta.servlet.ServletConfig.class);
-        Mockito.when(config.getServletContext()).thenReturn(Mockito.mock(jakarta.servlet.ServletContext.class));
+        jakarta.servlet.ServletConfig config = mock(jakarta.servlet.ServletConfig.class);
+        when(config.getServletContext()).thenReturn(mock(jakarta.servlet.ServletContext.class));
         servlet.init(config);
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(response.getWriter()).thenThrow(new IOException("no writer"));
+        when(request.getContextPath()).thenReturn("");
+        when(response.getWriter()).thenThrow(new IOException("no writer"));
 
         servlet.doGet(request, response);
-        Mockito.verify(response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        verify(response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Test

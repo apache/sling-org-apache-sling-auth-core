@@ -36,6 +36,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -103,11 +104,11 @@ public class AuthenticationHandlerWrapperTest {
                 .authenticationFailed(
                         any(javax.servlet.http.HttpServletRequest.class),
                         any(javax.servlet.http.HttpServletResponse.class),
-                        org.mockito.ArgumentMatchers.same(authInfo));
+                        same(authInfo));
         verify(handler)
                 .authenticationSucceeded(
                         any(javax.servlet.http.HttpServletRequest.class),
                         any(javax.servlet.http.HttpServletResponse.class),
-                        org.mockito.ArgumentMatchers.same(authInfo));
+                        same(authInfo));
     }
 }

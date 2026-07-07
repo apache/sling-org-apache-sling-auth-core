@@ -28,7 +28,11 @@ import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.auth.core.AuthConstants;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Verifies that the deprecated {@link AbstractAuthenticationHandler} helper
@@ -37,18 +41,18 @@ import org.mockito.Mockito;
 @SuppressWarnings("deprecation")
 public class AbstractAuthenticationHandlerTest {
 
-    private HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private HttpServletResponse response = mock(HttpServletResponse.class);
 
     @Test
     public void test_getAttributeOrParameter() {
-        Mockito.when(request.getParameter("p")).thenReturn("v");
+        when(request.getParameter("p")).thenReturn("v");
         Assert.assertEquals("v", AbstractAuthenticationHandler.getAttributeOrParameter(request, "p", "def"));
     }
 
     @Test
     public void test_getLoginResource() {
-        Mockito.when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
+        when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
         Assert.assertEquals("/res", AbstractAuthenticationHandler.getLoginResource(request, "/def"));
     }
 
@@ -59,11 +63,11 @@ public class AbstractAuthenticationHandlerTest {
 
     @Test
     public void test_sendRedirect() throws Exception {
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getRequestURI()).thenReturn("/current");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getRequestURI()).thenReturn("/current");
         Map<String, String> params = new HashMap<>();
         AbstractAuthenticationHandler.sendRedirect(request, response, "/target", params);
-        Mockito.verify(response).sendRedirect(Mockito.contains("/target?"));
+        verify(response).sendRedirect(contains("/target?"));
     }
 
     @Test
@@ -74,19 +78,19 @@ public class AbstractAuthenticationHandlerTest {
 
     @Test
     public void test_isValidateRequest() {
-        Mockito.when(request.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("true");
+        when(request.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("true");
         Assert.assertTrue(AbstractAuthenticationHandler.isValidateRequest(request));
     }
 
     @Test
     public void test_sendValid() {
         AbstractAuthenticationHandler.sendValid(response);
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).setStatus(HttpServletResponse.SC_OK);
     }
 
     @Test
     public void test_sendInvalid() {
         AbstractAuthenticationHandler.sendInvalid(request, response);
-        Mockito.verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
     }
 }

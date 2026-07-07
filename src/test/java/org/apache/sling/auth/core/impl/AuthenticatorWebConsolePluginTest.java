@@ -32,7 +32,11 @@ import org.apache.sling.auth.core.impl.hc.SetField;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class AuthenticatorWebConsolePluginTest {
 
@@ -41,24 +45,24 @@ public class AuthenticatorWebConsolePluginTest {
 
     @SuppressWarnings("unchecked")
     private PathBasedHolderCache<AuthenticationRequirementHolder> requirementsManager =
-            Mockito.mock(PathBasedHolderCache.class);
+            mock(PathBasedHolderCache.class);
 
-    private HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+    private HttpServletRequest request = mock(HttpServletRequest.class);
+    private HttpServletResponse response = mock(HttpServletResponse.class);
 
     @Before
     public void setup() throws Exception {
-        config = Mockito.mock(SlingAuthenticator.Config.class);
-        Mockito.when(config.sling_auth_anonymous_user()).thenReturn("");
-        Mockito.when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
-        Mockito.when(config.auth_sudo_parameter()).thenReturn("sudo");
+        config = mock(SlingAuthenticator.Config.class);
+        when(config.sling_auth_anonymous_user()).thenReturn("");
+        when(config.auth_sudo_cookie()).thenReturn("sling.sudo");
+        when(config.auth_sudo_parameter()).thenReturn("sudo");
 
-        handlersManager = Mockito.mock(AuthenticationHandlersManager.class);
+        handlersManager = mock(AuthenticationHandlersManager.class);
         Map<String, List<String>> handlerMap = new LinkedHashMap<>();
         handlerMap.put("/path/a", Arrays.asList("HandlerA", "HandlerB"));
-        Mockito.when(handlersManager.getAuthenticationHandlerMap()).thenReturn(handlerMap);
+        when(handlersManager.getAuthenticationHandlerMap()).thenReturn(handlerMap);
 
-        Mockito.when(requirementsManager.getHolders())
+        when(requirementsManager.getHolders())
                 .thenReturn(Arrays.asList(
                         new AuthenticationRequirementHolder("/secure", true, null),
                         new AuthenticationRequirementHolder("/public", false, null)));
@@ -75,7 +79,7 @@ public class AuthenticatorWebConsolePluginTest {
     public void test_doGet_rendersAllSections() throws Exception {
         AuthenticatorWebConsolePlugin plugin = newPlugin();
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         plugin.doGet(request, response);
 
@@ -95,10 +99,10 @@ public class AuthenticatorWebConsolePluginTest {
 
     @Test
     public void test_config_default_anonymous_user() throws Exception {
-        Mockito.when(config.sling_auth_anonymous_user()).thenReturn(null);
+        when(config.sling_auth_anonymous_user()).thenReturn(null);
         AuthenticatorWebConsolePlugin plugin = newPlugin();
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         plugin.doGet(request, response);
         Assert.assertTrue(sw.toString().contains("(default)"));
@@ -108,9 +112,9 @@ public class AuthenticatorWebConsolePluginTest {
     public void test_service_get_dispatches() throws Exception {
         AuthenticatorWebConsolePlugin plugin = newPlugin();
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
-        Mockito.when(request.getMethod()).thenReturn("GET");
-        Mockito.when(request.getProtocol()).thenReturn("HTTP/1.1");
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getProtocol()).thenReturn("HTTP/1.1");
 
         plugin.service(request, response);
         Assert.assertTrue(sw.toString().contains("Registered Authentication Handler"));
@@ -119,35 +123,35 @@ public class AuthenticatorWebConsolePluginTest {
     @Test
     public void test_service_post_ignored() throws Exception {
         AuthenticatorWebConsolePlugin plugin = newPlugin();
-        Mockito.when(request.getMethod()).thenReturn("POST");
+        when(request.getMethod()).thenReturn("POST");
 
         plugin.service(request, response);
-        Mockito.verify(response, Mockito.never()).getWriter();
+        verify(response, never()).getWriter();
     }
 
     @Test
     public void test_doGet_ioexception_sends_error() throws Exception {
         AuthenticatorWebConsolePlugin plugin = newPlugin();
-        jakarta.servlet.ServletConfig scfg = Mockito.mock(jakarta.servlet.ServletConfig.class);
-        Mockito.when(scfg.getServletContext()).thenReturn(Mockito.mock(jakarta.servlet.ServletContext.class));
+        jakarta.servlet.ServletConfig scfg = mock(jakarta.servlet.ServletConfig.class);
+        when(scfg.getServletContext()).thenReturn(mock(jakarta.servlet.ServletContext.class));
         plugin.init(scfg);
-        Mockito.when(response.getWriter()).thenThrow(new IOException("no writer"));
+        when(response.getWriter()).thenThrow(new IOException("no writer"));
 
         plugin.doGet(request, response);
-        Mockito.verify(response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        verify(response).sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
 
     @Test
     public void test_modified_updates_config() throws Exception {
         AuthenticatorWebConsolePlugin plugin = newPlugin();
-        SlingAuthenticator.Config newConfig = Mockito.mock(SlingAuthenticator.Config.class);
-        Mockito.when(newConfig.sling_auth_anonymous_user()).thenReturn(null);
-        Mockito.when(newConfig.auth_sudo_cookie()).thenReturn("c2");
-        Mockito.when(newConfig.auth_sudo_parameter()).thenReturn("p2");
+        SlingAuthenticator.Config newConfig = mock(SlingAuthenticator.Config.class);
+        when(newConfig.sling_auth_anonymous_user()).thenReturn(null);
+        when(newConfig.auth_sudo_cookie()).thenReturn("c2");
+        when(newConfig.auth_sudo_parameter()).thenReturn("p2");
         plugin.modified(newConfig);
 
         StringWriter sw = new StringWriter();
-        Mockito.when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
         plugin.doGet(request, response);
         Assert.assertTrue(sw.toString().contains("c2"));
         Assert.assertTrue(sw.toString().contains("p2"));
