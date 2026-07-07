@@ -217,10 +217,10 @@ public class AuthUtilTest {
     @Test
     public void test_getMappedLoginResourcePath_jakarta() {
         jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        ResourceResolver resolver = mock(ResourceResolver.class);
-        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        ResourceResolver rr = mock(ResourceResolver.class);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
         when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
-        when(resolver.map(req, "/res")).thenReturn("/mapped/res");
+        when(rr.map(req, "/res")).thenReturn("/mapped/res");
         Assert.assertEquals("/mapped/res", AuthUtil.getMappedLoginResourcePath(req, "/def"));
     }
 
@@ -418,10 +418,10 @@ public class AuthUtilTest {
     @Test
     public void test_getMappedLoginResourcePath_javax() {
         javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
-        ResourceResolver resolver = mock(ResourceResolver.class);
-        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        ResourceResolver rr = mock(ResourceResolver.class);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
         when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
-        when(resolver.map(req, "/res")).thenReturn("/mapped/res");
+        when(rr.map(req, "/res")).thenReturn("/mapped/res");
         Assert.assertEquals("/mapped/res", AuthUtil.getMappedLoginResourcePath(req, "/def"));
 
         javax.servlet.http.HttpServletRequest request2 = mock(javax.servlet.http.HttpServletRequest.class);
@@ -534,11 +534,11 @@ public class AuthUtilTest {
     public void test_isRedirectValid_resolvesToResource_jakarta() {
         jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
         when(req.getContextPath()).thenReturn("");
-        final ResourceResolver resolver = mock(ResourceResolver.class);
+        final ResourceResolver rr = mock(ResourceResolver.class);
         final Resource resource = mock(Resource.class);
         when(resource.getResourceType()).thenReturn("some/type");
-        when(resolver.resolve(eq(req), anyString())).thenReturn(resource);
-        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        when(rr.resolve(eq(req), anyString())).thenReturn(resource);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
 
         Assert.assertTrue(AuthUtil.isRedirectValid(req, "/valid/path"));
     }
@@ -552,19 +552,15 @@ public class AuthUtilTest {
     }
 
     @Test
-    public void test_isRedirectValid_illegalCharacters_javax() {
-        // a space triggers a URISyntaxException
-        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "/a b"));
-    }
-
-    @Test
-    public void test_isRedirectValid_url_javax() {
-        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "http://host/x"));
-    }
-
-    @Test
-    public void test_isRedirectValid_notNormalized_javax() {
-        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "/a//b"));
+    public void test_isRedirectValid_invalidTargets_javax() {
+        // "/a b": space triggers a URISyntaxException, "http://host/x": absolute URL,
+        // "/a//b": path is not normalized -- each must be rejected.
+        final String[] invalidTargets = {"/a b", "http://host/x", "/a//b"};
+        for (String target : invalidTargets) {
+            Assert.assertFalse(
+                    "expected invalid redirect for target: " + target,
+                    AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, target));
+        }
     }
 
     @Test
@@ -599,11 +595,11 @@ public class AuthUtilTest {
     public void test_isRedirectValid_resolvesToResource_javax() {
         javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
         when(req.getContextPath()).thenReturn("");
-        final ResourceResolver resolver = mock(ResourceResolver.class);
+        final ResourceResolver rr = mock(ResourceResolver.class);
         final Resource resource = mock(Resource.class);
         when(resource.getResourceType()).thenReturn("some/type");
-        when(resolver.resolve(eq(req), anyString())).thenReturn(resource);
-        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(resolver);
+        when(rr.resolve(eq(req), anyString())).thenReturn(resource);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
 
         Assert.assertTrue(AuthUtil.isRedirectValid(req, "/valid/path"));
     }

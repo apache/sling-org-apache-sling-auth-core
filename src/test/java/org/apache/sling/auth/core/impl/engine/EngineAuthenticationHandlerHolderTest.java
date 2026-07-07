@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.osgi.framework.ServiceReference;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -195,7 +194,7 @@ public class EngineAuthenticationHandlerHolderTest {
         assertEquals(0, holder.compareTo(same));
         assertNotEquals(holder, null);
         assertNotEquals(holder, differentHandler);
-        assertFalse(holder.equals(new Object()));
+        assertNotEquals(holder, new Object());
         assertEquals("engineHandler (Legacy API Handler)", holder.toString());
     }
 

@@ -51,7 +51,7 @@ public class AuthenticatorWebConsolePluginTest {
     private HttpServletResponse response = mock(HttpServletResponse.class);
 
     @Before
-    public void setup() throws Exception {
+    public void setup() {
         config = mock(SlingAuthenticator.Config.class);
         when(config.sling_auth_anonymous_user()).thenReturn("");
         when(config.auth_sudo_cookie()).thenReturn("sling.sudo");

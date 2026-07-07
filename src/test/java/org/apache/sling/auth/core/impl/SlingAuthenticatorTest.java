@@ -93,7 +93,7 @@ public class SlingAuthenticatorTest {
     private SlingAuthenticator createSlingAuthenticator(
             final SlingAuthenticator.Config config, final String... typeAndPathPairs) {
         final AuthenticationRequirementsManager requirements =
-                new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
+                new AuthenticationRequirementsManager(createBundleContext(), null, config, Runnable::run);
         final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
         if (typeAndPathPairs != null) {
             int i = 0;
@@ -102,10 +102,7 @@ public class SlingAuthenticatorTest {
                 i += 2;
             }
         }
-        final SlingAuthenticator slingAuthenticator =
-                new SlingAuthenticator(requirements, handlers, null, mock(BundleContext.class), config);
-
-        return slingAuthenticator;
+        return new SlingAuthenticator(requirements, handlers, null, mock(BundleContext.class), config);
     }
 
     @Test
@@ -506,7 +503,7 @@ public class SlingAuthenticatorTest {
     private SlingAuthenticator createAuthenticator(AbstractAuthenticationHandlerHolder... holders) {
         final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
         final AuthenticationRequirementsManager requirements =
-                new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
+                new AuthenticationRequirementsManager(createBundleContext(), null, config, Runnable::run);
         final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
         for (AbstractAuthenticationHandlerHolder h : holders) {
             handlers.addHolder(h);
@@ -518,7 +515,7 @@ public class SlingAuthenticatorTest {
             final ResourceResolverFactory rrf, final AbstractAuthenticationHandlerHolder... holders) {
         final SlingAuthenticator.Config config = SlingAuthenticatorTest.createDefaultConfig();
         final AuthenticationRequirementsManager requirements =
-                new AuthenticationRequirementsManager(createBundleContext(), null, config, callable -> callable.run());
+                new AuthenticationRequirementsManager(createBundleContext(), null, config, Runnable::run);
         final AuthenticationHandlersManager handlers = new AuthenticationHandlersManager(config);
         for (AbstractAuthenticationHandlerHolder h : holders) {
             handlers.addHolder(h);
