@@ -46,7 +46,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 
@@ -115,8 +114,7 @@ public class SlingAuthenticatorOsgiJavaxTest {
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "admin", "admin".toCharArray());
                     authInfo.put(AuthConstants.AUTH_INFO_LOGIN, Boolean.TRUE);
                     when(req.getRequestURL()).thenReturn(new StringBuffer("/test"));
-                    when(testAuthHandler.extractCredentials(Mockito.any(), Mockito.any()))
-                            .thenReturn(authInfo);
+                    when(testAuthHandler.extractCredentials(any(), any())).thenReturn(authInfo);
                 },
                 () -> testEventHandler.collectedEvents(AuthConstants.TOPIC_LOGIN),
                 event -> assertEquals("test1Value", event.getProperty("test1")));
@@ -132,8 +130,7 @@ public class SlingAuthenticatorOsgiJavaxTest {
                     // provide invalid test authInfo
                     AuthenticationInfo authInfo = new AuthenticationInfo("testing", "invalid", "invalid".toCharArray());
                     when(req.getRequestURL()).thenReturn(new StringBuffer("/testing"));
-                    when(testAuthHandler.extractCredentials(Mockito.any(), Mockito.any()))
-                            .thenReturn(authInfo);
+                    when(testAuthHandler.extractCredentials(any(), any())).thenReturn(authInfo);
                     // throw exception to trigger FailedLogin event
                     try {
                         when(resourceResolverFactory.getResourceResolver(authInfo))

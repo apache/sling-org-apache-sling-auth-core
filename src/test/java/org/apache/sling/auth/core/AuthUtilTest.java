@@ -18,19 +18,39 @@
  */
 package org.apache.sling.auth.core;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.resource.NonExistingResource;
+import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.SyntheticResource;
+import org.apache.sling.auth.core.spi.JakartaAuthenticationHandler;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.startsWith;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@SuppressWarnings("deprecation")
 public class AuthUtilTest {
 
-    final ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+    final ResourceResolver resolver = mock(ResourceResolver.class);
 
-    final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
 
     @Test
     public void test_isRedirectValid_null_empty() {
@@ -61,7 +81,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_invalid_characters() {
-        Mockito.when(request.getContextPath()).thenReturn("");
+        when(request.getContextPath()).thenReturn("");
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/</x"));
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "/illegal/>/x"));
@@ -73,7 +93,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_no_resource_resolver_root_context() {
-        Mockito.when(request.getContextPath()).thenReturn("");
+        when(request.getContextPath()).thenReturn("");
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
         Assert.assertTrue(AuthUtil.isRedirectValid(request, "/absolute/path"));
@@ -82,7 +102,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_no_resource_resolver_non_root_context() {
-        Mockito.when(request.getContextPath()).thenReturn("/ctx");
+        when(request.getContextPath()).thenReturn("/ctx");
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "/absolute/path"));
@@ -96,15 +116,15 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_resource_resolver_root_context() {
-        Mockito.when(request.getContextPath()).thenReturn("");
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        when(request.getContextPath()).thenReturn("");
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn(resolver);
 
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("/absolute/path")))
+        when(resolver.resolve((HttpServletRequest) any(), eq("/absolute/path")))
                 .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("relative/path")))
+        when(resolver.resolve((HttpServletRequest) any(), eq("relative/path")))
                 .thenReturn(new NonExistingResource(resolver, "relative/path"));
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.any()))
+        when(resolver.resolve((HttpServletRequest) any(), any()))
                 .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
@@ -120,15 +140,15 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_resource_resolver_non_root_context() {
-        Mockito.when(request.getContextPath()).thenReturn("/ctx");
-        Mockito.when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
+        when(request.getContextPath()).thenReturn("/ctx");
+        when(request.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER))
                 .thenReturn(resolver);
 
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("/absolute/path")))
+        when(resolver.resolve((HttpServletRequest) any(), eq("/absolute/path")))
                 .thenReturn(new SyntheticResource(resolver, "/absolute/path", "test"));
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.eq("relative/path")))
+        when(resolver.resolve((HttpServletRequest) any(), eq("relative/path")))
                 .thenReturn(new NonExistingResource(resolver, "relative/path"));
-        Mockito.when(resolver.resolve((HttpServletRequest) Mockito.any(), Mockito.any()))
+        when(resolver.resolve((HttpServletRequest) any(), any()))
                 .thenReturn(new NonExistingResource(resolver, "/absolute/missing"));
 
         Assert.assertFalse(AuthUtil.isRedirectValid(request, "relative/path"));
@@ -147,19 +167,529 @@ public class AuthUtilTest {
 
     @Test
     public void test_isBrowserRequest_Mozilla() {
-        Mockito.when(request.getHeader("User-Agent")).thenReturn("This is firefox (Mozilla)");
+        when(request.getHeader("User-Agent")).thenReturn("This is firefox (Mozilla)");
         Assert.assertTrue(AuthUtil.isBrowserRequest(request));
     }
 
     @Test
     public void test_isBrowserRequest_Opera() {
-        Mockito.when(request.getHeader("User-Agent")).thenReturn("This is opera (Opera)");
+        when(request.getHeader("User-Agent")).thenReturn("This is opera (Opera)");
         Assert.assertTrue(AuthUtil.isBrowserRequest(request));
     }
 
     @Test
     public void test_isBrowserRequest_WebDAV() {
-        Mockito.when(request.getHeader("User-Agent")).thenReturn("WebDAV Client");
+        when(request.getHeader("User-Agent")).thenReturn("WebDAV Client");
         Assert.assertFalse(AuthUtil.isBrowserRequest(request));
+    }
+
+    // ---- Jakarta variants ----
+
+    @Test
+    public void test_getAttributeOrParameter_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getAttribute("a")).thenReturn("attrValue");
+        Assert.assertEquals("attrValue", AuthUtil.getAttributeOrParameter(req, "a", "def"));
+
+        when(req.getAttribute("b")).thenReturn(null);
+        when(req.getParameter("b")).thenReturn("paramValue");
+        Assert.assertEquals("paramValue", AuthUtil.getAttributeOrParameter(req, "b", "def"));
+
+        when(req.getAttribute("c")).thenReturn("");
+        when(req.getParameter("c")).thenReturn("");
+        Assert.assertEquals("def", AuthUtil.getAttributeOrParameter(req, "c", "def"));
+
+        // non-string attribute is ignored
+        when(req.getAttribute("d")).thenReturn(Integer.valueOf(1));
+        when(req.getParameter("d")).thenReturn(null);
+        Assert.assertEquals("def", AuthUtil.getAttributeOrParameter(req, "d", "def"));
+    }
+
+    @Test
+    public void test_getLoginResource_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
+        Assert.assertEquals("/res", AuthUtil.getLoginResource(req, "/def"));
+
+        HttpServletRequest request2 = mock(HttpServletRequest.class);
+        Assert.assertEquals("/def", AuthUtil.getLoginResource(request2, "/def"));
+    }
+
+    @Test
+    public void test_getMappedLoginResourcePath_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        ResourceResolver rr = mock(ResourceResolver.class);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
+        when(rr.map(req, "/res")).thenReturn("/mapped/res");
+        Assert.assertEquals("/mapped/res", AuthUtil.getMappedLoginResourcePath(req, "/def"));
+    }
+
+    @Test
+    public void test_getMappedLoginResourcePath_null_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        // no resolver -> getResourceResolver returns null -> NPE guarded by null path only
+        // here defaultLoginResource is null and no param -> resourcePath null -> returns null
+        Assert.assertNull(AuthUtil.getMappedLoginResourcePath(req, null));
+    }
+
+    @Test
+    public void test_setLoginResourceAttribute_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        // attribute already set
+        when(req.getAttribute(Authenticator.LOGIN_RESOURCE)).thenReturn("/existing");
+        Assert.assertEquals("/existing", AuthUtil.setLoginResourceAttribute(req, "/def"));
+
+        // parameter set
+        HttpServletRequest request2 = mock(HttpServletRequest.class);
+        when(request2.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/param");
+        Assert.assertEquals("/param", AuthUtil.setLoginResourceAttribute(request2, "/def"));
+
+        // default used
+        HttpServletRequest request3 = mock(HttpServletRequest.class);
+        Assert.assertEquals("/def", AuthUtil.setLoginResourceAttribute(request3, "/def"));
+
+        // fallback to "/"
+        HttpServletRequest request4 = mock(HttpServletRequest.class);
+        Assert.assertEquals("/", AuthUtil.setLoginResourceAttribute(request4, null));
+    }
+
+    @Test
+    public void test_sendRedirect_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/current");
+        when(req.getQueryString()).thenReturn("x=1");
+
+        Map<String, String> params = new HashMap<>();
+        params.put("k", "v v");
+        AuthUtil.sendRedirect(req, response, "/valid/target", params);
+
+        verify(response).sendRedirect(contains("/valid/target?"));
+    }
+
+    @Test
+    public void test_sendRedirect_invalidTarget_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("/ctx");
+        when(req.getRequestURI()).thenReturn("/current");
+
+        AuthUtil.sendRedirect(req, response, "relative", null);
+        verify(response).sendRedirect(startsWith("/ctx?"));
+    }
+
+    @Test
+    public void test_sendRedirect_invalidTarget_rootContext_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/current");
+
+        AuthUtil.sendRedirect(req, response, "relative", null);
+        verify(response).sendRedirect(startsWith("/?"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_sendRedirect_committed_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.isCommitted()).thenReturn(true);
+        AuthUtil.sendRedirect(req, response, "/target", null);
+    }
+
+    @Test
+    public void test_isValidateRequest_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("TRUE");
+        Assert.assertTrue(AuthUtil.isValidateRequest(req));
+        when(req.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("no");
+        Assert.assertFalse(AuthUtil.isValidateRequest(req));
+    }
+
+    @Test
+    public void test_sendValid_jakarta() {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        AuthUtil.sendValid(response);
+        verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).setContentLength(0);
+    }
+
+    @Test
+    public void test_sendInvalid_withReason_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON)).thenReturn("bad");
+        when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE)).thenReturn("code1");
+        StringWriter sw = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
+
+        AuthUtil.sendInvalid(req, response);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setHeader(AuthConstants.X_REASON, "bad");
+        verify(response).setHeader(AuthConstants.X_REASON_CODE, "code1");
+        Assert.assertTrue(sw.toString().contains("bad"));
+    }
+
+    @Test
+    public void test_sendInvalid_noReason_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        AuthUtil.sendInvalid(req, response);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+    }
+
+    @Test
+    public void test_checkReferer_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        // not a POST -> true
+        when(req.getMethod()).thenReturn("GET");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
+
+        // POST with no referer -> true
+        when(req.getMethod()).thenReturn("POST");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
+
+        // POST with matching referer -> true
+        when(req.getContextPath()).thenReturn("");
+        when(req.getHeader("Referer")).thenReturn("http://host/login");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
+
+        // POST with non-matching referer -> false
+        when(req.getHeader("Referer")).thenReturn("http://host/other");
+        Assert.assertFalse(AuthUtil.checkReferer(req, "/login"));
+
+        // POST with malformed referer -> true (parse fails, falls through)
+        when(req.getHeader("Referer")).thenReturn("::not a url::");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
+    }
+
+    @Test
+    public void test_isAjaxRequest_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
+        Assert.assertTrue(AuthUtil.isAjaxRequest(req));
+        when(req.getHeader("X-Requested-With")).thenReturn("other");
+        Assert.assertFalse(AuthUtil.isAjaxRequest(req));
+    }
+
+    @Test
+    public void test_isRedirectValid_url_jakarta() {
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, "http://www.google.com"));
+    }
+
+    @Test
+    public void test_isBrowserRequest_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
+        Assert.assertTrue(AuthUtil.isBrowserRequest(req));
+        when(req.getHeader("User-Agent")).thenReturn("curl");
+        Assert.assertFalse(AuthUtil.isBrowserRequest(req));
+    }
+
+    // ---- Deprecated javax variants ----
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_getAttributeOrParameter_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getAttribute("a")).thenReturn("attrValue");
+        Assert.assertEquals("attrValue", AuthUtil.getAttributeOrParameter(req, "a", "def"));
+
+        when(req.getAttribute("b")).thenReturn(null);
+        when(req.getParameter("b")).thenReturn("paramValue");
+        Assert.assertEquals("paramValue", AuthUtil.getAttributeOrParameter(req, "b", "def"));
+
+        when(req.getAttribute("c")).thenReturn(null);
+        when(req.getParameter("c")).thenReturn(null);
+        Assert.assertEquals("def", AuthUtil.getAttributeOrParameter(req, "c", "def"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_getLoginResource_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
+        Assert.assertEquals("/res", AuthUtil.getLoginResource(req, "/def"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_getMappedLoginResourcePath_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        ResourceResolver rr = mock(ResourceResolver.class);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
+        when(rr.map(req, "/res")).thenReturn("/mapped/res");
+        Assert.assertEquals("/mapped/res", AuthUtil.getMappedLoginResourcePath(req, "/def"));
+
+        javax.servlet.http.HttpServletRequest request2 = mock(javax.servlet.http.HttpServletRequest.class);
+        Assert.assertNull(AuthUtil.getMappedLoginResourcePath(request2, null));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_setLoginResourceAttribute_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getAttribute(Authenticator.LOGIN_RESOURCE)).thenReturn("/existing");
+        Assert.assertEquals("/existing", AuthUtil.setLoginResourceAttribute(req, "/def"));
+
+        javax.servlet.http.HttpServletRequest request2 = mock(javax.servlet.http.HttpServletRequest.class);
+        when(request2.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/param");
+        Assert.assertEquals("/param", AuthUtil.setLoginResourceAttribute(request2, "/def"));
+
+        javax.servlet.http.HttpServletRequest request3 = mock(javax.servlet.http.HttpServletRequest.class);
+        Assert.assertEquals("/def", AuthUtil.setLoginResourceAttribute(request3, "/def"));
+
+        javax.servlet.http.HttpServletRequest request4 = mock(javax.servlet.http.HttpServletRequest.class);
+        Assert.assertEquals("/", AuthUtil.setLoginResourceAttribute(request4, null));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_sendRedirect_javax() throws Exception {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/current");
+        when(req.getQueryString()).thenReturn(null);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("k", "v");
+        AuthUtil.sendRedirect(req, response, "/valid/target", params);
+        verify(response).sendRedirect(contains("/valid/target?"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_isValidateRequest_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("true");
+        Assert.assertTrue(AuthUtil.isValidateRequest(req));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_sendValid_javax() {
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        AuthUtil.sendValid(response);
+        verify(response).setStatus(javax.servlet.http.HttpServletResponse.SC_OK);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_sendInvalid_javax() throws Exception {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON)).thenReturn("bad");
+        StringWriter sw = new StringWriter();
+        when(response.getWriter()).thenReturn(new PrintWriter(sw));
+        AuthUtil.sendInvalid(req, response);
+        verify(response).setStatus(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        Assert.assertTrue(sw.toString().contains("bad"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_checkReferer_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getMethod()).thenReturn("POST");
+        when(req.getContextPath()).thenReturn("");
+        when(req.getHeader("Referer")).thenReturn("http://host/login");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
+        when(req.getHeader("Referer")).thenReturn("http://host/other");
+        Assert.assertFalse(AuthUtil.checkReferer(req, "/login"));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_isAjaxRequest_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
+        Assert.assertTrue(AuthUtil.isAjaxRequest(req));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_isBrowserRequest_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getHeader("User-Agent")).thenReturn("Opera/9");
+        Assert.assertTrue(AuthUtil.isBrowserRequest(req));
+        when(req.getHeader("User-Agent")).thenReturn(null);
+        Assert.assertFalse(AuthUtil.isBrowserRequest(req));
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void test_isRedirectValid_javax() {
+        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "http://host"));
+        Assert.assertTrue(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "/absolute/path"));
+        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, "/unnormalized//x"));
+    }
+
+    // ---- jakarta isRedirectValid, resolver resolves the target ----
+
+    @Test
+    public void test_isRedirectValid_resolvesToResource_jakarta() {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getContextPath()).thenReturn("");
+        final ResourceResolver rr = mock(ResourceResolver.class);
+        final Resource resource = mock(Resource.class);
+        when(resource.getResourceType()).thenReturn("some/type");
+        when(rr.resolve(eq(req), anyString())).thenReturn(resource);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
+
+        Assert.assertTrue(AuthUtil.isRedirectValid(req, "/valid/path"));
+    }
+
+    // ---- javax isRedirectValid full branch coverage ----
+
+    @Test
+    public void test_isRedirectValid_empty_javax() {
+        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, ""));
+        Assert.assertFalse(AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, null));
+    }
+
+    @Test
+    public void test_isRedirectValid_invalidTargets_javax() {
+        // "/a b": space triggers a URISyntaxException, "http://host/x": absolute URL,
+        // "/a//b": path is not normalized -- each must be rejected.
+        final String[] invalidTargets = {"/a b", "http://host/x", "/a//b"};
+        for (String target : invalidTargets) {
+            Assert.assertFalse(
+                    "expected invalid redirect for target: " + target,
+                    AuthUtil.isRedirectValid((javax.servlet.http.HttpServletRequest) null, target));
+        }
+    }
+
+    @Test
+    public void test_isRedirectValid_contextPath_javax() {
+        // With context path "/ctx": a mismatching path and a non-absolute continuation are
+        // rejected, while the context root itself is accepted.
+        final Object[][] cases = {
+            {"/other/path", false},
+            {"/ctx", true},
+            {"/ctxrelative", false},
+        };
+        for (Object[] c : cases) {
+            final String target = (String) c[0];
+            final boolean expected = (Boolean) c[1];
+            javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+            when(req.getContextPath()).thenReturn("/ctx");
+            Assert.assertEquals("target: " + target, expected, AuthUtil.isRedirectValid(req, target));
+        }
+    }
+
+    @Test
+    public void test_isRedirectValid_illegalChars_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getContextPath()).thenReturn("");
+        Assert.assertFalse(AuthUtil.isRedirectValid(req, "/path'quote"));
+    }
+
+    @Test
+    public void test_isRedirectValid_resolvesToResource_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getContextPath()).thenReturn("");
+        final ResourceResolver rr = mock(ResourceResolver.class);
+        final Resource resource = mock(Resource.class);
+        when(resource.getResourceType()).thenReturn("some/type");
+        when(rr.resolve(eq(req), anyString())).thenReturn(resource);
+        when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
+
+        Assert.assertTrue(AuthUtil.isRedirectValid(req, "/valid/path"));
+    }
+
+    // ---- javax sendRedirect branch coverage ----
+
+    @Test
+    public void test_sendRedirect_invalidTarget_rootContext_javax() throws Exception {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("");
+        when(req.getRequestURI()).thenReturn("/current");
+        AuthUtil.sendRedirect(req, response, "relative", null);
+        verify(response).sendRedirect(startsWith("/?"));
+    }
+
+    @Test
+    public void test_sendRedirect_invalidTarget_withContext_javax() throws Exception {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        when(req.getContextPath()).thenReturn("/ctx");
+        when(req.getRequestURI()).thenReturn("/ctx/current");
+        when(req.getQueryString()).thenReturn("a=b");
+        final Map<String, String> params = new HashMap<>();
+        AuthUtil.sendRedirect(req, response, "relative", params);
+        verify(response).sendRedirect(startsWith("/ctx?"));
+    }
+
+    // ---- jakarta sendInvalid with reason code ----
+
+    @Test
+    public void test_sendInvalid_withReasonCode_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON)).thenReturn("bad");
+        when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE)).thenReturn("code42");
+        when(response.getWriter()).thenReturn(new java.io.PrintWriter(new java.io.StringWriter()));
+        AuthUtil.sendInvalid(req, response);
+        verify(response).setHeader(AuthConstants.X_REASON_CODE, "code42");
+    }
+
+    // ---- IOException error paths ----
+
+    @Test
+    public void test_sendValid_ioexception_jakarta() throws Exception {
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        doThrow(new IOException("boom")).when(response).flushBuffer();
+        AuthUtil.sendValid(response);
+        // IOException from flushBuffer is caught internally; the OK response is still prepared.
+        verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).flushBuffer();
+    }
+
+    @Test
+    public void test_sendValid_ioexception_javax() throws Exception {
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        doThrow(new IOException("boom")).when(response).flushBuffer();
+        AuthUtil.sendValid(response);
+        // IOException from flushBuffer is caught internally; the OK response is still prepared.
+        verify(response).setStatus(javax.servlet.http.HttpServletResponse.SC_OK);
+        verify(response).flushBuffer();
+    }
+
+    @Test
+    public void test_sendInvalid_ioexception_jakarta() throws Exception {
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        doThrow(new IOException("boom")).when(response).flushBuffer();
+        AuthUtil.sendInvalid(req, response);
+        // IOException from flushBuffer is caught internally; the FORBIDDEN response is still prepared.
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+        verify(response).flushBuffer();
+    }
+
+    @Test
+    public void test_sendInvalid_ioexception_javax() throws Exception {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        javax.servlet.http.HttpServletResponse response = mock(javax.servlet.http.HttpServletResponse.class);
+        doThrow(new IOException("boom")).when(response).flushBuffer();
+        AuthUtil.sendInvalid(req, response);
+        // IOException from flushBuffer is caught internally; the FORBIDDEN response is still prepared.
+        verify(response).setStatus(javax.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        verify(response).flushBuffer();
+    }
+
+    // ---- javax checkReferer malformed URL ----
+
+    @Test
+    public void test_checkReferer_malformedUrl_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getMethod()).thenReturn("POST");
+        when(req.getContextPath()).thenReturn("");
+        when(req.getHeader("Referer")).thenReturn("::: not a url :::");
+        Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
     }
 }
