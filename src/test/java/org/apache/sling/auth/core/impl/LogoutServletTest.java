@@ -51,7 +51,7 @@ public class LogoutServletTest {
     }
 
     @Test
-    public void test_logout_no_authenticator() throws Exception {
+    public void test_logout_no_authenticator() {
         LogoutServlet servlet = new LogoutServlet();
         servlet.service(request, response);
         verify(response).setStatus(HttpServletResponse.SC_NO_CONTENT);

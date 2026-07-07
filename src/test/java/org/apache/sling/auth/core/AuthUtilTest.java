@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.resource.NonExistingResource;
 import org.apache.sling.api.resource.Resource;
@@ -186,7 +187,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_getAttributeOrParameter_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getAttribute("a")).thenReturn("attrValue");
         Assert.assertEquals("attrValue", AuthUtil.getAttributeOrParameter(req, "a", "def"));
 
@@ -206,17 +207,17 @@ public class AuthUtilTest {
 
     @Test
     public void test_getLoginResource_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
         Assert.assertEquals("/res", AuthUtil.getLoginResource(req, "/def"));
 
-        jakarta.servlet.http.HttpServletRequest request2 = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest request2 = mock(HttpServletRequest.class);
         Assert.assertEquals("/def", AuthUtil.getLoginResource(request2, "/def"));
     }
 
     @Test
     public void test_getMappedLoginResourcePath_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         ResourceResolver rr = mock(ResourceResolver.class);
         when(req.getAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER)).thenReturn(rr);
         when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/res");
@@ -226,7 +227,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_getMappedLoginResourcePath_null_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         // no resolver -> getResourceResolver returns null -> NPE guarded by null path only
         // here defaultLoginResource is null and no param -> resourcePath null -> returns null
         Assert.assertNull(AuthUtil.getMappedLoginResourcePath(req, null));
@@ -234,29 +235,29 @@ public class AuthUtilTest {
 
     @Test
     public void test_setLoginResourceAttribute_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         // attribute already set
         when(req.getAttribute(Authenticator.LOGIN_RESOURCE)).thenReturn("/existing");
         Assert.assertEquals("/existing", AuthUtil.setLoginResourceAttribute(req, "/def"));
 
         // parameter set
-        jakarta.servlet.http.HttpServletRequest request2 = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest request2 = mock(HttpServletRequest.class);
         when(request2.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/param");
         Assert.assertEquals("/param", AuthUtil.setLoginResourceAttribute(request2, "/def"));
 
         // default used
-        jakarta.servlet.http.HttpServletRequest request3 = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest request3 = mock(HttpServletRequest.class);
         Assert.assertEquals("/def", AuthUtil.setLoginResourceAttribute(request3, "/def"));
 
         // fallback to "/"
-        jakarta.servlet.http.HttpServletRequest request4 = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest request4 = mock(HttpServletRequest.class);
         Assert.assertEquals("/", AuthUtil.setLoginResourceAttribute(request4, null));
     }
 
     @Test
     public void test_sendRedirect_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(req.getContextPath()).thenReturn("");
         when(req.getRequestURI()).thenReturn("/current");
         when(req.getQueryString()).thenReturn("x=1");
@@ -270,8 +271,8 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendRedirect_invalidTarget_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(req.getContextPath()).thenReturn("/ctx");
         when(req.getRequestURI()).thenReturn("/current");
 
@@ -281,8 +282,8 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendRedirect_invalidTarget_rootContext_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(req.getContextPath()).thenReturn("");
         when(req.getRequestURI()).thenReturn("/current");
 
@@ -292,15 +293,15 @@ public class AuthUtilTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_sendRedirect_committed_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(response.isCommitted()).thenReturn(true);
         AuthUtil.sendRedirect(req, response, "/target", null);
     }
 
     @Test
     public void test_isValidateRequest_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("TRUE");
         Assert.assertTrue(AuthUtil.isValidateRequest(req));
         when(req.getParameter(AuthConstants.PAR_J_VALIDATE)).thenReturn("no");
@@ -309,23 +310,23 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendValid_jakarta() {
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         AuthUtil.sendValid(response);
-        verify(response).setStatus(jakarta.servlet.http.HttpServletResponse.SC_OK);
+        verify(response).setStatus(HttpServletResponse.SC_OK);
         verify(response).setContentLength(0);
     }
 
     @Test
     public void test_sendInvalid_withReason_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON)).thenReturn("bad");
         when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE)).thenReturn("code1");
         StringWriter sw = new StringWriter();
         when(response.getWriter()).thenReturn(new PrintWriter(sw));
 
         AuthUtil.sendInvalid(req, response);
-        verify(response).setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         verify(response).setHeader(AuthConstants.X_REASON, "bad");
         verify(response).setHeader(AuthConstants.X_REASON_CODE, "code1");
         Assert.assertTrue(sw.toString().contains("bad"));
@@ -333,15 +334,15 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendInvalid_noReason_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         AuthUtil.sendInvalid(req, response);
-        verify(response).setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
     }
 
     @Test
     public void test_checkReferer_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         // not a POST -> true
         when(req.getMethod()).thenReturn("GET");
         Assert.assertTrue(AuthUtil.checkReferer(req, "/login"));
@@ -366,7 +367,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_isAjaxRequest_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
         Assert.assertTrue(AuthUtil.isAjaxRequest(req));
         when(req.getHeader("X-Requested-With")).thenReturn("other");
@@ -375,13 +376,12 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_url_jakarta() {
-        Assert.assertFalse(
-                AuthUtil.isRedirectValid((jakarta.servlet.http.HttpServletRequest) null, "http://www.google.com"));
+        Assert.assertFalse(AuthUtil.isRedirectValid((HttpServletRequest) null, "http://www.google.com"));
     }
 
     @Test
     public void test_isBrowserRequest_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
         Assert.assertTrue(AuthUtil.isBrowserRequest(req));
         when(req.getHeader("User-Agent")).thenReturn("curl");
@@ -532,7 +532,7 @@ public class AuthUtilTest {
 
     @Test
     public void test_isRedirectValid_resolvesToResource_jakarta() {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getContextPath()).thenReturn("");
         final ResourceResolver rr = mock(ResourceResolver.class);
         final Resource resource = mock(Resource.class);
@@ -564,24 +564,21 @@ public class AuthUtilTest {
     }
 
     @Test
-    public void test_isRedirectValid_contextPathMismatch_javax() {
-        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
-        when(req.getContextPath()).thenReturn("/ctx");
-        Assert.assertFalse(AuthUtil.isRedirectValid(req, "/other/path"));
-    }
-
-    @Test
-    public void test_isRedirectValid_contextRoot_javax() {
-        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
-        when(req.getContextPath()).thenReturn("/ctx");
-        Assert.assertTrue(AuthUtil.isRedirectValid(req, "/ctx"));
-    }
-
-    @Test
-    public void test_isRedirectValid_notAbsoluteAfterContext_javax() {
-        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
-        when(req.getContextPath()).thenReturn("/ctx");
-        Assert.assertFalse(AuthUtil.isRedirectValid(req, "/ctxrelative"));
+    public void test_isRedirectValid_contextPath_javax() {
+        // With context path "/ctx": a mismatching path and a non-absolute continuation are
+        // rejected, while the context root itself is accepted.
+        final Object[][] cases = {
+            {"/other/path", false},
+            {"/ctx", true},
+            {"/ctxrelative", false},
+        };
+        for (Object[] c : cases) {
+            final String target = (String) c[0];
+            final boolean expected = (Boolean) c[1];
+            javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+            when(req.getContextPath()).thenReturn("/ctx");
+            Assert.assertEquals("target: " + target, expected, AuthUtil.isRedirectValid(req, target));
+        }
     }
 
     @Test
@@ -632,8 +629,8 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendInvalid_withReasonCode_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON)).thenReturn("bad");
         when(req.getAttribute(JakartaAuthenticationHandler.FAILURE_REASON_CODE)).thenReturn("code42");
         when(response.getWriter()).thenReturn(new java.io.PrintWriter(new java.io.StringWriter()));
@@ -645,11 +642,11 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendValid_ioexception_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         doThrow(new IOException("boom")).when(response).flushBuffer();
         AuthUtil.sendValid(response);
         // IOException from flushBuffer is caught internally; the OK response is still prepared.
-        verify(response).setStatus(jakarta.servlet.http.HttpServletResponse.SC_OK);
+        verify(response).setStatus(HttpServletResponse.SC_OK);
         verify(response).flushBuffer();
     }
 
@@ -665,12 +662,12 @@ public class AuthUtilTest {
 
     @Test
     public void test_sendInvalid_ioexception_jakarta() throws Exception {
-        jakarta.servlet.http.HttpServletRequest req = mock(jakarta.servlet.http.HttpServletRequest.class);
-        jakarta.servlet.http.HttpServletResponse response = mock(jakarta.servlet.http.HttpServletResponse.class);
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
         doThrow(new IOException("boom")).when(response).flushBuffer();
         AuthUtil.sendInvalid(req, response);
         // IOException from flushBuffer is caught internally; the FORBIDDEN response is still prepared.
-        verify(response).setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         verify(response).flushBuffer();
     }
 
