@@ -81,13 +81,15 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements JakartaAuthe
         if (redirect != null) {
             // and redirect ensuring the response is sent to the client
             try {
-                response.sendRedirect(redirect);
+                final String redirectTarget = (redirect.startsWith("/") && !redirect.contains("://")) ? redirect : "/";
+                response.sendRedirect(redirectTarget);
             } catch (Exception e) {
                 // expected: IOException and IllegalStateException
+                final String sanitizedRedirect = sanitizeForLog(redirect);
                 LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class)
                         .error(
-                                "handleRedirect: Failed to send redirect to " + redirect
-                                        + ", aborting request without redirect",
+                                "handleRedirect: Failed to send redirect to {}, aborting request without redirect",
+                                sanitizedRedirect,
                                 e);
             }
 
@@ -130,12 +132,20 @@ public class DefaultJakartaAuthenticationFeedbackHandler implements JakartaAuthe
 
         // absolute target (in the servlet context)
         if (!AuthUtil.isRedirectValid(request, redirect)) {
+            final String sanitizedRedirect = sanitizeForLog(redirect);
             LoggerFactory.getLogger(DefaultJakartaAuthenticationFeedbackHandler.class)
-                    .error("handleRedirect: Redirect target '{}' is invalid, redirecting to '/'", redirect);
+                    .error("handleRedirect: Redirect target '{}' is invalid, redirecting to '/'", sanitizedRedirect);
             redirect = "/";
         }
 
         return redirect;
+    }
+
+    private static String sanitizeForLog(final String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\r", "\\r").replace("\n", "\\n");
     }
 
     /**
