@@ -28,13 +28,14 @@ import java.util.Arrays;
 import org.apache.felix.hc.api.Result;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DefaultLoginsHealthCheckTest {
 
@@ -46,10 +47,10 @@ public class DefaultLoginsHealthCheckTest {
             SetField.set(c, "logins", Arrays.asList(new String[] {login}));
         }
 
-        final SlingRepository repo = Mockito.mock(SlingRepository.class);
+        final SlingRepository repo = mock(SlingRepository.class);
         SetField.set(c, "repository", repo);
-        final Session s = Mockito.mock(Session.class);
-        Mockito.when(repo.login(ArgumentMatchers.any(Credentials.class))).thenAnswer(new Answer<Session>() {
+        final Session s = mock(Session.class);
+        when(repo.login(any(Credentials.class))).thenAnswer(new Answer<Session>() {
             @Override
             public Session answer(InvocationOnMock invocation) throws LoginException {
                 final SimpleCredentials c = (SimpleCredentials) invocation.getArguments()[0];
