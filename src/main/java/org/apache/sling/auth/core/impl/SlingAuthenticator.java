@@ -265,6 +265,16 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
      */
     private static final String AUTH_INFO_PROP_FEEDBACK_HANDLER = "$$sling.auth.AuthenticationFeedbackHandler$$";
 
+    /**
+     * Request attribute set once an anonymous {@code ResourceResolver} acquisition has been
+     * attempted for the current request. It guards against the
+     * {@code handleLoginFailure -> getAnonymousResolver -> handleLoginFailure} recursion that
+     * occurs when the anonymous login itself keeps failing (e.g. the repository is unavailable
+     * or a required segment is missing), which otherwise recurses until a {@code StackOverflowError}.
+     */
+    private static final String REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED =
+            "$$sling.auth.anonymousResolverAttempted$$";
+
     /** The name of the impersonation parameter */
     private volatile String sudoParameterName;
 
@@ -896,6 +906,11 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
         // a request for the login servlet
         if (isAnonAllowed(request)) {
 
+            // mark that anonymous resolution has been attempted for this request, so a
+            // subsequent handleLoginFailure does not fall back into getAnonymousResolver
+            // again and recurse indefinitely when the anonymous login keeps failing
+            request.setAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED, Boolean.TRUE);
+
             try {
                 ResourceResolver resolver = resourceResolverFactory.getResourceResolver(authInfo);
 
@@ -992,6 +1007,7 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
         } else if (reason instanceof LoginException) {
             log.info("handleLoginFailure: Unable to authenticate {}: {}", user, reason.getMessage());
             if (isAnonAllowed(request)
+                    && request.getAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED) == null
                     && !expectAuthenticationHandler(request)
                     && !AuthUtil.isValidateRequest(request)) {
                 log.debug(
