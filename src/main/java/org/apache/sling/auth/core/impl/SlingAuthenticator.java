@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
@@ -1007,7 +1008,8 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
         } else if (reason instanceof LoginException) {
             log.info("handleLoginFailure: Unable to authenticate {}: {}", user, reason.getMessage());
             if (isAnonAllowed(request)
-                    && request.getAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED) == null
+                    && !Objects.equals(
+                            Boolean.TRUE, request.getAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED))
                     && !expectAuthenticationHandler(request)
                     && !AuthUtil.isValidateRequest(request)) {
                 log.debug(

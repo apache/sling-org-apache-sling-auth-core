@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import junitx.util.PrivateAccessor;
 import org.apache.sling.api.resource.LoginException;
+import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.auth.core.spi.AuthenticationInfo;
 import org.junit.Assert;
@@ -127,6 +128,32 @@ public class SlingAuthenticatorAnonymousRecursionTest {
                 "anonymous login must be attempted exactly once, never retried in a recursive loop",
                 1,
                 loginAttempts.get());
+    }
+
+    @Test
+    public void falseAnonymousResolverAttemptMarkerAllowsFallback() throws Throwable {
+        final ResourceResolver resourceResolver = Mockito.mock(ResourceResolver.class);
+        final ResourceResolverFactory resourceResolverFactory = Mockito.mock(ResourceResolverFactory.class);
+        Mockito.when(resourceResolverFactory.getResourceResolver(Mockito.anyMap()))
+                .thenReturn(resourceResolver);
+
+        final SlingAuthenticator authenticator = createAuthenticator(resourceResolverFactory);
+        final HttpServletRequest request = anonymousBrowserRequest();
+        final String attemptedAttribute = (String)
+                PrivateAccessor.getField(SlingAuthenticator.class, "REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED");
+        request.setAttribute(attemptedAttribute, Boolean.FALSE);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+
+        final boolean processRequest = (Boolean) PrivateAccessor.invoke(
+                authenticator,
+                "handleLoginFailure",
+                new Class[] {
+                    HttpServletRequest.class, HttpServletResponse.class, AuthenticationInfo.class, Exception.class
+                },
+                new Object[] {request, response, new AuthenticationInfo("basic", "user"), new LoginException("retry")});
+
+        Assert.assertTrue("a false marker means anonymous resolution has not been attempted", processRequest);
+        Mockito.verify(resourceResolverFactory).getResourceResolver(Mockito.anyMap());
     }
 
     private static boolean isStackOverflow(Throwable t) {
