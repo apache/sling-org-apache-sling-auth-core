@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletRequestEvent;
@@ -264,6 +265,16 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
      * handler to be called back on login failure or success.
      */
     private static final String AUTH_INFO_PROP_FEEDBACK_HANDLER = "$$sling.auth.AuthenticationFeedbackHandler$$";
+
+    /**
+     * Request attribute set once an anonymous {@code ResourceResolver} acquisition has been
+     * attempted for the current request. It guards against the
+     * {@code handleLoginFailure -> getAnonymousResolver -> handleLoginFailure} recursion that
+     * occurs when the anonymous login itself keeps failing (e.g. the repository is unavailable
+     * or a required segment is missing), which otherwise recurses until a {@code StackOverflowError}.
+     */
+    private static final String REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED =
+            "$$sling.auth.anonymousResolverAttempted$$";
 
     /** The name of the impersonation parameter */
     private volatile String sudoParameterName;
@@ -896,6 +907,11 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
         // a request for the login servlet
         if (isAnonAllowed(request)) {
 
+            // mark that anonymous resolution has been attempted for this request, so a
+            // subsequent handleLoginFailure does not fall back into getAnonymousResolver
+            // again and recurse indefinitely when the anonymous login keeps failing
+            request.setAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED, Boolean.TRUE);
+
             try {
                 ResourceResolver resolver = resourceResolverFactory.getResourceResolver(authInfo);
 
@@ -992,6 +1008,8 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
         } else if (reason instanceof LoginException) {
             log.info("handleLoginFailure: Unable to authenticate {}: {}", user, reason.getMessage());
             if (isAnonAllowed(request)
+                    && !Objects.equals(
+                            Boolean.TRUE, request.getAttribute(REQUEST_ATTRIBUTE_ANONYMOUS_RESOLVER_ATTEMPTED))
                     && !expectAuthenticationHandler(request)
                     && !AuthUtil.isValidateRequest(request)) {
                 log.debug(
