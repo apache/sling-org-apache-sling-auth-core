@@ -846,6 +846,15 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
             // custom feedback handler with option to redirect
             if (feedbackHandler != null) {
                 processRequest = !feedbackHandler.authenticationSucceeded(request, response, authInfo);
+                if (processRequest && response.isCommitted()) {
+                    // the handler sent a response (e.g. a redirect) but asked us to
+                    // continue; nothing can be processed on a committed response,
+                    // so terminate the request instead of running into sendInvalid
+                    log.debug(
+                            "getResolver: feedback handler {} committed the response but returned false, terminating request",
+                            feedbackHandler.getClass().getName());
+                    processRequest = false;
+                }
             }
 
             if (processRequest) {

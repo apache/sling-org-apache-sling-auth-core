@@ -47,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.eq;
@@ -525,10 +526,15 @@ public class SlingAuthenticatorTest {
     }
 
     private AbstractAuthenticationHandlerHolder infoHolder(final String path, final AuthenticationInfo info) {
+        return infoHolder(path, info, null);
+    }
+
+    private AbstractAuthenticationHandlerHolder infoHolder(
+            final String path, final AuthenticationInfo info, final JakartaAuthenticationFeedbackHandler feedback) {
         return new AbstractAuthenticationHandlerHolder(path, null) {
             @Override
             protected JakartaAuthenticationFeedbackHandler getFeedbackHandler() {
-                return null;
+                return feedback;
             }
 
             @Override
@@ -760,6 +766,45 @@ public class SlingAuthenticatorTest {
 
         Assert.assertFalse(auth.handleSecurity(request, response));
         verify(response).sendRedirect("/content/target");
+        verify(resolver).close();
+    }
+
+    @Test
+    public void test_handleSecurity_feedback_handler_committed_response_but_returned_false() throws Exception {
+        // sling.auth.form's authenticationSucceeded sends the redirect (committing the response) and
+        // then returns false; the authenticator must treat the request as done instead of continuing
+        // into "AuthenticationHandler did not block request" and sendInvalid on a committed response
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final JakartaAuthenticationFeedbackHandler feedback = new JakartaAuthenticationFeedbackHandler() {
+            @Override
+            public void authenticationFailed(
+                    HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {}
+
+            @Override
+            public boolean authenticationSucceeded(
+                    HttpServletRequest request, HttpServletResponse response, AuthenticationInfo authInfo) {
+                try {
+                    response.sendRedirect("/content/target");
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+                when(response.isCommitted()).thenReturn(true);
+                return false;
+            }
+        };
+        final AuthenticationInfo info = new AuthenticationInfo("form", "user", "pwd".toCharArray());
+        final SlingAuthenticator auth = createAuthenticator(rrf, infoHolder("/", info, feedback));
+
+        final HttpServletRequest request = requestFor("/j_security_check");
+
+        Assert.assertFalse(auth.handleSecurity(request, response));
+        verify(response).sendRedirect("/content/target");
+        verify(response, never()).sendError(anyInt(), anyString());
+        verify(response, never()).setStatus(anyInt());
         verify(resolver).close();
     }
 
