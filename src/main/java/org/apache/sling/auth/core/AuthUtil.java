@@ -215,8 +215,10 @@ public final class AuthUtil {
      * Returns the mapped resource path (to redirect to after a successful authentication).
      * It still needs to be validated by the caller.
      * Use this method to issue a redirect instead of {@link #getLoginResource(HttpServletRequest, String)} to correctly consider resource resolver mapping.
+     * If the request carries no resource resolver (see {@link AuthenticationSupport#REQUEST_ATTRIBUTE_RESOLVER}),
+     * for example while anonymous access is being established, the path is returned unmapped.
      * @return the mapped path of the resource target or {@code null} if non is given in the request
-     * @since 1.7.0 (Bundle Version 2.1.0)
+     * @since 1.7.0 (Bundle Version 2.1.2)
      */
     public static @Nullable String getMappedLoginResourcePath(
             final HttpServletRequest request, String defaultLoginResource) {
@@ -224,17 +226,19 @@ public final class AuthUtil {
         if (resourcePath == null) {
             return null;
         }
-        return getResourceResolver(request).map(request, resourcePath);
+        final ResourceResolver resolver = getResourceResolver(request);
+        return resolver == null ? resourcePath : resolver.map(request, resourcePath);
     }
 
     /**
      * Returns the mapped resource path (to redirect to after a successful authentication).
      * It still needs to be validated by the caller.
      * Use this method to issue a redirect instead of {@link #getLoginResource(javax.servlet.http.HttpServletRequest, String)} to correctly consider resource resolver mapping.
+     * If the request carries no resource resolver, the path is returned unmapped.
      * @return the mapped path of the resource target or {@code null} if non is given in the request
      *
      * @deprecated Use {@link #getMappedLoginResourcePath(HttpServletRequest, String)}
-     * @since 1.7.0 (Bundle Version 2.1.0)
+     * @since 1.7.0 (Bundle Version 2.1.2)
      */
     @Deprecated
     public static @Nullable String getMappedLoginResourcePath(
@@ -243,7 +247,8 @@ public final class AuthUtil {
         if (resourcePath == null) {
             return null;
         }
-        return getResourceResolver(request).map(request, resourcePath);
+        final ResourceResolver resolver = getResourceResolver(request);
+        return resolver == null ? resourcePath : resolver.map(request, resourcePath);
     }
 
     /**

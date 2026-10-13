@@ -228,9 +228,18 @@ public class AuthUtilTest {
     @Test
     public void test_getMappedLoginResourcePath_null_jakarta() {
         HttpServletRequest req = mock(HttpServletRequest.class);
-        // no resolver -> getResourceResolver returns null -> NPE guarded by null path only
-        // here defaultLoginResource is null and no param -> resourcePath null -> returns null
+        // no resolver, no parameter, no default -> nothing to map, returns null
         Assert.assertNull(AuthUtil.getMappedLoginResourcePath(req, null));
+    }
+
+    @Test
+    public void test_getMappedLoginResourcePath_without_resolver_jakarta() {
+        // anonymous request (e.g. the login page) carrying resource=... but no resolver attribute yet:
+        // the path cannot be mapped and must be returned as is instead of failing
+        HttpServletRequest req = mock(HttpServletRequest.class);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/content/protected");
+        Assert.assertEquals("/content/protected", AuthUtil.getMappedLoginResourcePath(req, null));
+        Assert.assertEquals("/def", AuthUtil.getMappedLoginResourcePath(mock(HttpServletRequest.class), "/def"));
     }
 
     @Test
@@ -426,6 +435,13 @@ public class AuthUtilTest {
 
         javax.servlet.http.HttpServletRequest request2 = mock(javax.servlet.http.HttpServletRequest.class);
         Assert.assertNull(AuthUtil.getMappedLoginResourcePath(request2, null));
+    }
+
+    @Test
+    public void test_getMappedLoginResourcePath_without_resolver_javax() {
+        javax.servlet.http.HttpServletRequest req = mock(javax.servlet.http.HttpServletRequest.class);
+        when(req.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/content/protected");
+        Assert.assertEquals("/content/protected", AuthUtil.getMappedLoginResourcePath(req, null));
     }
 
     @SuppressWarnings("deprecation")

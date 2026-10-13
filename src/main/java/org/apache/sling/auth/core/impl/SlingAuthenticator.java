@@ -916,8 +916,15 @@ public class SlingAuthenticator implements Authenticator, AuthenticationSupport,
                 ResourceResolver resolver = resourceResolverFactory.getResourceResolver(authInfo);
 
                 // check whether the client asked for redirect after
-                // authentication and/or impersonation
-                if (DefaultJakartaAuthenticationFeedbackHandler.handleRedirect(request, response)) {
+                // authentication and/or impersonation. Only an explicit
+                // sling.auth.redirect counts here: the "resource" fallback of
+                // handleRedirect is meant for the redirect after a successful
+                // login. An anonymous request carrying "resource" is typically
+                // the login form itself, redirecting it to the protected
+                // resource would loop (and there is no resolver on the
+                // request yet to map the path with)
+                if (request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER) != null
+                        && DefaultJakartaAuthenticationFeedbackHandler.handleRedirect(request, response)) {
 
                     // request will now be terminated, so close the resolver
                     // to release resources

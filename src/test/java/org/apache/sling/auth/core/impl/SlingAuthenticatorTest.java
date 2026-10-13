@@ -29,6 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import junitx.util.PrivateAccessor;
 import org.apache.sling.api.SlingJakartaHttpServletRequest;
 import org.apache.sling.api.SlingJakartaHttpServletResponse;
+import org.apache.sling.api.auth.Authenticator;
 import org.apache.sling.api.auth.NoAuthenticationHandlerException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -723,6 +724,42 @@ public class SlingAuthenticatorTest {
 
         // redirect requested -> request considered done, resolver closed
         Assert.assertFalse(auth.handleSecurity(request, response));
+        verify(resolver).close();
+    }
+
+    @Test
+    public void test_handleSecurity_anonymous_login_page_with_resource_param() throws Exception {
+        // the login form is requested anonymously and carries resource=<protected page>; the request
+        // must proceed to render the form (no redirect, no exception), see the 2.1.0 vote
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
+        final SlingAuthenticator auth = createAuthenticator(rrf);
+
+        final HttpServletRequest request = requestFor("/system/sling/form/login");
+        when(request.getParameter(Authenticator.LOGIN_RESOURCE)).thenReturn("/content/protected");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Assert.assertTrue(auth.handleSecurity(request, response));
+        verify(response, never()).sendRedirect(anyString());
+        verify(resolver, never()).close();
+        verify(request).setAttribute(AuthenticationSupport.REQUEST_ATTRIBUTE_RESOLVER, resolver);
+    }
+
+    @Test
+    public void test_handleSecurity_anonymous_with_explicit_redirect_param() throws Exception {
+        // sling.auth.redirect on an anonymous request keeps redirecting, as before 2.1.0
+        final ResourceResolverFactory rrf = mock(ResourceResolverFactory.class);
+        final ResourceResolver resolver = mock(ResourceResolver.class);
+        when(rrf.getResourceResolver(any(java.util.Map.class))).thenReturn(resolver);
+        final SlingAuthenticator auth = createAuthenticator(rrf);
+
+        final HttpServletRequest request = requestFor("/content");
+        when(request.getParameter(AuthenticationSupport.REDIRECT_PARAMETER)).thenReturn("/content/target");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Assert.assertFalse(auth.handleSecurity(request, response));
+        verify(response).sendRedirect("/content/target");
         verify(resolver).close();
     }
 

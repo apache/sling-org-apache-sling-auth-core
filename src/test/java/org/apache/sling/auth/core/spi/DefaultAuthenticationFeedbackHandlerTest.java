@@ -97,4 +97,19 @@ public class DefaultAuthenticationFeedbackHandlerTest {
         DefaultAuthenticationFeedbackHandler handler = new DefaultAuthenticationFeedbackHandler();
         Assert.assertFalse(handler.authenticationSucceeded(request, response, new AuthenticationInfo("test")));
     }
+
+    @Test
+    public void test_redirect_resource_fallback_without_resolver() throws Exception {
+        // SLING-13025 fallback to the "resource" parameter, on a request that has no resolver
+        // attribute yet (anonymous access): must redirect to the unmapped path, not fail
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getParameter(org.apache.sling.api.auth.Authenticator.LOGIN_RESOURCE))
+                .thenReturn("/content/protected");
+        when(request.getContextPath()).thenReturn("");
+        when(request.getServletPath()).thenReturn("/content/protected");
+        when(request.getRequestURI()).thenReturn("/content/protected");
+        Assert.assertTrue(DefaultAuthenticationFeedbackHandler.handleRedirect(request, response));
+        verify(response).sendRedirect("/content/protected");
+    }
 }
